@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import Phaser from 'phaser'
 import { CityScene } from './scenes/CityScene'
+import { InteriorScene } from './scenes/InteriorScene'
 
 /**
  * Monta il gioco Phaser dentro React.
@@ -28,7 +29,7 @@ export function PhaserCanvas() {
         width: '100%',
         height: '100%',
       },
-      scene: [CityScene],
+      scene: [CityScene, InteriorScene],
     })
 
     return () => gioco.destroy(true)

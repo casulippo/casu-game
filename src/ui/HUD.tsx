@@ -1,5 +1,6 @@
 import { useGame } from '../store'
 import { faseGiorno, formattaOra } from '../engine/time'
+import { luogoPerId } from '../engine/luoghi'
 
 const ETICHETTE_FASE: Record<string, string> = {
   notte: 'Notte',
@@ -44,16 +45,27 @@ export function HUD() {
   const tempo = useGame((s) => s.tempo)
   const giocatore = useGame((s) => s.giocatore)
   const quartiere = useGame((s) => s.quartiereCorrente)
+  const luogoCorrente = useGame((s) => s.luogoCorrente)
+
+  const dove = luogoCorrente ? nomeLuogo(luogoCorrente) : quartiere
 
   return (
     <div className="flex flex-wrap items-stretch gap-1.5 sm:gap-2">
       <Riquadro label="Giorno" value={String(tempo.giorno)} />
       <Riquadro label="Ora" value={formattaOra(tempo)} />
       <Riquadro label="Fase" value={ETICHETTE_FASE[faseGiorno(tempo)]} />
-      <Riquadro label="Puliti" value={`${giocatore.soldiPuliti} €`} />
+      <Riquadro label="Dove" value={dove} />
+      <Riquadro label="Puliti" value={`${giocatore.soldiPuliti} €`} soloDesktop />
       <Riquadro label="Età" value={`${giocatore.eta} anni`} soloDesktop />
       <Riquadro label="Sporchi" value={`${giocatore.soldiSporchi} €`} soloDesktop />
-      <Riquadro label="Quartiere" value={quartiere} soloDesktop />
     </div>
   )
+}
+
+function nomeLuogo(id: string): string {
+  try {
+    return luogoPerId(id).nome
+  } catch {
+    return id
+  }
 }

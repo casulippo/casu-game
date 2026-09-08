@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import {
-  LATO_CITTA,
-  calpestabile,
-  generaCitta,
-  pianiEdificio,
-  puntoDiPartenza,
-} from './city'
+import { LATO_CITTA, calpestabile, generaCitta, puntoDiPartenza } from './city'
+import { LUOGHI, celleOccupate } from './luoghi'
 
 const mappa = generaCitta()
 
@@ -15,25 +10,39 @@ describe('generaCitta', () => {
     expect(mappa[0]).toHaveLength(LATO_CITTA)
   })
 
-  it('contiene sia strade che edifici', () => {
-    const tutte = mappa.flat()
-    expect(tutte).toContain('strada')
-    expect(tutte).toContain('edificio')
-  })
-
   it('e deterministica: due generazioni danno la stessa citta', () => {
     expect(generaCitta()).toEqual(generaCitta())
+  })
+
+  it('contiene la strada, i marciapiedi e il verde', () => {
+    const tutte = new Set(mappa.flat())
+    expect(tutte).toContain('strada')
+    expect(tutte).toContain('marciapiede')
+    expect(tutte).toContain('erba')
+    expect(tutte).toContain('albero')
+  })
+
+  it('segna come edificio tutte le celle dei luoghi', () => {
+    for (const luogo of LUOGHI) {
+      for (const cella of celleOccupate(luogo)) {
+        expect(mappa[cella.y][cella.x]).toBe('edificio')
+      }
+    }
   })
 })
 
 describe('calpestabile', () => {
-  it('lascia passare sulle strade', () => {
-    expect(calpestabile(mappa, 0, 0)).toBe(true)
+  it('lascia passare sulla strada', () => {
+    expect(calpestabile(mappa, 5, 10)).toBe(true)
   })
 
   it('blocca dentro gli edifici', () => {
-    const edificio = trovaCella('edificio')
-    expect(calpestabile(mappa, edificio.x, edificio.y)).toBe(false)
+    const cella = celleOccupate(LUOGHI[0])[0]
+    expect(calpestabile(mappa, cella.x, cella.y)).toBe(false)
+  })
+
+  it('blocca contro gli alberi', () => {
+    expect(calpestabile(mappa, 2, 2)).toBe(false)
   })
 
   it('blocca fuori dai bordi della mappa', () => {
@@ -44,30 +53,14 @@ describe('calpestabile', () => {
   })
 
   it('tratta le coordinate frazionarie come la cella che le contiene', () => {
-    const edificio = trovaCella('edificio')
-    expect(calpestabile(mappa, edificio.x + 0.9, edificio.y + 0.9)).toBe(false)
-  })
-})
-
-describe('pianiEdificio', () => {
-  it('da sempre lo stesso numero di piani per la stessa cella', () => {
-    expect(pianiEdificio(7, 3)).toBe(pianiEdificio(7, 3))
+    const cella = celleOccupate(LUOGHI[0])[0]
+    expect(calpestabile(mappa, cella.x + 0.9, cella.y + 0.9)).toBe(false)
   })
 
-  it('sta tra 2 e 5 piani', () => {
-    for (let x = 0; x < 20; x++) {
-      for (let y = 0; y < 20; y++) {
-        const piani = pianiEdificio(x, y)
-        expect(piani).toBeGreaterThanOrEqual(2)
-        expect(piani).toBeLessThanOrEqual(5)
-      }
+  it('lascia libera la porta di ogni luogo, altrimenti sarebbe irraggiungibile', () => {
+    for (const luogo of LUOGHI) {
+      expect(calpestabile(mappa, luogo.porta.x, luogo.porta.y)).toBe(true)
     }
-  })
-
-  it('non da lo stesso valore a tutta la citta', () => {
-    const valori = new Set<number>()
-    for (let x = 0; x < 10; x++) valori.add(pianiEdificio(x, 4))
-    expect(valori.size).toBeGreaterThan(1)
   })
 })
 
@@ -77,12 +70,3 @@ describe('puntoDiPartenza', () => {
     expect(calpestabile(mappa, p.x, p.y)).toBe(true)
   })
 })
-
-function trovaCella(tipo: string) {
-  for (let y = 0; y < mappa.length; y++) {
-    for (let x = 0; x < mappa[y].length; x++) {
-      if (mappa[y][x] === tipo) return { x, y }
-    }
-  }
-  throw new Error(`nessuna cella di tipo ${tipo}`)
-}

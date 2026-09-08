@@ -1,56 +1,83 @@
 import type { Griglia } from './iso'
+import { LUOGHI, celleOccupate, type Luogo } from './luoghi'
 
-export type Cella = 'strada' | 'marciapiede' | 'edificio' | 'parco'
+export type Cella = 'strada' | 'marciapiede' | 'erba' | 'albero' | 'edificio'
 
-export const LATO_CITTA = 28
+export const LATO_CITTA = 22
 
-/** Ogni quanto passa una strada. */
-const PASSO_ISOLATO = 7
+/** La carreggiata: due celle di strada che attraversano la città. */
+const STRADA_Y = [10, 11]
+/** I marciapiedi ai lati della carreggiata. */
+const MARCIAPIEDE_Y = [9, 12]
+
+/** Alberi disposti a mano lungo i bordi, per non lasciare il verde vuoto. */
+const ALBERI: Griglia[] = [
+  { x: 2, y: 2 },
+  { x: 2, y: 15 },
+  { x: 3, y: 18 },
+  { x: 7, y: 17 },
+  { x: 11, y: 3 },
+  { x: 12, y: 6 },
+  { x: 17, y: 4 },
+  { x: 18, y: 8 },
+  { x: 19, y: 16 },
+  { x: 8, y: 19 },
+]
 
 /**
- * Genera l'isolato di prova: una griglia di strade con edifici in mezzo.
+ * Costruisce la mappa della città.
  *
- * Provvisorio. Quando arriveranno gli asset, la mappa sarà autorata in Tiled e
- * caricata da JSON — ma il tipo `Cella[][]` e le funzioni sotto restano identici,
- * quindi il resto del codice non se ne accorgerà.
+ * Prima il terreno, poi gli edifici sopra: così un luogo aggiunto in `luoghi.ts`
+ * compare senza dover toccare questa funzione.
  */
-export function generaCitta(lato = LATO_CITTA): Cella[][] {
+export function generaCitta(
+  lato = LATO_CITTA,
+  luoghi: Luogo[] = LUOGHI,
+): Cella[][] {
   const mappa: Cella[][] = []
 
   for (let y = 0; y < lato; y++) {
     const riga: Cella[] = []
     for (let x = 0; x < lato; x++) {
-      riga.push(cellaIn(x, y, lato))
+      riga.push(terrenoIn(x, y))
     }
     mappa.push(riga)
+  }
+
+  for (const albero of ALBERI) {
+    if (dentro(mappa, albero.x, albero.y)) {
+      mappa[albero.y][albero.x] = 'albero'
+    }
+  }
+
+  for (const luogo of luoghi) {
+    for (const cella of celleOccupate(luogo)) {
+      if (dentro(mappa, cella.x, cella.y)) {
+        mappa[cella.y][cella.x] = 'edificio'
+      }
+    }
+    // La porta resta sempre praticabile, altrimenti il luogo è irraggiungibile.
+    if (dentro(mappa, luogo.porta.x, luogo.porta.y)) {
+      mappa[luogo.porta.y][luogo.porta.x] = 'marciapiede'
+    }
   }
 
   return mappa
 }
 
-function cellaIn(x: number, y: number, lato: number): Cella {
-  const suStradaX = x % PASSO_ISOLATO === 0
-  const suStradaY = y % PASSO_ISOLATO === 0
+function terrenoIn(x: number, y: number): Cella {
+  if (STRADA_Y.includes(y)) return 'strada'
+  if (MARCIAPIEDE_Y.includes(y)) return 'marciapiede'
 
-  if (suStradaX || suStradaY) return 'strada'
+  // Un marciapiede verticale che collega la strada ai due edifici.
+  if (x === 6 && y < 10) return 'marciapiede'
+  if (x === 14 && y > 11) return 'marciapiede'
 
-  const bordoIsolato =
-    x % PASSO_ISOLATO === 1 ||
-    y % PASSO_ISOLATO === 1 ||
-    x % PASSO_ISOLATO === PASSO_ISOLATO - 1 ||
-    y % PASSO_ISOLATO === PASSO_ISOLATO - 1
+  return 'erba'
+}
 
-  if (bordoIsolato) return 'marciapiede'
-
-  // Un isolato ogni tanto è verde invece che costruito.
-  const isolatoX = Math.floor(x / PASSO_ISOLATO)
-  const isolatoY = Math.floor(y / PASSO_ISOLATO)
-  if ((isolatoX + isolatoY * 3) % 5 === 2) return 'parco'
-
-  // Fuori dai bordi della città non si costruisce.
-  if (x >= lato - 1 || y >= lato - 1) return 'marciapiede'
-
-  return 'edificio'
+function dentro(mappa: Cella[][], x: number, y: number): boolean {
+  return y >= 0 && y < mappa.length && x >= 0 && x < mappa[y].length
 }
 
 /** Si può camminare qui? */
@@ -58,35 +85,20 @@ export function calpestabile(mappa: Cella[][], x: number, y: number): boolean {
   const cx = Math.floor(x)
   const cy = Math.floor(y)
 
-  if (cy < 0 || cy >= mappa.length) return false
-  if (cx < 0 || cx >= mappa[cy].length) return false
+  if (!dentro(mappa, cx, cy)) return false
 
-  return mappa[cy][cx] !== 'edificio'
+  const cella = mappa[cy][cx]
+  return cella !== 'edificio' && cella !== 'albero'
 }
 
-/**
- * Quanti piani ha l'edificio in questa cella.
- *
- * Deterministica: la stessa cella dà sempre lo stesso risultato, così la città
- * non cambia forma a ogni caricamento e non serve salvarne l'aspetto.
- */
-export function pianiEdificio(x: number, y: number): number {
-  const rumore = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
-  const frazione = rumore - Math.floor(rumore)
-  return 2 + Math.floor(frazione * 4)
-}
-
-/** Una posizione libera dove far comparire il giocatore. */
+/** Il giocatore comincia sul marciapiede, davanti a casa. */
 export function puntoDiPartenza(mappa: Cella[][]): Griglia {
-  const centro = Math.floor(mappa.length / 2)
+  const davantiACasa = { x: 14.5, y: 12.5 }
+  if (calpestabile(mappa, davantiACasa.x, davantiACasa.y)) return davantiACasa
 
-  for (let raggio = 0; raggio < mappa.length; raggio++) {
-    for (let dy = -raggio; dy <= raggio; dy++) {
-      for (let dx = -raggio; dx <= raggio; dx++) {
-        const x = centro + dx
-        const y = centro + dy
-        if (calpestabile(mappa, x, y)) return { x: x + 0.5, y: y + 0.5 }
-      }
+  for (let y = 0; y < mappa.length; y++) {
+    for (let x = 0; x < mappa[y].length; x++) {
+      if (calpestabile(mappa, x, y)) return { x: x + 0.5, y: y + 0.5 }
     }
   }
 

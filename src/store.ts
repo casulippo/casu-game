@@ -2,33 +2,57 @@ import { create } from 'zustand'
 import { statoIniziale, type GameState, type Quartiere } from './engine/state'
 import { avanza } from './engine/time'
 
+/** Dove si trova il giocatore: per strada, o dentro un luogo. */
+export type Ambiente = 'citta' | 'interno'
+
 /**
  * L'unico ponte tra la logica di gioco, il canvas Phaser e la UI React.
  *
- * Phaser scrive qui (il tempo che scorre, la posizione del giocatore),
+ * Phaser scrive qui (il tempo che scorre, dove si trova il giocatore),
  * React si sottoscrive e si ridisegna da solo. I due strati non si parlano
  * mai direttamente: è l'equivalente tipizzato dei signal di Godot.
  */
 interface GameStore extends GameState {
-  /** Fa scorrere il tempo. Chiamato dal game loop di Phaser. */
+  ambiente: Ambiente
+  /** Il luogo in cui si è entrati, se siamo dentro. */
+  luogoCorrente: string | null
+  /**
+   * Il luogo a portata di interazione, se ce n'è uno.
+   *
+   * Aggiornato dalla scena solo quando cambia davvero, non a ogni frame:
+   * ogni scrittura qui fa ri-renderizzare la UI.
+   */
+  luogoVicino: string | null
+
   avanzaTempo: (oreGioco: number) => void
-  /** Cambia quartiere (viaggio a piedi o rapido). */
   vaiA: (quartiere: Quartiere) => void
-  /** Ricomincia da capo. */
+  entraIn: (luogoId: string) => void
+  esci: () => void
+  segnalaLuogoVicino: (luogoId: string | null) => void
   reset: () => void
-  /** Sostituisce lo stato, per il caricamento di un salvataggio. */
   carica: (stato: GameState) => void
 }
 
 export const useGame = create<GameStore>()((set) => ({
   ...statoIniziale(),
+  ambiente: 'citta',
+  luogoCorrente: null,
+  luogoVicino: null,
 
   avanzaTempo: (oreGioco) =>
     set((s) => ({ tempo: avanza(s.tempo, oreGioco) })),
 
   vaiA: (quartiere) => set({ quartiereCorrente: quartiere }),
 
-  reset: () => set(statoIniziale()),
+  entraIn: (luogoId) =>
+    set({ ambiente: 'interno', luogoCorrente: luogoId, luogoVicino: null }),
+
+  esci: () => set({ ambiente: 'citta', luogoCorrente: null, luogoVicino: null }),
+
+  segnalaLuogoVicino: (luogoId) =>
+    set((s) => (s.luogoVicino === luogoId ? s : { luogoVicino: luogoId })),
+
+  reset: () => set({ ...statoIniziale(), ambiente: 'citta', luogoCorrente: null }),
 
   carica: (stato) => set(stato),
 }))

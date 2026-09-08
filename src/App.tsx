@@ -1,5 +1,6 @@
 import { PhaserCanvas } from './game/PhaserCanvas'
 import { HUD } from './ui/HUD'
+import { PromptAzione } from './ui/PromptAzione'
 import { TouchControls } from './ui/TouchControls'
 
 /**
@@ -19,10 +20,7 @@ export default function App() {
       </div>
 
       <TouchControls />
-
-      <p className="pointer-events-none absolute inset-x-0 bottom-2 hidden text-center text-xs text-slate-500 sm:block">
-        Frecce o WASD per muoverti
-      </p>
+      <PromptAzione />
     </main>
   )
 }
