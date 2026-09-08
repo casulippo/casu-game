@@ -14,32 +14,31 @@ import {
   calpestabile,
   generaCitta,
   puntoDiPartenza,
+  terrenoSotto,
   type Cella,
 } from '../../engine/city'
-import { LUOGHI, luogoAllaPortata, type Luogo } from '../../engine/luoghi'
+import { ARREDO, type Arredo } from '../../engine/arredo'
+import { LUOGHI, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
-import { faseGiorno, oreDaTempoReale, type FaseGiorno } from '../../engine/time'
+import { illuminazione } from '../../engine/illuminazione'
+import { oreDaTempoReale } from '../../engine/time'
 import { gameStore } from '../../store'
 import { leggiSpinta } from '../input'
-import { creaGiocatore, puntiDaVertici } from './comuni'
+import { Luminosi, creaGiocatore, puntiDaVertici } from './comuni'
 
 /** Celle attraversate in un secondo. */
 const VELOCITA = 3.5
 
-const COLORE_SUOLO: Record<Cella, number> = {
-  strada: 0x2f333d,
-  marciapiede: 0x545c6b,
-  erba: 0x35603f,
-  albero: 0x2c4f36,
-  edificio: 0x3a3f4b,
-}
+/** Il marciapiede sta un gradino sopra l'asfalto: è ciò che dà spessore alla strada. */
+const ALTEZZA_CORDOLO = 7
 
-/** Il cielo cambia con l'ora del giorno: il tempo di gioco si vede sulla mappa. */
-const CIELO: Record<FaseGiorno, number> = {
-  notte: 0x0b0e14,
-  mattina: 0x1d2735,
-  pomeriggio: 0x243040,
-  sera: 0x2a1f2e,
+const COLORE_SUOLO: Record<Cella, number> = {
+  strada: 0x2b2f38,
+  marciapiede: 0x6b7280,
+  erba: 0x3d6b47,
+  albero: 0x3d6b47,
+  edificio: 0x3a3f4b,
+  ostacolo: 0x6b7280,
 }
 
 interface Aspetto {
@@ -51,14 +50,14 @@ interface Aspetto {
 
 const ASPETTO: Record<string, Aspetto> = {
   supermercato: {
-    sinistra: 0x9c5f3c,
-    destra: 0xc4794c,
-    tetto: 0x6d7684,
-    insegna: 0x3fa66a,
+    sinistra: 0x8d5638,
+    destra: 0xba7248,
+    tetto: 0x69717d,
+    insegna: 0x2f9c62,
   },
   casa: {
-    sinistra: 0x8a7d6b,
-    destra: 0xb3a288,
+    sinistra: 0x7d7160,
+    destra: 0xab9a80,
     tetto: 0xa8442f,
     insegna: 0xd8a24a,
   },
@@ -67,8 +66,8 @@ const ASPETTO: Record<string, Aspetto> = {
 /**
  * La città in vista isometrica.
  *
- * Tutta la matematica della proiezione vive in `engine/iso.ts`, la mappa e i
- * luoghi in `engine/city.ts` e `engine/luoghi.ts`: qui si disegna soltanto.
+ * La matematica della proiezione vive in `engine/iso.ts`, la mappa in
+ * `engine/city.ts`, la luce in `engine/illuminazione.ts`: qui si disegna soltanto.
  */
 export class CityScene extends Phaser.Scene {
   private mappa: Cella[][] = []
@@ -77,7 +76,8 @@ export class CityScene extends Phaser.Scene {
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
   private wasd!: Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>
   private tastoAzione!: Phaser.Input.Keyboard.Key
-  private faseCorrente: FaseGiorno | null = null
+  private luminosi = new Luminosi()
+  private velo!: Phaser.GameObjects.Rectangle
 
   constructor() {
     super('city')
@@ -86,11 +86,15 @@ export class CityScene extends Phaser.Scene {
   create() {
     this.mappa = generaCitta()
     this.pos = this.registry.get('posCitta') ?? puntoDiPartenza(this.mappa)
+    this.luminosi = new Luminosi()
 
-    this.disegnaSuolo()
+    this.disegnaTerreno()
+    this.disegnaCordoli()
     this.disegnaAlberi()
+    this.disegnaArredo()
     this.disegnaLuoghi()
     this.giocatore = creaGiocatore(this)
+    this.velo = this.creaVelo()
 
     this.tasti = this.input.keyboard!.createCursorKeys()
     this.wasd = this.input.keyboard!.addKeys('W,A,S,D') as typeof this.wasd
@@ -98,28 +102,55 @@ export class CityScene extends Phaser.Scene {
 
     this.impostaCamera()
     this.aggiornaGiocatore()
+    this.aggiornaLuce()
   }
 
   update(_time: number, deltaMs: number) {
     this.muovi(deltaMs / 1000)
     this.aggiornaGiocatore()
-    this.aggiornaLuogoVicino()
+    this.aggiornaInterazione()
     this.controllaIngresso()
 
     gameStore.getState().avanzaTempo(oreDaTempoReale(deltaMs))
-    this.aggiornaCielo()
+    this.aggiornaLuce()
+  }
+
+  // ------------------------------------------------------------------- luce
+
+  /**
+   * L'illuminazione segue l'ora di gioco: un velo colorato moltiplicato sopra
+   * la scena, e le luci artificiali che si accendono al calare del sole.
+   */
+  private aggiornaLuce() {
+    const luce = illuminazione(gameStore.getState().tempo)
+
+    this.cameras.main.setBackgroundColor(luce.cielo)
+    this.velo.setFillStyle(luce.tinta)
+    this.luminosi.applica(luce.luci)
+  }
+
+  /** Il velo copre lo schermo e non scorre con la camera. */
+  private creaVelo(): Phaser.GameObjects.Rectangle {
+    const velo = this.add.rectangle(0, 0, 10, 10, 0xffffff)
+    velo.setOrigin(0, 0)
+    velo.setScrollFactor(0)
+    velo.setDepth(100_000)
+    velo.setBlendMode(Phaser.BlendModes.MULTIPLY)
+
+    const adatta = () => velo.setSize(this.scale.width, this.scale.height)
+    adatta()
+    this.scale.on('resize', adatta)
+    this.events.once('shutdown', () => this.scale.off('resize', adatta))
+
+    return velo
   }
 
   // -------------------------------------------------------------- interazione
 
-  private aggiornaLuogoVicino() {
+  private aggiornaInterazione() {
     gameStore.getState().segnalaInterazione(interazioneInCitta(this.pos))
   }
 
-  /**
-   * L'ingresso può partire dal tasto E o dal pulsante touch, che scrive
-   * direttamente nello store. In entrambi i casi si finisce qui.
-   */
   private controllaIngresso() {
     const stato = gameStore.getState()
 
@@ -131,15 +162,14 @@ export class CityScene extends Phaser.Scene {
 
     if (!Phaser.Input.Keyboard.JustDown(this.tastoAzione)) return
 
-    const luogo = luogoAllaPortata(this.pos)
-    if (luogo?.accessibile) stato.entraIn(luogo.id)
+    const azione = interazioneInCitta(this.pos)
+    if (azione?.tipo === 'entra') stato.entraIn(azione.luogo.id)
   }
 
   // ---------------------------------------------------------------- movimento
 
   private muovi(deltaSec: number) {
     const { dir, intensita } = this.direzioneRichiesta()
-
     if (intensita === 0) return
 
     const passo = VELOCITA * deltaSec * intensita
@@ -152,12 +182,6 @@ export class CityScene extends Phaser.Scene {
     if (calpestabile(this.mappa, this.pos.x, nuovaY)) this.pos.y = nuovaY
   }
 
-  /**
-   * Unisce le due sorgenti di comando: tastiera e joystick touch.
-   *
-   * Il joystick ha la precedenza se lo stai usando, così su un tablet con
-   * tastiera collegata i due non si disturbano a vicenda.
-   */
   private direzioneRichiesta(): { dir: Griglia; intensita: number } {
     const touch = leggiSpinta()
     if (touch.intensita > 0) {
@@ -179,37 +203,87 @@ export class CityScene extends Phaser.Scene {
 
   private aggiornaGiocatore() {
     const { sx, sy } = grigliaASchermo(this.pos)
-    this.giocatore.setPosition(sx, sy)
-    // Mezza cella di margine: entrando in una fascia, il personaggio ci passa davanti.
+    const rialzo = this.suMarciapiede() ? ALTEZZA_CORDOLO : 0
+
+    this.giocatore.setPosition(sx, sy - rialzo)
     this.giocatore.setDepth(profondita(this.pos) + 0.5)
+  }
+
+  /** Camminando sul marciapiede si sta un gradino più in alto. */
+  private suMarciapiede(): boolean {
+    const terreno = terrenoSotto(Math.floor(this.pos.x), Math.floor(this.pos.y))
+    return terreno === 'marciapiede'
   }
 
   // ---------------------------------------------------------------- rendering
 
-  private disegnaSuolo() {
+  private disegnaTerreno() {
     const g = this.add.graphics()
     g.setDepth(-1000)
 
     for (let y = 0; y < this.mappa.length; y++) {
       for (let x = 0; x < this.mappa[y].length; x++) {
-        const tipo = this.mappa[y][x]
-        g.fillStyle(COLORE_SUOLO[tipo === 'albero' ? 'erba' : tipo], 1)
-        g.lineStyle(1, 0x000000, 0.14)
+        const terreno = terrenoSotto(x, y)
+        if (terreno === 'marciapiede') continue // disegnato rialzato dopo
+
+        g.fillStyle(this.variaColore(COLORE_SUOLO[terreno], x, y), 1)
         const punti = puntiDaVertici(verticiCella({ x, y }))
         g.fillPoints(punti, true)
-        g.strokePoints(punti, true)
       }
     }
 
     this.disegnaStriscePedonali(g)
   }
 
-  /** Qualche riga bianca sull'asfalto: la strada smette di sembrare un tappeto. */
+  /**
+   * Una leggera variazione di tono cella per cella.
+   *
+   * Un colore uniforme legge come plastica: bastano pochi punti di scarto,
+   * deterministici, perché l'asfalto sembri asfalto.
+   */
+  private variaColore(colore: number, x: number, y: number): number {
+    const rumore = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
+    const scarto = Math.round(((rumore - Math.floor(rumore)) - 0.5) * 14)
+
+    const canale = (spostamento: number) =>
+      Math.min(255, Math.max(0, ((colore >> spostamento) & 0xff) + scarto))
+
+    return (canale(16) << 16) | (canale(8) << 8) | canale(0)
+  }
+
   private disegnaStriscePedonali(g: Phaser.GameObjects.Graphics) {
-    g.fillStyle(0xd8d8d8, 0.5)
-    for (let x = 1; x < this.mappa.length - 1; x += 3) {
-      const { sx, sy } = grigliaASchermo({ x: x + 0.5, y: 10.5 })
-      g.fillEllipse(sx, sy, TILE_W * 0.36, TILE_H * 0.36)
+    g.fillStyle(0xd4d8de, 0.55)
+    for (const x of [7, 13]) {
+      for (const y of [10, 11]) {
+        const punti = puntiDaVertici(verticiCella({ x, y }))
+        g.fillPoints(punti, true)
+      }
+    }
+  }
+
+  /** I marciapiedi sono blocchi bassi, non superfici piatte: hanno un cordolo. */
+  private disegnaCordoli() {
+    const perFascia = new Map<number, Griglia[]>()
+
+    for (let y = 0; y < this.mappa.length; y++) {
+      for (let x = 0; x < this.mappa[y].length; x++) {
+        if (terrenoSotto(x, y) !== 'marciapiede') continue
+        const fascia = profondita({ x, y })
+        if (!perFascia.has(fascia)) perFascia.set(fascia, [])
+        perFascia.get(fascia)!.push({ x, y })
+      }
+    }
+
+    for (const [fascia, celle] of perFascia) {
+      const g = this.add.graphics()
+      g.setDepth(fascia - 0.9)
+      for (const cella of celle) {
+        this.blocco(g, cella, ALTEZZA_CORDOLO, {
+          sinistra: 0x4d545f,
+          destra: 0x5c6470,
+          sopra: this.variaColore(0x767d8a, cella.x, cella.y),
+        })
+      }
     }
   }
 
@@ -222,16 +296,140 @@ export class CityScene extends Phaser.Scene {
         const g = this.add.graphics()
         g.setDepth(profondita({ x, y }))
 
-        g.fillStyle(0x000000, 0.25)
-        g.fillEllipse(sx, sy + 2, TILE_W * 0.32, TILE_H * 0.32)
-        g.fillStyle(0x5a4632, 1)
-        g.fillRect(sx - 3, sy - 26, 6, 26)
-        g.fillStyle(0x3f7a4a, 1)
-        g.fillCircle(sx, sy - 34, 15)
-        g.fillStyle(0x4b8f57, 1)
-        g.fillCircle(sx - 5, sy - 39, 10)
+        g.fillStyle(0x000000, 0.28)
+        g.fillEllipse(sx, sy + 2, TILE_W * 0.34, TILE_H * 0.34)
+        g.fillStyle(0x53422f, 1)
+        g.fillRect(sx - 3, sy - 28, 6, 28)
+        g.fillStyle(0x2f6039, 1)
+        g.fillCircle(sx, sy - 36, 16)
+        g.fillStyle(0x3d7a48, 1)
+        g.fillCircle(sx - 6, sy - 42, 11)
+        g.fillStyle(0x4d9257, 1)
+        g.fillCircle(sx + 5, sy - 45, 7)
       }
     }
+  }
+
+  private disegnaArredo() {
+    for (const pezzo of ARREDO) {
+      switch (pezzo.tipo) {
+        case 'lampione':
+          this.disegnaLampione(pezzo)
+          break
+        case 'auto':
+          this.disegnaAuto(pezzo)
+          break
+        case 'cassonetto':
+          this.blocchetto(pezzo, 15, 0x2f5c46, 0x3b7256, 0x498a68)
+          break
+        case 'panchina':
+          this.disegnaPanchina(pezzo)
+          break
+        case 'cespuglio':
+          this.disegnaCespuglio(pezzo)
+          break
+      }
+    }
+  }
+
+  private disegnaLampione(pezzo: Arredo) {
+    const { sx, sy } = grigliaASchermo(pezzo)
+    const base = sy - ALTEZZA_CORDOLO
+    const altezza = 62
+
+    const g = this.add.graphics()
+    g.setDepth(profondita(pezzo))
+    g.fillStyle(0x000000, 0.25)
+    g.fillEllipse(sx, base + 2, TILE_W * 0.22, TILE_H * 0.22)
+    g.fillStyle(0x3c4350, 1)
+    g.fillRect(sx - 2, base - altezza, 4, altezza)
+    g.fillStyle(0x4a5260, 1)
+    g.fillRect(sx - 7, base - altezza - 5, 14, 6)
+
+    // La lampada e il suo alone si accendono col buio.
+    const lampada = this.add.circle(sx, base - altezza - 1, 4, 0xffd9a0)
+    lampada.setDepth(profondita(pezzo) + 0.1)
+    this.luminosi.aggiungi(lampada, 1)
+
+    const alone = this.add.circle(sx, base - altezza + 4, 46, 0xffc46b)
+    alone.setDepth(profondita(pezzo) - 0.2)
+    alone.setBlendMode(Phaser.BlendModes.ADD)
+    this.luminosi.aggiungi(alone, 0.16)
+
+    // Il cerchio di luce a terra.
+    const pozza = this.add.ellipse(sx, base + 4, TILE_W * 1.5, TILE_H * 1.5, 0xffc46b)
+    pozza.setDepth(-999)
+    pozza.setBlendMode(Phaser.BlendModes.ADD)
+    this.luminosi.aggiungi(pozza, 0.12)
+  }
+
+  private disegnaAuto(pezzo: Arredo) {
+    const { sx, sy } = grigliaASchermo(pezzo)
+    const colori = [0x8c3b3b, 0x2f5b8c, 0x3f6b4a, 0x8a7a3f]
+    const colore = colori[(pezzo.x * 3 + pezzo.y * 7) % colori.length]
+
+    const g = this.add.graphics()
+    g.setDepth(profondita(pezzo))
+
+    g.fillStyle(0x000000, 0.3)
+    g.fillEllipse(sx, sy + 3, TILE_W * 0.62, TILE_H * 0.55)
+
+    this.blocco(g, pezzo, 13, {
+      sinistra: scurisci(colore, 0.7),
+      destra: colore,
+      sopra: schiarisci(colore, 1.15),
+    })
+
+    // L'abitacolo, un blocchetto più stretto e scuro sopra la scocca.
+    const { sx: cx, sy: cy } = grigliaASchermo(pezzo)
+    g.fillStyle(0x1e2530, 0.9)
+    g.fillEllipse(cx, cy - 20, TILE_W * 0.34, TILE_H * 0.42)
+  }
+
+  private disegnaPanchina(pezzo: Arredo) {
+    const { sx, sy } = grigliaASchermo(pezzo)
+    const g = this.add.graphics()
+    g.setDepth(profondita(pezzo))
+
+    g.fillStyle(0x000000, 0.22)
+    g.fillEllipse(sx, sy + 2, TILE_W * 0.42, TILE_H * 0.4)
+    this.blocco(g, pezzo, 9, {
+      sinistra: 0x6b4f33,
+      destra: 0x82613f,
+      sopra: 0x99754d,
+    })
+    g.fillStyle(0x6b4f33, 1)
+    g.fillRect(sx - 12, sy - 26, 24, 9)
+  }
+
+  private disegnaCespuglio(pezzo: Arredo) {
+    const { sx, sy } = grigliaASchermo(pezzo)
+    const g = this.add.graphics()
+    g.setDepth(profondita(pezzo))
+
+    g.fillStyle(0x000000, 0.22)
+    g.fillEllipse(sx, sy + 2, TILE_W * 0.4, TILE_H * 0.4)
+    g.fillStyle(0x2f5f3a, 1)
+    g.fillCircle(sx - 6, sy - 8, 10)
+    g.fillStyle(0x3a7346, 1)
+    g.fillCircle(sx + 5, sy - 10, 9)
+    g.fillStyle(0x458553, 1)
+    g.fillCircle(sx, sy - 15, 8)
+  }
+
+  private blocchetto(
+    cella: Griglia,
+    altezza: number,
+    sinistra: number,
+    destra: number,
+    sopra: number,
+  ) {
+    const g = this.add.graphics()
+    g.setDepth(profondita(cella))
+    const { sx, sy } = grigliaASchermo(cella)
+    g.fillStyle(0x000000, 0.25)
+    g.fillEllipse(sx, sy + 2, TILE_W * 0.42, TILE_H * 0.4)
+    this.blocco(g, cella, altezza, { sinistra, destra, sopra })
   }
 
   private disegnaLuoghi() {
@@ -242,10 +440,6 @@ export class CityScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Un luogo è disegnato come un unico volume, non cella per cella:
-   * l'ingombro può essere largo diverse celle ma l'edificio è uno solo.
-   */
   private disegnaEdificio(luogo: Luogo) {
     const aspetto = ASPETTO[luogo.tipo]
     const h = luogo.piani * ALTEZZA_PIANO
@@ -272,67 +466,81 @@ export class CityScene extends Phaser.Scene {
     const g = this.add.graphics()
     g.setDepth(profondita({ x: x1, y: y1 }))
 
-    // Faccia sinistra, in ombra.
     g.fillStyle(aspetto.sinistra, 1)
-    g.fillPoints(
-      puntiDaVertici([lx, ly - h, lx, ly, bx, by, bx, by - h]),
-      true,
-    )
+    g.fillPoints(puntiDaVertici([lx, ly - h, lx, ly, bx, by, bx, by - h]), true)
 
-    // Faccia destra, illuminata di taglio.
     g.fillStyle(aspetto.destra, 1)
-    g.fillPoints(
-      puntiDaVertici([bx, by - h, bx, by, rx, ry, rx, ry - h]),
-      true,
-    )
+    g.fillPoints(puntiDaVertici([bx, by - h, bx, by, rx, ry, rx, ry - h]), true)
 
-    // Tetto.
+    // Una fascia di zoccolatura in basso: l'edificio poggia invece di galleggiare.
+    g.fillStyle(scurisci(aspetto.sinistra, 0.75), 1)
+    g.fillPoints(puntiDaVertici([lx, ly - 9, lx, ly, bx, by, bx, by - 9]), true)
+    g.fillStyle(scurisci(aspetto.destra, 0.75), 1)
+    g.fillPoints(puntiDaVertici([bx, by - 9, bx, by, rx, ry, rx, ry - 9]), true)
+
     g.fillStyle(aspetto.tetto, 1)
-    g.lineStyle(1, 0x1e222b, 0.9)
+    g.lineStyle(1, 0x1e222b, 0.85)
     const tetto = puntiDaVertici([tx, ty - h, rx, ry - h, bx, by - h, lx, ly - h])
     g.fillPoints(tetto, true)
     g.strokePoints(tetto, true)
 
-    this.disegnaVetrine(g, luogo, { bx, by, lx, ly, rx, ry })
+    this.disegnaFinestre(luogo, { bx, by, lx, ly, rx, ry }, h)
   }
 
-  private disegnaVetrine(
-    g: Phaser.GameObjects.Graphics,
+  /** Le finestre sono oggetti a sé: devono potersi accendere la sera. */
+  private disegnaFinestre(
     luogo: Luogo,
     v: { bx: number; by: number; lx: number; ly: number; rx: number; ry: number },
+    altezza: number,
   ) {
-    const acceso = luogo.tipo === 'supermercato' ? 0x9fd8c0 : 0xe8c170
+    const depth = profondita({
+      x: luogo.origine.x + luogo.larghezza - 1,
+      y: luogo.origine.y + luogo.profondita - 1,
+    })
+    const acceso = luogo.tipo === 'supermercato' ? 0xa9e4cc : 0xffd28a
 
-    if (luogo.tipo === 'supermercato') {
-      // Una fascia continua di vetrine al piano terra.
-      g.fillStyle(acceso, 0.8)
-      const passi = 5
-      for (let i = 1; i <= passi; i++) {
-        const t = i / (passi + 1)
-        const x = v.bx + (v.rx - v.bx) * t
-        const y = v.by + (v.ry - v.by) * t
-        g.fillRect(x - 7, y - 34, 14, 18)
-      }
-      return
-    }
+    const passi = luogo.tipo === 'supermercato' ? 5 : 2
+    const altezzaVetrina = luogo.tipo === 'supermercato' ? 20 : 12
+    const larghezzaVetrina = luogo.tipo === 'supermercato' ? 15 : 11
 
-    // La casa ha finestre più piccole e sparse.
-    g.fillStyle(acceso, 0.85)
-    for (const t of [0.35, 0.7]) {
+    for (let i = 1; i <= passi; i++) {
+      const t = i / (passi + 1)
       const x = v.bx + (v.rx - v.bx) * t
       const y = v.by + (v.ry - v.by) * t
-      g.fillRect(x - 5, y - 40, 10, 11)
+
+      // Piano terra su un lato, primo piano se l'edificio è alto.
+      const quote = luogo.tipo === 'supermercato' ? [26] : [26, altezza - 12]
+
+      for (const quota of quote) {
+        const vetro = this.add.rectangle(
+          x,
+          y - quota,
+          larghezzaVetrina,
+          altezzaVetrina,
+          acceso,
+        )
+        vetro.setDepth(depth + 0.1)
+        this.luminosi.aggiungi(vetro, 0.85, 0.12)
+      }
     }
   }
 
-  /** Un tappeto colorato sulla soglia: si capisce a colpo d'occhio dove si entra. */
   private disegnaSoglia(luogo: Luogo) {
     const g = this.add.graphics()
     g.setDepth(profondita(luogo.porta) - 0.5)
 
     const colore = luogo.accessibile ? 0xe0b25c : 0x6b7280
-    g.fillStyle(colore, luogo.accessibile ? 0.85 : 0.5)
+    g.fillStyle(colore, luogo.accessibile ? 0.9 : 0.55)
     g.fillPoints(puntiDaVertici(verticiCella(luogo.porta)), true)
+
+    if (!luogo.accessibile) return
+
+    // Una luce sopra la porta di ciò che è aperto.
+    const { sx, sy } = grigliaASchermo(luogo.porta)
+    const alone = this.add.ellipse(sx, sy - 4, TILE_W * 1.1, TILE_H * 1.1, 0xffc46b)
+    alone.setDepth(profondita(luogo.porta) - 0.4)
+    alone.setBlendMode(Phaser.BlendModes.ADD)
+    this.luminosi.aggiungi(alone, 0.2)
   }
 
   private disegnaInsegna(luogo: Luogo) {
@@ -343,22 +551,34 @@ export class CityScene extends Phaser.Scene {
     const { sx, sy } = grigliaASchermo(centro)
     const altezza = luogo.piani * ALTEZZA_PIANO
 
-    const testo = this.add.text(sx, sy - altezza - 34, luogo.nome.toUpperCase(), {
+    const testo = this.add.text(sx, sy - altezza - 32, luogo.nome.toUpperCase(), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
-      color: '#f4f4f5',
+      color: '#f8fafc',
       backgroundColor: coloreCss(ASPETTO[luogo.tipo].insegna),
-      padding: { x: 7, y: 3 },
+      padding: { x: 8, y: 3 },
     })
     testo.setOrigin(0.5, 1)
     testo.setDepth(10_000)
 
+    // Di notte l'insegna alona come un neon.
+    const neon = this.add.rectangle(
+      sx,
+      sy - altezza - 32 - testo.height / 2,
+      testo.width + 16,
+      testo.height + 12,
+      ASPETTO[luogo.tipo].insegna,
+    )
+    neon.setDepth(9_999)
+    neon.setBlendMode(Phaser.BlendModes.ADD)
+    this.luminosi.aggiungi(neon, 0.4)
+
     if (!luogo.accessibile && luogo.motivoChiusura) {
-      const chiuso = this.add.text(sx, sy - altezza - 18, luogo.motivoChiusura, {
+      const chiuso = this.add.text(sx, sy - altezza - 16, luogo.motivoChiusura, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
         color: '#cbd5e1',
-        backgroundColor: 'rgba(15,23,42,0.75)',
+        backgroundColor: 'rgba(15,23,42,0.8)',
         padding: { x: 5, y: 2 },
       })
       chiuso.setOrigin(0.5, 1)
@@ -366,12 +586,41 @@ export class CityScene extends Phaser.Scene {
     }
   }
 
-  private aggiornaCielo() {
-    const fase = faseGiorno(gameStore.getState().tempo)
-    if (fase === this.faseCorrente) return
+  /** Un prisma isometrico alto `altezza` sulla cella indicata. */
+  private blocco(
+    g: Phaser.GameObjects.Graphics,
+    cella: Griglia,
+    altezza: number,
+    colori: { sinistra: number; destra: number; sopra: number },
+  ) {
+    const [tx, ty, rx, ry, bx, by, lx, ly] = verticiCella(cella)
 
-    this.faseCorrente = fase
-    this.cameras.main.setBackgroundColor(CIELO[fase])
+    g.fillStyle(colori.sinistra, 1)
+    g.fillPoints(
+      puntiDaVertici([lx, ly - altezza, lx, ly, bx, by, bx, by - altezza]),
+      true,
+    )
+
+    g.fillStyle(colori.destra, 1)
+    g.fillPoints(
+      puntiDaVertici([bx, by - altezza, bx, by, rx, ry, rx, ry - altezza]),
+      true,
+    )
+
+    g.fillStyle(colori.sopra, 1)
+    g.fillPoints(
+      puntiDaVertici([
+        tx,
+        ty - altezza,
+        rx,
+        ry - altezza,
+        bx,
+        by - altezza,
+        lx,
+        ly - altezza,
+      ]),
+      true,
+    )
   }
 
   private impostaCamera() {
@@ -386,10 +635,23 @@ export class CityScene extends Phaser.Scene {
       altezza,
     )
     this.cameras.main.startFollow(this.giocatore, true, 0.08, 0.08)
-    this.cameras.main.setBackgroundColor(CIELO.mattina)
   }
 }
 
 function coloreCss(colore: number): string {
   return `#${colore.toString(16).padStart(6, '0')}`
+}
+
+function scurisci(colore: number, fattore: number): number {
+  return scala(colore, fattore)
+}
+
+function schiarisci(colore: number, fattore: number): number {
+  return scala(colore, fattore)
+}
+
+function scala(colore: number, fattore: number): number {
+  const canale = (spostamento: number) =>
+    Math.min(255, Math.round(((colore >> spostamento) & 0xff) * fattore))
+  return (canale(16) << 16) | (canale(8) << 8) | canale(0)
 }

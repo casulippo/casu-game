@@ -46,13 +46,27 @@ export function HUD() {
   const giocatore = useGame((s) => s.giocatore)
   const quartiere = useGame((s) => s.quartiereCorrente)
   const luogoCorrente = useGame((s) => s.luogoCorrente)
+  const avanzaTempo = useGame((s) => s.avanzaTempo)
 
   const dove = luogoCorrente ? nomeLuogo(luogoCorrente) : quartiere
 
   return (
     <div className="flex flex-wrap items-stretch gap-1.5 sm:gap-2">
       <Riquadro label="Giorno" value={String(tempo.giorno)} />
-      <Riquadro label="Ora" value={formattaOra(tempo)} />
+      {/* Cliccabile per saltare avanti: il ciclo giorno/notte dura un'ora reale. */}
+      <button
+        type="button"
+        onClick={() => avanzaTempo(2)}
+        className="pointer-events-auto rounded-md bg-slate-900/75 px-2 py-1 text-left ring-1 ring-slate-700/80 backdrop-blur-sm transition active:scale-95 sm:px-3 sm:py-2"
+        title="Avanza di 2 ore"
+      >
+        <div className="text-[9px] uppercase tracking-wider text-slate-400 sm:text-[10px]">
+          Ora +2
+        </div>
+        <div className="font-mono text-sm text-slate-100 tabular-nums sm:text-lg">
+          {formattaOra(tempo)}
+        </div>
+      </button>
       <Riquadro label="Fase" value={ETICHETTE_FASE[faseGiorno(tempo)]} />
       <Riquadro label="Dove" value={dove} />
       <Riquadro label="Puliti" value={`${giocatore.soldiPuliti} €`} soloDesktop />

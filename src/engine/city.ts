@@ -1,7 +1,15 @@
 import type { Griglia } from './iso'
+import { ARREDO, bloccaIlPasso } from './arredo'
 import { LUOGHI, celleOccupate, type Luogo } from './luoghi'
 
-export type Cella = 'strada' | 'marciapiede' | 'erba' | 'albero' | 'edificio'
+export type Cella =
+  | 'strada'
+  | 'marciapiede'
+  | 'erba'
+  | 'albero'
+  | 'edificio'
+  /** Occupata da arredo urbano ingombrante: ci si gira intorno. */
+  | 'ostacolo'
 
 export const LATO_CITTA = 22
 
@@ -50,6 +58,12 @@ export function generaCitta(
     }
   }
 
+  for (const arredo of ARREDO) {
+    if (bloccaIlPasso(arredo.tipo) && dentro(mappa, arredo.x, arredo.y)) {
+      mappa[arredo.y][arredo.x] = 'ostacolo'
+    }
+  }
+
   for (const luogo of luoghi) {
     for (const cella of celleOccupate(luogo)) {
       if (dentro(mappa, cella.x, cella.y)) {
@@ -63,6 +77,11 @@ export function generaCitta(
   }
 
   return mappa
+}
+
+/** Il terreno sotto l'arredo, per sapere cosa disegnare come pavimentazione. */
+export function terrenoSotto(x: number, y: number): Cella {
+  return terrenoIn(x, y)
 }
 
 function terrenoIn(x: number, y: number): Cella {
@@ -88,7 +107,7 @@ export function calpestabile(mappa: Cella[][], x: number, y: number): boolean {
   if (!dentro(mappa, cx, cy)) return false
 
   const cella = mappa[cy][cx]
-  return cella !== 'edificio' && cella !== 'albero'
+  return cella !== 'edificio' && cella !== 'albero' && cella !== 'ostacolo'
 }
 
 /** Il giocatore comincia sul marciapiede, davanti a casa. */
