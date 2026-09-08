@@ -30,27 +30,27 @@ export interface Luogo {
  */
 export const LUOGHI: Luogo[] = [
   {
-    id: 'supermercato',
-    nome: 'Supermercato',
-    tipo: 'supermercato',
-    origine: { x: 4, y: 5 },
-    larghezza: 6,
-    profondita: 4,
-    piani: 2,
-    accessibile: false,
-    porta: { x: 6, y: 9 },
-    motivoChiusura: 'Chiuso',
-  },
-  {
     id: 'casa',
     nome: 'Casa',
     tipo: 'casa',
-    origine: { x: 13, y: 13 },
+    origine: { x: 38, y: 25 },
     larghezza: 3,
     profondita: 3,
     piani: 2,
     accessibile: true,
-    porta: { x: 14, y: 12 },
+    porta: { x: 39, y: 24 },
+  },
+  {
+    id: 'supermercato',
+    nome: 'Supermercato',
+    tipo: 'supermercato',
+    origine: { x: 38, y: 33 },
+    larghezza: 5,
+    profondita: 4,
+    piani: 2,
+    accessibile: false,
+    porta: { x: 40, y: 32 },
+    motivoChiusura: 'Chiuso',
   },
 ]
 

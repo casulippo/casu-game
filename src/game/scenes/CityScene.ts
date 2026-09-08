@@ -13,12 +13,15 @@ import {
 import {
   calpestabile,
   generaCitta,
+  pianiEdificio,
   puntoDiPartenza,
   terrenoSotto,
+  tintaEdificio,
   type Cella,
 } from '../../engine/city'
+import { quartiereIn } from '../../engine/quartieri'
 import { ARREDO, type Arredo } from '../../engine/arredo'
-import { LUOGHI, type Luogo } from '../../engine/luoghi'
+import { LUOGHI, celleOccupate, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
 import { illuminazione } from '../../engine/illuminazione'
 import { oreDaTempoReale } from '../../engine/time'
@@ -32,13 +35,20 @@ const VELOCITA = 3.5
 /** Il marciapiede sta un gradino sopra l'asfalto: è ciò che dà spessore alla strada. */
 const ALTEZZA_CORDOLO = 7
 
-const COLORE_SUOLO: Record<Cella, number> = {
-  strada: 0x2b2f38,
-  marciapiede: 0x6b7280,
-  erba: 0x3d6b47,
-  albero: 0x3d6b47,
-  edificio: 0x3a3f4b,
-  ostacolo: 0x6b7280,
+/** Il colore di una cella dipende dal quartiere in cui si trova. */
+function coloreSuolo(cella: Cella, x: number, y: number): number {
+  if (cella === 'acqua') return 0x1e3f5c
+
+  const q = quartiereIn(x, y)
+  switch (cella) {
+    case 'strada':
+      return q.strada
+    case 'marciapiede':
+    case 'ostacolo':
+      return q.marciapiede
+    default:
+      return q.suolo
+  }
 }
 
 interface Aspetto {
@@ -78,6 +88,8 @@ export class CityScene extends Phaser.Scene {
   private tastoAzione!: Phaser.Input.Keyboard.Key
   private luminosi = new Luminosi()
   private velo!: Phaser.GameObjects.Rectangle
+  /** Le celle occupate dai luoghi con nome, che si disegnano a parte. */
+  private celleDeiLuoghi = new Set<string>()
 
   constructor() {
     super('city')
@@ -88,8 +100,13 @@ export class CityScene extends Phaser.Scene {
     this.pos = this.registry.get('posCitta') ?? puntoDiPartenza(this.mappa)
     this.luminosi = new Luminosi()
 
+    this.celleDeiLuoghi = new Set(
+      LUOGHI.flatMap((l) => celleOccupate(l)).map((c) => `${c.x},${c.y}`),
+    )
+
     this.disegnaTerreno()
     this.disegnaCordoli()
+    this.disegnaPalazzi()
     this.disegnaAlberi()
     this.disegnaArredo()
     this.disegnaLuoghi()
@@ -226,13 +243,11 @@ export class CityScene extends Phaser.Scene {
         const terreno = terrenoSotto(x, y)
         if (terreno === 'marciapiede') continue // disegnato rialzato dopo
 
-        g.fillStyle(this.variaColore(COLORE_SUOLO[terreno], x, y), 1)
+        g.fillStyle(this.variaColore(coloreSuolo(terreno, x, y), x, y), 1)
         const punti = puntiDaVertici(verticiCella({ x, y }))
         g.fillPoints(punti, true)
       }
     }
-
-    this.disegnaStriscePedonali(g)
   }
 
   /**
@@ -249,16 +264,6 @@ export class CityScene extends Phaser.Scene {
       Math.min(255, Math.max(0, ((colore >> spostamento) & 0xff) + scarto))
 
     return (canale(16) << 16) | (canale(8) << 8) | canale(0)
-  }
-
-  private disegnaStriscePedonali(g: Phaser.GameObjects.Graphics) {
-    g.fillStyle(0xd4d8de, 0.55)
-    for (const x of [7, 13]) {
-      for (const y of [10, 11]) {
-        const punti = puntiDaVertici(verticiCella({ x, y }))
-        g.fillPoints(punti, true)
-      }
-    }
   }
 
   /** I marciapiedi sono blocchi bassi, non superfici piatte: hanno un cordolo. */
@@ -278,12 +283,85 @@ export class CityScene extends Phaser.Scene {
       const g = this.add.graphics()
       g.setDepth(fascia - 0.9)
       for (const cella of celle) {
-        this.blocco(g, cella, ALTEZZA_CORDOLO, {
-          sinistra: 0x4d545f,
-          destra: 0x5c6470,
-          sopra: this.variaColore(0x767d8a, cella.x, cella.y),
+        const q = quartiereIn(cella.x, cella.y)
+        // Lo slum non ha cordoli: la strada è sterrata e sfuma nel terreno.
+        const altezza = q.pavimentazione === 'sterrato' ? 2 : ALTEZZA_CORDOLO
+
+        this.blocco(g, cella, altezza, {
+          sinistra: scurisci(q.marciapiede, 0.72),
+          destra: scurisci(q.marciapiede, 0.85),
+          sopra: this.variaColore(q.marciapiede, cella.x, cella.y),
         })
       }
+    }
+  }
+
+  /**
+   * Il tessuto edilizio dei quartieri: gli edifici senza nome.
+   *
+   * Raggruppati per fascia diagonale — le celle con la stessa somma x+y non
+   * possono coprirsi tra loro, quindi condividono un oggetto di disegno.
+   * Migliaia di edifici diventano qualche decina di draw call.
+   */
+  private disegnaPalazzi() {
+    const perFascia = new Map<number, Griglia[]>()
+
+    for (let y = 0; y < this.mappa.length; y++) {
+      for (let x = 0; x < this.mappa[y].length; x++) {
+        if (this.mappa[y][x] !== 'edificio') continue
+        if (this.celleDeiLuoghi.has(`${x},${y}`)) continue
+
+        const fascia = profondita({ x, y })
+        if (!perFascia.has(fascia)) perFascia.set(fascia, [])
+        perFascia.get(fascia)!.push({ x, y })
+      }
+    }
+
+    for (const [fascia, celle] of perFascia) {
+      const volumi = this.add.graphics()
+      volumi.setDepth(fascia)
+
+      // Le finestre della fascia stanno in un secondo livello, la cui opacità
+      // varia tutta insieme col calare della luce. Come oggetti separati
+      // sarebbero decine di migliaia di sprite; così sono un disegno per fascia.
+      const finestre = this.add.graphics()
+      finestre.setDepth(fascia + 0.1)
+      this.luminosi.aggiungi(finestre, 0.85, 0.06)
+
+      for (const cella of celle) {
+        const tinta = tintaEdificio(cella.x, cella.y)
+        const altezza = pianiEdificio(cella.x, cella.y) * ALTEZZA_PIANO
+
+        this.blocco(volumi, cella, altezza, {
+          sinistra: scurisci(tinta, 0.62),
+          destra: scurisci(tinta, 0.82),
+          sopra: scurisci(tinta, 0.5),
+        })
+
+        this.finestreDiFacciata(finestre, cella, altezza)
+      }
+    }
+  }
+
+  /** Le finestre dei palazzi anonimi, che si accendono la sera. */
+  private finestreDiFacciata(
+    g: Phaser.GameObjects.Graphics,
+    cella: Griglia,
+    altezza: number,
+  ) {
+    const q = quartiereIn(cella.x, cella.y)
+    const piani = Math.floor(altezza / ALTEZZA_PIANO)
+    const { sx, sy } = grigliaASchermo(cella)
+
+    g.fillStyle(q.neon ? 0xff6bd8 : 0xffd28a, 1)
+
+    for (let piano = 0; piano < piani; piano++) {
+      // Accese in modo irregolare ma stabile: niente sfarfallio a ogni frame.
+      if (Math.sin(cella.x * 3.1 + cella.y * 7.7 + piano * 2.3) < 0.15) continue
+
+      const y = sy - piano * ALTEZZA_PIANO - ALTEZZA_PIANO * 0.7
+      g.fillRect(sx + 5, y, 6, 8)
+      g.fillRect(sx - 11, y, 6, 8)
     }
   }
 

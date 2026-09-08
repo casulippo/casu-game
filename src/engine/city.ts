@@ -1,6 +1,7 @@
 import type { Griglia } from './iso'
 import { ARREDO, bloccaIlPasso } from './arredo'
 import { LUOGHI, celleOccupate, type Luogo } from './luoghi'
+import { LATO_CITTA, quartiereIn, type DatiQuartiere } from './quartieri'
 
 export type Cella =
   | 'strada'
@@ -8,35 +9,26 @@ export type Cella =
   | 'erba'
   | 'albero'
   | 'edificio'
+  | 'acqua'
   /** Occupata da arredo urbano ingombrante: ci si gira intorno. */
   | 'ostacolo'
 
-export const LATO_CITTA = 22
+export { LATO_CITTA }
 
-/** La carreggiata: due celle di strada che attraversano la città. */
-const STRADA_Y = [10, 11]
-/** I marciapiedi ai lati della carreggiata. */
-const MARCIAPIEDE_Y = [9, 12]
+/** Ogni quanto passa una strada dentro un quartiere. */
+const PASSO_ISOLATO = 6
 
-/** Alberi disposti a mano lungo i bordi, per non lasciare il verde vuoto. */
-const ALBERI: Griglia[] = [
-  { x: 2, y: 2 },
-  { x: 2, y: 15 },
-  { x: 3, y: 18 },
-  { x: 7, y: 17 },
-  { x: 11, y: 3 },
-  { x: 12, y: 6 },
-  { x: 17, y: 4 },
-  { x: 18, y: 8 },
-  { x: 19, y: 16 },
-  { x: 8, y: 19 },
-]
+/** Il mare lambisce la città a nord e a ovest del porto. */
+function suAcqua(x: number, y: number): boolean {
+  return y < 2 || (x < 2 && y < 14)
+}
 
 /**
  * Costruisce la mappa della città.
  *
- * Prima il terreno, poi gli edifici sopra: così un luogo aggiunto in `luoghi.ts`
- * compare senza dover toccare questa funzione.
+ * Prima il tessuto urbano quartiere per quartiere, poi gli alberi, poi l'arredo,
+ * infine i luoghi con identità propria. L'ordine conta: ogni strato può
+ * sovrascrivere il precedente.
  */
 export function generaCitta(
   lato = LATO_CITTA,
@@ -52,11 +44,7 @@ export function generaCitta(
     mappa.push(riga)
   }
 
-  for (const albero of ALBERI) {
-    if (dentro(mappa, albero.x, albero.y)) {
-      mappa[albero.y][albero.x] = 'albero'
-    }
-  }
+  posaAlberi(mappa)
 
   for (const arredo of ARREDO) {
     if (bloccaIlPasso(arredo.tipo) && dentro(mappa, arredo.x, arredo.y)) {
@@ -79,24 +67,101 @@ export function generaCitta(
   return mappa
 }
 
-/** Il terreno sotto l'arredo, per sapere cosa disegnare come pavimentazione. */
-export function terrenoSotto(x: number, y: number): Cella {
-  return terrenoIn(x, y)
+/**
+ * Il tessuto urbano di una cella.
+ *
+ * La griglia stradale è comune a tutta la città, così i quartieri restano
+ * collegati e si passa dall'uno all'altro camminando. Cambiano i materiali e
+ * quanto fittamente si costruisce.
+ */
+function terrenoIn(x: number, y: number): Cella {
+  if (suAcqua(x, y)) return 'acqua'
+
+  const q = quartiereIn(x, y)
+
+  // Le arterie che separano i quartieri sono sempre percorribili.
+  if (suArteria(x, y)) return 'strada'
+
+  const locX = x - q.origine.x
+  const locY = y - q.origine.y
+
+  if (locX % PASSO_ISOLATO === 0 || locY % PASSO_ISOLATO === 0) return 'strada'
+
+  const suBordo =
+    locX % PASSO_ISOLATO === 1 ||
+    locY % PASSO_ISOLATO === 1 ||
+    locX % PASSO_ISOLATO === PASSO_ISOLATO - 1 ||
+    locY % PASSO_ISOLATO === PASSO_ISOLATO - 1
+
+  if (suBordo) return 'marciapiede'
+
+  return costruito(x, y, q) ? 'edificio' : 'erba'
 }
 
-function terrenoIn(x: number, y: number): Cella {
-  if (STRADA_Y.includes(y)) return 'strada'
-  if (MARCIAPIEDE_Y.includes(y)) return 'marciapiede'
+/** Le strade di confine tra un quartiere e l'altro. */
+function suArteria(x: number, y: number): boolean {
+  const confiniX = [18, 34]
+  const confiniY = [14, 24]
+  return confiniX.includes(x) || confiniY.includes(y)
+}
 
-  // Un marciapiede verticale che collega la strada ai due edifici.
-  if (x === 6 && y < 10) return 'marciapiede'
-  if (x === 14 && y > 11) return 'marciapiede'
+/**
+ * Se il cuore di un isolato è costruito.
+ *
+ * Deterministico: la città non cambia forma a ogni caricamento, quindi non serve
+ * salvarne l'aspetto.
+ */
+function costruito(x: number, y: number, q: DatiQuartiere): boolean {
+  return casuale(x, y, 12.9898, 78.233) < q.densita
+}
 
-  return 'erba'
+/** Quanti piani ha l'edificio in questa cella, secondo il suo quartiere. */
+export function pianiEdificio(x: number, y: number): number {
+  const q = quartiereIn(x, y)
+  const [min, max] = q.piani
+  return min + Math.floor(casuale(x, y, 39.3467, 11.135) * (max - min + 1))
+}
+
+/** Il colore della facciata, scelto tra quelli del quartiere. */
+export function tintaEdificio(x: number, y: number): number {
+  const q = quartiereIn(x, y)
+  return q.edifici[Math.floor(casuale(x, y, 7.331, 51.77) * q.edifici.length)]
+}
+
+/**
+ * Rumore deterministico tra 0 e 1.
+ *
+ * La città non cambia forma a ogni caricamento, quindi non serve salvarne
+ * l'aspetto: basta ricalcolarlo dalle coordinate.
+ */
+function casuale(x: number, y: number, a: number, b: number): number {
+  const n = Math.sin(x * a + y * b) * 43758.5453
+  return n - Math.floor(n)
+}
+
+/** Alberi e verde, più fitti dove il quartiere è meno costruito. */
+function posaAlberi(mappa: Cella[][]) {
+  for (let y = 0; y < mappa.length; y++) {
+    for (let x = 0; x < mappa[y].length; x++) {
+      if (mappa[y][x] !== 'erba') continue
+
+      const q = quartiereIn(x, y)
+      const rumore = Math.sin(x * 45.164 + y * 21.377) * 19541.31
+      const frazione = rumore - Math.floor(rumore)
+
+      // Dove si costruisce poco resta più verde.
+      if (frazione < (1 - q.densita) * 0.55) mappa[y][x] = 'albero'
+    }
+  }
 }
 
 function dentro(mappa: Cella[][], x: number, y: number): boolean {
   return y >= 0 && y < mappa.length && x >= 0 && x < mappa[y].length
+}
+
+/** Il terreno "nudo", senza arredo né luoghi: serve per la pavimentazione. */
+export function terrenoSotto(x: number, y: number): Cella {
+  return terrenoIn(x, y)
 }
 
 /** Si può camminare qui? */
@@ -107,13 +172,20 @@ export function calpestabile(mappa: Cella[][], x: number, y: number): boolean {
   if (!dentro(mappa, cx, cy)) return false
 
   const cella = mappa[cy][cx]
-  return cella !== 'edificio' && cella !== 'albero' && cella !== 'ostacolo'
+  return (
+    cella !== 'edificio' &&
+    cella !== 'albero' &&
+    cella !== 'ostacolo' &&
+    cella !== 'acqua'
+  )
 }
 
-/** Il giocatore comincia sul marciapiede, davanti a casa. */
+/** Il giocatore comincia davanti a casa, nel quartiere residenziale. */
 export function puntoDiPartenza(mappa: Cella[][]): Griglia {
-  const davantiACasa = { x: 14.5, y: 12.5 }
-  if (calpestabile(mappa, davantiACasa.x, davantiACasa.y)) return davantiACasa
+  const casa = LUOGHI.find((l) => l.id === 'casa')
+  if (casa && calpestabile(mappa, casa.porta.x, casa.porta.y)) {
+    return { x: casa.porta.x + 0.5, y: casa.porta.y + 0.5 }
+  }
 
   for (let y = 0; y < mappa.length; y++) {
     for (let x = 0; x < mappa[y].length; x++) {
