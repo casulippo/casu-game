@@ -1,7 +1,13 @@
 @import 'tailwindcss';
 
-body {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
+  overflow: hidden;
+  /* Il trascinamento non deve tirare giù la pagina o attivare il pull-to-refresh. */
+  overscroll-behavior: none;
   font-family:
     system-ui,
     -apple-system,
@@ -9,6 +15,16 @@ body {
     sans-serif;
 }
 
+body {
+  /* Su iPhone evita il rimbalzo elastico quando si gioca vicino ai bordi. */
+  position: fixed;
+  inset: 0;
+  /* Niente evidenziazione blu al tocco. */
+  -webkit-tap-highlight-color: transparent;
+}
+
 canvas {
   display: block;
+  /* I gesti sul canvas sono comandi di gioco, non scroll o zoom del browser. */
+  touch-action: none;
 }

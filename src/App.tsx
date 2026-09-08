@@ -1,25 +1,28 @@
 import { PhaserCanvas } from './game/PhaserCanvas'
 import { HUD } from './ui/HUD'
+import { TouchControls } from './ui/TouchControls'
 
+/**
+ * Il gioco occupa tutto lo schermo; HUD e comandi stanno sopra al canvas.
+ *
+ * `h-dvh` invece di `h-screen`: sui browser mobile la barra degli indirizzi
+ * compare e scompare, e `100vh` non ne tiene conto — il fondo della pagina
+ * finirebbe sotto la barra.
+ */
 export default function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4 p-6">
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight">Casu Game</h1>
-          <p className="text-sm text-slate-400">
-            Un giorno di vita dura 60 minuti reali.
-          </p>
-        </header>
+    <main className="relative h-dvh w-screen overflow-hidden bg-slate-950 text-slate-200">
+      <PhaserCanvas />
 
+      <div className="pointer-events-none absolute inset-x-0 top-0 p-2 sm:p-4">
         <HUD />
-
-        <PhaserCanvas />
-
-        <footer className="text-xs text-slate-500">
-          Muoviti con le frecce o WASD.
-        </footer>
       </div>
-    </div>
+
+      <TouchControls />
+
+      <p className="pointer-events-none absolute inset-x-0 bottom-2 hidden text-center text-xs text-slate-500 sm:block">
+        Frecce o WASD per muoverti
+      </p>
+    </main>
   )
 }

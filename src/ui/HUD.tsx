@@ -8,13 +8,28 @@ const ETICHETTE_FASE: Record<string, string> = {
   sera: 'Sera',
 }
 
-function Riquadro({ label, value }: { label: string; value: string }) {
+function Riquadro({
+  label,
+  value,
+  soloDesktop = false,
+}: {
+  label: string
+  value: string
+  /** Su telefono lo spazio è poco: alcuni dati compaiono solo da tablet in su. */
+  soloDesktop?: boolean
+}) {
   return (
-    <div className="rounded-md bg-slate-800/80 px-3 py-2 ring-1 ring-slate-700">
-      <div className="text-[10px] uppercase tracking-wider text-slate-400">
+    <div
+      className={`rounded-md bg-slate-900/75 px-2 py-1 ring-1 ring-slate-700/80 backdrop-blur-sm sm:px-3 sm:py-2 ${
+        soloDesktop ? 'hidden sm:block' : ''
+      }`}
+    >
+      <div className="text-[9px] uppercase tracking-wider text-slate-400 sm:text-[10px]">
         {label}
       </div>
-      <div className="font-mono text-lg text-slate-100 tabular-nums">{value}</div>
+      <div className="font-mono text-sm text-slate-100 tabular-nums sm:text-lg">
+        {value}
+      </div>
     </div>
   )
 }
@@ -31,14 +46,14 @@ export function HUD() {
   const quartiere = useGame((s) => s.quartiereCorrente)
 
   return (
-    <div className="flex flex-wrap items-stretch gap-2">
+    <div className="flex flex-wrap items-stretch gap-1.5 sm:gap-2">
       <Riquadro label="Giorno" value={String(tempo.giorno)} />
       <Riquadro label="Ora" value={formattaOra(tempo)} />
       <Riquadro label="Fase" value={ETICHETTE_FASE[faseGiorno(tempo)]} />
-      <Riquadro label="Età" value={`${giocatore.eta} anni`} />
       <Riquadro label="Puliti" value={`${giocatore.soldiPuliti} €`} />
-      <Riquadro label="Sporchi" value={`${giocatore.soldiSporchi} €`} />
-      <Riquadro label="Quartiere" value={quartiere} />
+      <Riquadro label="Età" value={`${giocatore.eta} anni`} soloDesktop />
+      <Riquadro label="Sporchi" value={`${giocatore.soldiSporchi} €`} soloDesktop />
+      <Riquadro label="Quartiere" value={quartiere} soloDesktop />
     </div>
   )
 }

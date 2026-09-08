@@ -18,16 +18,15 @@ export function PhaserCanvas() {
     const gioco = new Phaser.Game({
       type: Phaser.AUTO,
       parent: contenitore.current,
-      width: 960,
-      height: 640,
       pixelArt: true,
-      physics: {
-        default: 'arcade',
-        arcade: { gravity: { x: 0, y: 0 }, debug: false },
-      },
+      // Niente motore fisico: le collisioni sono su griglia, in engine/city.ts
       scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH,
+        // RESIZE, non FIT: il canvas prende tutto lo spazio disponibile invece
+        // di adattare un formato fisso. Su telefono significa niente bande nere,
+        // in verticale come in orizzontale.
+        mode: Phaser.Scale.RESIZE,
+        width: '100%',
+        height: '100%',
       },
       scene: [CityScene],
     })
@@ -35,5 +34,5 @@ export function PhaserCanvas() {
     return () => gioco.destroy(true)
   }, [])
 
-  return <div ref={contenitore} className="overflow-hidden rounded-lg shadow-2xl" />
+  return <div ref={contenitore} className="absolute inset-0" />
 }
