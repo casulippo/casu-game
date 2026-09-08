@@ -20,6 +20,10 @@ export function PhaserCanvas() {
       type: Phaser.AUTO,
       parent: contenitore.current,
       pixelArt: true,
+      // Arrotonda le posizioni di disegno all'intero: senza, la camera che
+      // insegue il giocatore su coordinate frazionarie fa vibrare i bordi dei
+      // tile di un pixel, e il terreno sembra ondeggiare.
+      roundPixels: true,
       // Niente motore fisico: le collisioni sono su griglia, in engine/city.ts
       scale: {
         // RESIZE, non FIT: il canvas prende tutto lo spazio disponibile invece

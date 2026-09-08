@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import { TILE_H, TILE_W } from '../engine/iso'
+import { TILE_H, TILE_W, grigliaASchermo } from '../engine/iso'
 import type { Pavimentazione } from '../engine/quartieri'
 
 /**
@@ -93,6 +93,121 @@ export function preparaTile(scena: Phaser.Scene) {
 
 export function nomeTile(materiale: Materiale, variante: number): string {
   return `tile-${materiale}-${variante}`
+}
+
+export interface SuoloDipinto {
+  chiave: string
+  /** Dove va posizionata l'immagine, in coordinate schermo. */
+  x: number
+  y: number
+}
+
+/**
+ * Dipinge l'intero suolo su una sola immagine.
+ *
+ * Una cella per oggetto significava migliaia di sprite: pesante, e con i bordi
+ * che vibravano di un pixel a seconda della posizione della camera, facendo
+ * "ondeggiare" il terreno. Dipingendo tutto una volta sola su un canvas, resta
+ * un oggetto solo e le giunzioni sono fisse per sempre.
+ */
+export function costruisciSuolo(
+  scena: Phaser.Scene,
+  lato: number,
+  descriviCella: (
+    x: number,
+    y: number,
+  ) => {
+    materiale: Materiale | null
+    rialzo: number
+    coloreCordolo: number | null
+  },
+): SuoloDipinto | null {
+  const chiave = 'suolo-citta'
+  if (scena.textures.exists(chiave)) scena.textures.remove(chiave)
+
+  const larghezza = lato * TILE_W
+  const margine = TILE_H * 2
+  const altezza = lato * TILE_H + margine
+
+  const tela = document.createElement('canvas')
+  tela.width = larghezza
+  tela.height = altezza
+
+  const ctx = tela.getContext('2d')
+  if (!ctx) return null
+  ctx.imageSmoothingEnabled = false
+
+  // L'origine del disegno: l'angolo più a sinistra e più in alto della mappa.
+  const originaX = -larghezza / 2
+  const originaY = -TILE_H / 2 - margine / 2
+
+  // In ordine di fascia diagonale, così i gradini si sovrappongono nel verso giusto.
+  for (let fascia = 0; fascia <= (lato - 1) * 2; fascia++) {
+    for (let y = Math.max(0, fascia - lato + 1); y <= Math.min(fascia, lato - 1); y++) {
+      const x = fascia - y
+      if (x < 0 || x >= lato) continue
+
+      const info = descriviCella(x, y)
+      if (!info.materiale) continue
+
+      const { sx, sy } = grigliaASchermo({ x, y })
+      const px = sx - originaX
+      const py = sy - originaY
+
+      if (info.coloreCordolo !== null && info.rialzo > 0) {
+        disegnaFacce(ctx, px, py, info.rialzo, info.coloreCordolo)
+      }
+
+      const sorgente = scena.textures
+        .get(nomeTile(info.materiale, varianteDi(x, y)))
+        .getSourceImage() as CanvasImageSource
+
+      ctx.drawImage(sorgente, px - TILE_W / 2, py - TILE_H / 2 - info.rialzo)
+    }
+  }
+
+  scena.textures.addCanvas(chiave, tela)
+  return { chiave, x: originaX, y: originaY }
+}
+
+/** Le due facce visibili del gradino di marciapiede. */
+function disegnaFacce(
+  ctx: CanvasRenderingContext2D,
+  px: number,
+  py: number,
+  altezza: number,
+  tinta: number,
+) {
+  const mw = TILE_W / 2
+  const mh = TILE_H / 2
+
+  ctx.fillStyle = css(scala(tinta, 0.6))
+  ctx.beginPath()
+  ctx.moveTo(px - mw, py - altezza)
+  ctx.lineTo(px - mw, py)
+  ctx.lineTo(px, py + mh)
+  ctx.lineTo(px, py + mh - altezza)
+  ctx.closePath()
+  ctx.fill()
+
+  ctx.fillStyle = css(scala(tinta, 0.78))
+  ctx.beginPath()
+  ctx.moveTo(px, py + mh - altezza)
+  ctx.lineTo(px, py + mh)
+  ctx.lineTo(px + mw, py)
+  ctx.lineTo(px + mw, py - altezza)
+  ctx.closePath()
+  ctx.fill()
+}
+
+function scala(colore: number, fattore: number): number {
+  const canale = (spostamento: number) =>
+    Math.min(255, Math.round(((colore >> spostamento) & 0xff) * fattore))
+  return (canale(16) << 16) | (canale(8) << 8) | canale(0)
+}
+
+function css(colore: number): string {
+  return `#${colore.toString(16).padStart(6, '0')}`
 }
 
 /** La variante da usare per una cella: stabile, così la mappa non sfarfalla. */

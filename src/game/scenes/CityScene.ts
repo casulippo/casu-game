@@ -19,7 +19,7 @@ import {
   tintaEdificio,
   type Cella,
 } from '../../engine/city'
-import { quartiereIn, type DatiQuartiere } from '../../engine/quartieri'
+import { quartiereIn } from '../../engine/quartieri'
 import { ARREDO, type Arredo } from '../../engine/arredo'
 import { LUOGHI, celleOccupate, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
@@ -30,11 +30,10 @@ import { leggiSpinta } from '../input'
 import { Luminosi, creaGiocatore, puntiDaVertici } from './comuni'
 import {
   caricaTexture,
+  costruisciSuolo,
   materialeMarciapiede,
   materialeStrada,
-  nomeTile,
   preparaTile,
-  varianteDi,
 } from '../terreno'
 
 /** Celle attraversate in un secondo. */
@@ -242,92 +241,37 @@ export class CityScene extends Phaser.Scene {
    * suolo: dipingerli in ordine di fascia risolve da sé le sovrapposizioni.
    */
   private disegnaTerreno() {
-    const lato = this.mappa.length
-
-    // Le facce dei gradini di marciapiede, raggruppate per fascia diagonale.
-    const facce = new Map<number, Phaser.GameObjects.Graphics>()
-
-    for (let y = 0; y < lato; y++) {
-      for (let x = 0; x < lato; x++) {
-        const terreno = terrenoSotto(x, y)
-        if (terreno === 'acqua') continue // il mare ha un trattamento a parte
-
-        const q = quartiereIn(x, y)
-        const marciapiede = terreno === 'marciapiede'
-        const rialzo = marciapiede
-          ? q.pavimentazione === 'sterrato'
-            ? 2
-            : ALTEZZA_CORDOLO
-          : 0
-
-        if (marciapiede) {
-          const fascia = profondita({ x, y })
-          if (!facce.has(fascia)) {
-            const g = this.add.graphics()
-            g.setDepth(fascia - 0.95)
-            facce.set(fascia, g)
-          }
-          this.facceCordolo(facce.get(fascia)!, { x, y }, rialzo, q.marciapiede)
-        }
-
-        this.stampaCella({ x, y }, terreno, q, rialzo, marciapiede)
+    const suolo = costruisciSuolo(this, this.mappa.length, (x, y) => {
+      const terreno = terrenoSotto(x, y)
+      if (terreno === 'acqua') {
+        return { materiale: null, rialzo: 0, coloreCordolo: null }
       }
-    }
-  }
 
-  /** Posa il rombo texturizzato di una cella. */
-  private stampaCella(
-    cella: Griglia,
-    terreno: Cella,
-    q: DatiQuartiere,
-    rialzo: number,
-    marciapiede: boolean,
-  ) {
-    const materiale =
-      terreno === 'strada'
-        ? materialeStrada(q.pavimentazione)
-        : marciapiede
-          ? materialeMarciapiede(q.pavimentazione)
-          : 'erba'
+      const q = quartiereIn(x, y)
+      const marciapiede = terreno === 'marciapiede'
+      const rialzo = marciapiede
+        ? q.pavimentazione === 'sterrato'
+          ? 2
+          : ALTEZZA_CORDOLO
+        : 0
 
-    const { sx, sy } = grigliaASchermo(cella)
-    const chiave = nomeTile(materiale, varianteDi(cella.x, cella.y))
-    const depth = marciapiede ? profondita(cella) - 0.9 : -1000
+      return {
+        materiale:
+          terreno === 'strada'
+            ? materialeStrada(q.pavimentazione)
+            : marciapiede
+              ? materialeMarciapiede(q.pavimentazione)
+              : 'erba',
+        rialzo,
+        coloreCordolo: marciapiede ? q.marciapiede : null,
+      }
+    })
 
-    // Se per qualsiasi ragione il tile non è stato preparato, si ripiega sul
-    // colore del quartiere: meglio un suolo piatto che un buco trasparente.
-    if (!this.textures.exists(chiave)) {
-      const g = this.add.graphics()
-      g.setDepth(depth)
-      g.fillStyle(terreno === 'strada' ? q.strada : marciapiede ? q.marciapiede : q.suolo, 1)
-      g.fillPoints(puntiDaVertici(verticiCella(cella)), true)
-      g.y -= rialzo
-      return
-    }
+    if (!suolo) return
 
-    const tile = this.add.image(sx, sy - rialzo, chiave)
-    tile.setDepth(depth)
-  }
-
-  /** Le due facce visibili del gradino di marciapiede. */
-  private facceCordolo(
-    g: Phaser.GameObjects.Graphics,
-    cella: Griglia,
-    altezza: number,
-    tinta: number,
-  ) {
-    const [, , rx, ry, bx, by, lx, ly] = verticiCella(cella)
-
-    g.fillStyle(scurisci(tinta, 0.6), 1)
-    g.fillPoints(
-      puntiDaVertici([lx, ly - altezza, lx, ly, bx, by, bx, by - altezza]),
-      true,
-    )
-    g.fillStyle(scurisci(tinta, 0.78), 1)
-    g.fillPoints(
-      puntiDaVertici([bx, by - altezza, bx, by, rx, ry, rx, ry - altezza]),
-      true,
-    )
+    const immagine = this.add.image(suolo.x, suolo.y, suolo.chiave)
+    immagine.setOrigin(0, 0)
+    immagine.setDepth(-1000)
   }
 
   /** Il mare, dipinto sotto tutto il resto. */
@@ -413,14 +357,23 @@ export class CityScene extends Phaser.Scene {
     }
   }
 
+  /** Un solo oggetto di disegno per fascia, non uno per albero. */
   private disegnaAlberi() {
+    const perFascia = new Map<number, Phaser.GameObjects.Graphics>()
+
     for (let y = 0; y < this.mappa.length; y++) {
       for (let x = 0; x < this.mappa[y].length; x++) {
         if (this.mappa[y][x] !== 'albero') continue
 
         const { sx, sy } = grigliaASchermo({ x, y })
-        const g = this.add.graphics()
-        g.setDepth(profondita({ x, y }))
+        const fascia = profondita({ x, y })
+
+        if (!perFascia.has(fascia)) {
+          const nuovo = this.add.graphics()
+          nuovo.setDepth(fascia)
+          perFascia.set(fascia, nuovo)
+        }
+        const g = perFascia.get(fascia)!
 
         g.fillStyle(0x000000, 0.28)
         g.fillEllipse(sx, sy + 2, TILE_W * 0.34, TILE_H * 0.34)
