@@ -28,28 +28,20 @@ import { oreDaTempoReale } from '../../engine/time'
 import { gameStore } from '../../store'
 import { leggiSpinta } from '../input'
 import { Luminosi, creaGiocatore, puntiDaVertici } from './comuni'
+import {
+  caricaTexture,
+  materialeMarciapiede,
+  materialeStrada,
+  nomeTile,
+  preparaTile,
+  varianteDi,
+} from '../terreno'
 
 /** Celle attraversate in un secondo. */
 const VELOCITA = 3.5
 
 /** Il marciapiede sta un gradino sopra l'asfalto: è ciò che dà spessore alla strada. */
 const ALTEZZA_CORDOLO = 7
-
-/** Il colore di una cella dipende dal quartiere in cui si trova. */
-function coloreSuolo(cella: Cella, x: number, y: number): number {
-  if (cella === 'acqua') return 0x1e3f5c
-
-  const q = quartiereIn(x, y)
-  switch (cella) {
-    case 'strada':
-      return q.strada
-    case 'marciapiede':
-    case 'ostacolo':
-      return q.marciapiede
-    default:
-      return q.suolo
-  }
-}
 
 interface Aspetto {
   sinistra: number
@@ -90,12 +82,20 @@ export class CityScene extends Phaser.Scene {
   private velo!: Phaser.GameObjects.Rectangle
   /** Le celle occupate dai luoghi con nome, che si disegnano a parte. */
   private celleDeiLuoghi = new Set<string>()
+  /** Angolo in alto a sinistra della mappa del suolo, in coordinate schermo. */
+  private originaSuolo = { x: 0, y: 0 }
 
   constructor() {
     super('city')
   }
 
+  preload() {
+    caricaTexture(this)
+  }
+
   create() {
+    preparaTile(this)
+
     this.mappa = generaCitta()
     this.pos = this.registry.get('posCitta') ?? puntoDiPartenza(this.mappa)
     this.luminosi = new Luminosi()
@@ -104,8 +104,8 @@ export class CityScene extends Phaser.Scene {
       LUOGHI.flatMap((l) => celleOccupate(l)).map((c) => `${c.x},${c.y}`),
     )
 
+    this.disegnaMare()
     this.disegnaTerreno()
-    this.disegnaCordoli()
     this.disegnaPalazzi()
     this.disegnaAlberi()
     this.disegnaArredo()
@@ -234,64 +234,122 @@ export class CityScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- rendering
 
-  private disegnaTerreno() {
-    const g = this.add.graphics()
-    g.setDepth(-1000)
-
-    for (let y = 0; y < this.mappa.length; y++) {
-      for (let x = 0; x < this.mappa[y].length; x++) {
-        const terreno = terrenoSotto(x, y)
-        if (terreno === 'marciapiede') continue // disegnato rialzato dopo
-
-        g.fillStyle(this.variaColore(coloreSuolo(terreno, x, y), x, y), 1)
-        const punti = puntiDaVertici(verticiCella({ x, y }))
-        g.fillPoints(punti, true)
-      }
-    }
-  }
-
   /**
-   * Una leggera variazione di tono cella per cella.
+   * Il suolo, stampato una volta sola su un'unica immagine.
    *
-   * Un colore uniforme legge come plastica: bastano pochi punti di scarto,
-   * deterministici, perché l'asfalto sembri asfalto.
+   * Ogni cella è un rombo ritagliato dalle texture. Disegnarle come oggetti
+   * separati significherebbe migliaia di sprite; qui il risultato è un solo
+   * oggetto, dipinto in fase di avvio.
+   *
+   * Terreno e cordoli stanno insieme perché vivono entrambi a livello del
+   * suolo: dipingerli in ordine di fascia risolve da sé le sovrapposizioni.
    */
-  private variaColore(colore: number, x: number, y: number): number {
-    const rumore = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
-    const scarto = Math.round(((rumore - Math.floor(rumore)) - 0.5) * 14)
+  private disegnaTerreno() {
+    const lato = this.mappa.length
+    const larghezza = lato * TILE_W
+    const altezza = lato * TILE_H + ALTEZZA_CORDOLO + TILE_H
 
-    const canale = (spostamento: number) =>
-      Math.min(255, Math.max(0, ((colore >> spostamento) & 0xff) + scarto))
+    // L'angolo più a sinistra del rombo della mappa, in coordinate schermo.
+    this.originaSuolo = { x: -larghezza / 2, y: -TILE_H / 2 }
 
-    return (canale(16) << 16) | (canale(8) << 8) | canale(0)
-  }
+    const rt = this.add.renderTexture(
+      this.originaSuolo.x,
+      this.originaSuolo.y,
+      larghezza,
+      altezza,
+    )
+    rt.setOrigin(0, 0)
+    rt.setDepth(-1000)
 
-  /** I marciapiedi sono blocchi bassi, non superfici piatte: hanno un cordolo. */
-  private disegnaCordoli() {
-    const perFascia = new Map<number, Griglia[]>()
+    const facce = this.make.graphics({}, false)
 
-    for (let y = 0; y < this.mappa.length; y++) {
-      for (let x = 0; x < this.mappa[y].length; x++) {
-        if (terrenoSotto(x, y) !== 'marciapiede') continue
-        const fascia = profondita({ x, y })
-        if (!perFascia.has(fascia)) perFascia.set(fascia, [])
-        perFascia.get(fascia)!.push({ x, y })
+    // Per fascia diagonale: prima le facce dei cordoli, poi i piani calpestabili.
+    for (let fascia = 0; fascia <= (lato - 1) * 2; fascia++) {
+      facce.clear()
+      const celleDellaFascia: Griglia[] = []
+
+      for (let y = Math.max(0, fascia - lato + 1); y <= Math.min(fascia, lato - 1); y++) {
+        const x = fascia - y
+        if (x < 0 || x >= lato) continue
+        celleDellaFascia.push({ x, y })
+      }
+
+      for (const cella of celleDellaFascia) {
+        if (terrenoSotto(cella.x, cella.y) !== 'marciapiede') continue
+        const q = quartiereIn(cella.x, cella.y)
+        const h = q.pavimentazione === 'sterrato' ? 2 : ALTEZZA_CORDOLO
+        this.facceCordolo(facce, cella, h, q.marciapiede)
+      }
+
+      rt.draw(facce, -this.originaSuolo.x, -this.originaSuolo.y)
+
+      for (const cella of celleDellaFascia) {
+        this.stampaCella(rt, cella)
       }
     }
 
-    for (const [fascia, celle] of perFascia) {
-      const g = this.add.graphics()
-      g.setDepth(fascia - 0.9)
-      for (const cella of celle) {
-        const q = quartiereIn(cella.x, cella.y)
-        // Lo slum non ha cordoli: la strada è sterrata e sfuma nel terreno.
-        const altezza = q.pavimentazione === 'sterrato' ? 2 : ALTEZZA_CORDOLO
+    facce.destroy()
+  }
 
-        this.blocco(g, cella, altezza, {
-          sinistra: scurisci(q.marciapiede, 0.72),
-          destra: scurisci(q.marciapiede, 0.85),
-          sopra: this.variaColore(q.marciapiede, cella.x, cella.y),
-        })
+  /** Stampa il rombo texturizzato di una cella sulla mappa del suolo. */
+  private stampaCella(rt: Phaser.GameObjects.RenderTexture, cella: Griglia) {
+    const terreno = terrenoSotto(cella.x, cella.y)
+    if (terreno === 'acqua') return // il mare ha un trattamento a parte
+
+    const q = quartiereIn(cella.x, cella.y)
+    const materiale =
+      terreno === 'strada'
+        ? materialeStrada(q.pavimentazione)
+        : terreno === 'marciapiede'
+          ? materialeMarciapiede(q.pavimentazione)
+          : 'erba'
+
+    const rialzo =
+      terreno === 'marciapiede'
+        ? q.pavimentazione === 'sterrato'
+          ? 2
+          : ALTEZZA_CORDOLO
+        : 0
+
+    const { sx, sy } = grigliaASchermo(cella)
+    rt.draw(
+      nomeTile(materiale, varianteDi(cella.x, cella.y)),
+      sx - this.originaSuolo.x - TILE_W / 2,
+      sy - this.originaSuolo.y - TILE_H / 2 - rialzo,
+    )
+  }
+
+  /** Le due facce visibili del gradino di marciapiede. */
+  private facceCordolo(
+    g: Phaser.GameObjects.Graphics,
+    cella: Griglia,
+    altezza: number,
+    tinta: number,
+  ) {
+    const [, , rx, ry, bx, by, lx, ly] = verticiCella(cella)
+
+    g.fillStyle(scurisci(tinta, 0.6), 1)
+    g.fillPoints(
+      puntiDaVertici([lx, ly - altezza, lx, ly, bx, by, bx, by - altezza]),
+      true,
+    )
+    g.fillStyle(scurisci(tinta, 0.78), 1)
+    g.fillPoints(
+      puntiDaVertici([bx, by - altezza, bx, by, rx, ry, rx, ry - altezza]),
+      true,
+    )
+  }
+
+  /** Il mare, dipinto sotto tutto il resto. */
+  private disegnaMare() {
+    const g = this.add.graphics()
+    g.setDepth(-1200)
+    g.fillStyle(0x1e3f5c, 1)
+
+    for (let y = 0; y < this.mappa.length; y++) {
+      for (let x = 0; x < this.mappa[y].length; x++) {
+        if (this.mappa[y][x] !== 'acqua') continue
+        g.fillPoints(puntiDaVertici(verticiCella({ x, y })), true)
       }
     }
   }
