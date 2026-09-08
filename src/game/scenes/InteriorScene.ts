@@ -139,9 +139,7 @@ export class InteriorScene extends Phaser.Scene {
 
   private aggiornaGiocatore() {
     const { sx, sy } = grigliaASchermo(this.pos)
-    // Arrotondato al pixel, come in città: su pixel art le posizioni
-    // frazionarie fanno tremolare i contorni.
-    this.giocatore.setPosition(Math.round(sx), Math.round(sy))
+    this.giocatore.setPosition(sx, sy)
     this.giocatore.setDepth(profondita(this.pos) + 0.5)
   }
 

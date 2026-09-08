@@ -20,10 +20,11 @@ export function PhaserCanvas() {
       type: Phaser.AUTO,
       parent: contenitore.current,
       pixelArt: true,
-      // Arrotonda le posizioni di disegno all'intero: senza, la camera che
-      // insegue il giocatore su coordinate frazionarie fa vibrare i bordi dei
-      // tile di un pixel, e il terreno sembra ondeggiare.
-      roundPixels: true,
+      // roundPixels resta disattivo di proposito: arrotondare all'intero rende
+      // il movimento a scatti, perché a poche unità di spostamento per frame
+      // l'arrotondamento alterna valori diversi. Serviva quando il suolo era
+      // fatto di migliaia di tile separati, le cui giunzioni vibravano; ora è
+      // un'immagine sola e il problema non si pone.
       // Niente motore fisico: le collisioni sono su griglia, in engine/city.ts
       scale: {
         // RESIZE, non FIT: il canvas prende tutto lo spazio disponibile invece
