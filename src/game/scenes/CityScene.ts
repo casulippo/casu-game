@@ -218,7 +218,10 @@ export class CityScene extends Phaser.Scene {
     const { sx, sy } = grigliaASchermo(this.pos)
     const rialzo = this.suMarciapiede() ? ALTEZZA_CORDOLO : 0
 
-    this.giocatore.setPosition(sx, sy - rialzo)
+    // Posizione arrotondata al pixel. La camera lo insegue senza interpolazione
+    // e arrotonda a sua volta: se i due usassero valori diversi, il mondo
+    // tremerebbe rispetto al personaggio a ogni frame.
+    this.giocatore.setPosition(Math.round(sx), Math.round(sy - rialzo))
     this.giocatore.setDepth(profondita(this.pos) + 0.5)
   }
 
@@ -713,7 +716,10 @@ export class CityScene extends Phaser.Scene {
       larghezza,
       altezza,
     )
-    this.cameras.main.startFollow(this.giocatore, true, 0.08, 0.08)
+    // Nessuna interpolazione: inseguire il giocatore per avvicinamenti sempre
+    // più piccoli produce spostamenti sub-pixel che, arrotondati, fanno vibrare
+    // l'inquadratura mentre ci si muove.
+    this.cameras.main.startFollow(this.giocatore, true, 1, 1)
   }
 }
 
