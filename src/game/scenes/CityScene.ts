@@ -36,6 +36,7 @@ import {
   preparaTile,
 } from '../terreno'
 import { caricaEdifici, edificioPer, preparaEdifici } from '../edifici'
+import { LUMINOSI, caricaArredo, pezzoPer, preparaArredo } from '../arredoSprite'
 import { creaProtagonista, caricaPersonaggio, type Protagonista } from '../personaggio'
 import {
   ancoraPrisma,
@@ -112,12 +113,14 @@ export class CityScene extends Phaser.Scene {
   preload() {
     caricaTexture(this)
     caricaEdifici(this)
+    caricaArredo(this)
     caricaPersonaggio(this)
   }
 
   create() {
     preparaTile(this)
     preparaEdifici(this)
+    preparaArredo(this)
 
     this.mappa = generaCitta()
     this.pos = this.registry.get('posCitta') ?? puntoDiPartenza(this.mappa)
@@ -417,16 +420,27 @@ export class CityScene extends Phaser.Scene {
         continue
       }
 
+      // I pezzi con uno sprite dedicato: l'arredo di periferia.
+      const sprite = pezzoPer(pezzo.tipo)
+      if (sprite) {
+        const img = this.add.image(sx, sy + TILE_H / 2, sprite.chiave, sprite.frame)
+        img.setOrigin(0.5, 1)
+        img.setScale(sprite.scala)
+        img.setDepth(depth)
+
+        const luce = LUMINOSI[pezzo.tipo]
+        if (luce) this.aggiungiFuoco(sx, sy, depth, luce.raggio, luce.forza)
+        continue
+      }
+
+      // Gli altri restano volumi colorati.
       const stile = STILE_ARREDO[pezzo.tipo]
+      if (!stile) continue
+
       const altezza =
         pezzo.tipo === 'auto' ? 13 : pezzo.tipo === 'cassonetto' ? 15 : 10
 
-      const chiave = texturaPrisma(
-        this,
-        `arr-${pezzo.tipo}`,
-        altezza,
-        stile,
-      )
+      const chiave = texturaPrisma(this, `arr-${pezzo.tipo}`, altezza, stile)
       const ancora = ancoraPrisma(altezza)
 
       const img = this.add.image(sx, sy, chiave)
@@ -437,12 +451,11 @@ export class CityScene extends Phaser.Scene {
 
   private disegnaLampione(pezzo: Arredo, sx: number, sy: number, depth: number) {
     const altezza = 62
-    const chiave = texturaPrisma(
-      this,
-      'arr-lampione',
-      altezza,
-      { sinistra: 0x3c4350, destra: 0x454d5b, sopra: 0x4a5260 },
-    )
+    const chiave = texturaPrisma(this, 'arr-lampione', altezza, {
+      sinistra: 0x3c4350,
+      destra: 0x454d5b,
+      sopra: 0x4a5260,
+    })
     const ancora = ancoraPrisma(altezza)
 
     const palo = this.add.image(sx, sy - ALTEZZA_CORDOLO, chiave)
@@ -450,18 +463,28 @@ export class CityScene extends Phaser.Scene {
     palo.setDepth(depth)
     palo.setScale(0.12, 1)
 
-    const alone = this.add.image(sx, sy - ALTEZZA_CORDOLO - altezza, texturaAlone(this, 64))
+    this.aggiungiFuoco(sx, sy - ALTEZZA_CORDOLO - altezza / 2, depth, 64, 0.55)
+    void pezzo
+  }
+
+  /** L'alone caldo di un fuoco acceso, che di notte illumina il vicolo. */
+  private aggiungiFuoco(
+    sx: number,
+    sy: number,
+    depth: number,
+    raggio: number,
+    forza: number,
+  ) {
+    const alone = this.add.image(sx, sy - 14, texturaAlone(this, raggio))
     alone.setDepth(depth - 0.2)
     alone.setBlendMode(Phaser.BlendModes.ADD)
-    this.luminosi.aggiungi(alone, 0.55)
+    this.luminosi.aggiungi(alone, forza)
 
-    const pozza = this.add.image(sx, sy - ALTEZZA_CORDOLO + 6, texturaAlone(this, 56))
-    pozza.setScale(1.4, 0.7)
+    const pozza = this.add.image(sx, sy + 4, texturaAlone(this, raggio))
+    pozza.setScale(1.3, 0.6)
     pozza.setDepth(-999)
     pozza.setBlendMode(Phaser.BlendModes.ADD)
-    this.luminosi.aggiungi(pozza, 0.4)
-
-    void pezzo
+    this.luminosi.aggiungi(pozza, forza * 0.7)
   }
 
   private disegnaLuoghi() {

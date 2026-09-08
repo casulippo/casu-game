@@ -6,6 +6,13 @@ export type TipoArredo =
   | 'cassonetto'
   | 'auto'
   | 'cespuglio'
+  // Arredo di periferia: sono questi a raccontare il degrado.
+  | 'bidone-fuoco'
+  | 'rifiuti'
+  | 'cartoni'
+  | 'auto-rottame'
+  | 'palo-storto'
+  | 'panni'
 
 export interface Arredo extends Griglia {
   tipo: TipoArredo
@@ -18,6 +25,13 @@ const BLOCCA: Record<TipoArredo, boolean> = {
   cassonetto: true,
   auto: true,
   cespuglio: true,
+  'bidone-fuoco': true,
+  rifiuti: true,
+  cartoni: true,
+  'auto-rottame': true,
+  // Pali e fili stanno in alto: ci si passa sotto.
+  'palo-storto': false,
+  panni: false,
 }
 
 export function bloccaIlPasso(tipo: TipoArredo): boolean {
@@ -49,8 +63,53 @@ function lampioniSulleArterie(): Arredo[] {
   return pezzi
 }
 
+/**
+ * L'arredo della periferia, disseminato fitto.
+ *
+ * Generato invece che elencato: sono decine di pezzi, e scriverli a mano
+ * sarebbe un elenco illeggibile che nessuno riuscirebbe a modificare. La
+ * scelta resta deterministica, quindi il quartiere non cambia aspetto a ogni
+ * caricamento.
+ */
+function degradoDiPeriferia(): Arredo[] {
+  const pezzi: Arredo[] = []
+
+  // Confini della periferia, come dichiarati in quartieri.ts.
+  const daX = 1
+  const aX = 17
+  const daY = 15
+  const aY = 47
+
+  const repertorio: TipoArredo[] = [
+    'rifiuti',
+    'cartoni',
+    'rifiuti',
+    'bidone-fuoco',
+    'auto-rottame',
+    'panni',
+    'palo-storto',
+    'rifiuti',
+  ]
+
+  for (let y = daY; y < aY; y++) {
+    for (let x = daX; x < aX; x++) {
+      const rumore = Math.sin(x * 33.17 + y * 71.53) * 12793.31
+      const frazione = rumore - Math.floor(rumore)
+
+      // Circa un quinto delle celle disponibili ospita qualcosa.
+      if (frazione > 0.2) continue
+
+      const scelta = Math.floor((frazione / 0.2) * repertorio.length)
+      pezzi.push({ x, y, tipo: repertorio[Math.min(scelta, repertorio.length - 1)] })
+    }
+  }
+
+  return pezzi
+}
+
 export const ARREDO: Arredo[] = [
   ...lampioniSulleArterie(),
+  ...degradoDiPeriferia(),
 
   // Porto: cassonetti e mezzi fermi nei piazzali.
   { x: 6, y: 8, tipo: 'cassonetto' },

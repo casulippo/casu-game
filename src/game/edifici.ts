@@ -20,6 +20,8 @@ export interface ModelloEdificio {
 const MODELLI: Record<string, ModelloEdificio> = {
   baracca: { file: 'baracca', celle: 2 },
   'baracca-rovinata': { file: 'baracca-rovinata', celle: 2 },
+  'baracca-due-piani': { file: 'baracca-due-piani', celle: 2.2 },
+  'baracca-telo': { file: 'baracca-telo', celle: 2.1 },
   capannone: { file: 'capannone', celle: 2.6 },
   'palazzo-centro': { file: 'palazzo-centro', celle: 2.2 },
   'club-notturno': { file: 'club-notturno', celle: 2.6 },
@@ -30,7 +32,14 @@ const MODELLI: Record<string, ModelloEdificio> = {
 /** Il repertorio di ogni quartiere. */
 const REPERTORIO: Record<Quartiere, string[]> = {
   porto: ['capannone'],
-  periferia: ['baracca', 'baracca-rovinata'],
+  periferia: [
+    'baracca',
+    'baracca-rovinata',
+    'baracca-due-piani',
+    'baracca-telo',
+    'baracca',
+    'baracca-rovinata',
+  ],
   centro: ['palazzo-centro'],
   notturna: ['club-notturno'],
   ricca: ['torre-vetro'],
