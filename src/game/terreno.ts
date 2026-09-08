@@ -48,11 +48,16 @@ export function preparaTile(scena: Phaser.Scene) {
       const chiave = nomeTile(nome, v)
       if (scena.textures.exists(chiave)) continue
 
-      const tela = scena.textures.createCanvas(chiave, TILE_W, TILE_H)
-      if (!tela) continue
+      // Canvas costruito a mano e registrato come texture: è la via più
+      // elementare, senza dipendere dall'implementazione interna del motore.
+      const tela = document.createElement('canvas')
+      tela.width = TILE_W
+      tela.height = TILE_H
 
-      const ctx = tela.getContext()
-      ctx.clearRect(0, 0, TILE_W, TILE_H)
+      const ctx = tela.getContext('2d')
+      if (!ctx) continue
+
+      ctx.imageSmoothingEnabled = false
       ctx.save()
 
       // Il rombo isometrico: la maschera che dà la forma al tile.
@@ -81,7 +86,7 @@ export function preparaTile(scena: Phaser.Scene) {
       )
 
       ctx.restore()
-      tela.refresh()
+      scena.textures.addCanvas(chiave, tela)
     }
   }
 }

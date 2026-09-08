@@ -19,7 +19,7 @@ import {
   tintaEdificio,
   type Cella,
 } from '../../engine/city'
-import { quartiereIn } from '../../engine/quartieri'
+import { quartiereIn, type DatiQuartiere } from '../../engine/quartieri'
 import { ARREDO, type Arredo } from '../../engine/arredo'
 import { LUOGHI, celleOccupate, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
@@ -82,9 +82,6 @@ export class CityScene extends Phaser.Scene {
   private velo!: Phaser.GameObjects.Rectangle
   /** Le celle occupate dai luoghi con nome, che si disegnano a parte. */
   private celleDeiLuoghi = new Set<string>()
-  /** Angolo in alto a sinistra della mappa del suolo, in coordinate schermo. */
-  private originaSuolo = { x: 0, y: 0 }
-
   constructor() {
     super('city')
   }
@@ -246,77 +243,70 @@ export class CityScene extends Phaser.Scene {
    */
   private disegnaTerreno() {
     const lato = this.mappa.length
-    const larghezza = lato * TILE_W
-    const altezza = lato * TILE_H + ALTEZZA_CORDOLO + TILE_H
 
-    // L'angolo più a sinistra del rombo della mappa, in coordinate schermo.
-    this.originaSuolo = { x: -larghezza / 2, y: -TILE_H / 2 }
+    // Le facce dei gradini di marciapiede, raggruppate per fascia diagonale.
+    const facce = new Map<number, Phaser.GameObjects.Graphics>()
 
-    const rt = this.add.renderTexture(
-      this.originaSuolo.x,
-      this.originaSuolo.y,
-      larghezza,
-      altezza,
-    )
-    rt.setOrigin(0, 0)
-    rt.setDepth(-1000)
+    for (let y = 0; y < lato; y++) {
+      for (let x = 0; x < lato; x++) {
+        const terreno = terrenoSotto(x, y)
+        if (terreno === 'acqua') continue // il mare ha un trattamento a parte
 
-    const facce = this.make.graphics({}, false)
+        const q = quartiereIn(x, y)
+        const marciapiede = terreno === 'marciapiede'
+        const rialzo = marciapiede
+          ? q.pavimentazione === 'sterrato'
+            ? 2
+            : ALTEZZA_CORDOLO
+          : 0
 
-    // Per fascia diagonale: prima le facce dei cordoli, poi i piani calpestabili.
-    for (let fascia = 0; fascia <= (lato - 1) * 2; fascia++) {
-      facce.clear()
-      const celleDellaFascia: Griglia[] = []
+        if (marciapiede) {
+          const fascia = profondita({ x, y })
+          if (!facce.has(fascia)) {
+            const g = this.add.graphics()
+            g.setDepth(fascia - 0.95)
+            facce.set(fascia, g)
+          }
+          this.facceCordolo(facce.get(fascia)!, { x, y }, rialzo, q.marciapiede)
+        }
 
-      for (let y = Math.max(0, fascia - lato + 1); y <= Math.min(fascia, lato - 1); y++) {
-        const x = fascia - y
-        if (x < 0 || x >= lato) continue
-        celleDellaFascia.push({ x, y })
-      }
-
-      for (const cella of celleDellaFascia) {
-        if (terrenoSotto(cella.x, cella.y) !== 'marciapiede') continue
-        const q = quartiereIn(cella.x, cella.y)
-        const h = q.pavimentazione === 'sterrato' ? 2 : ALTEZZA_CORDOLO
-        this.facceCordolo(facce, cella, h, q.marciapiede)
-      }
-
-      rt.draw(facce, -this.originaSuolo.x, -this.originaSuolo.y)
-
-      for (const cella of celleDellaFascia) {
-        this.stampaCella(rt, cella)
+        this.stampaCella({ x, y }, terreno, q, rialzo, marciapiede)
       }
     }
-
-    facce.destroy()
   }
 
-  /** Stampa il rombo texturizzato di una cella sulla mappa del suolo. */
-  private stampaCella(rt: Phaser.GameObjects.RenderTexture, cella: Griglia) {
-    const terreno = terrenoSotto(cella.x, cella.y)
-    if (terreno === 'acqua') return // il mare ha un trattamento a parte
-
-    const q = quartiereIn(cella.x, cella.y)
+  /** Posa il rombo texturizzato di una cella. */
+  private stampaCella(
+    cella: Griglia,
+    terreno: Cella,
+    q: DatiQuartiere,
+    rialzo: number,
+    marciapiede: boolean,
+  ) {
     const materiale =
       terreno === 'strada'
         ? materialeStrada(q.pavimentazione)
-        : terreno === 'marciapiede'
+        : marciapiede
           ? materialeMarciapiede(q.pavimentazione)
           : 'erba'
 
-    const rialzo =
-      terreno === 'marciapiede'
-        ? q.pavimentazione === 'sterrato'
-          ? 2
-          : ALTEZZA_CORDOLO
-        : 0
-
     const { sx, sy } = grigliaASchermo(cella)
-    rt.draw(
-      nomeTile(materiale, varianteDi(cella.x, cella.y)),
-      sx - this.originaSuolo.x - TILE_W / 2,
-      sy - this.originaSuolo.y - TILE_H / 2 - rialzo,
-    )
+    const chiave = nomeTile(materiale, varianteDi(cella.x, cella.y))
+    const depth = marciapiede ? profondita(cella) - 0.9 : -1000
+
+    // Se per qualsiasi ragione il tile non è stato preparato, si ripiega sul
+    // colore del quartiere: meglio un suolo piatto che un buco trasparente.
+    if (!this.textures.exists(chiave)) {
+      const g = this.add.graphics()
+      g.setDepth(depth)
+      g.fillStyle(terreno === 'strada' ? q.strada : marciapiede ? q.marciapiede : q.suolo, 1)
+      g.fillPoints(puntiDaVertici(verticiCella(cella)), true)
+      g.y -= rialzo
+      return
+    }
+
+    const tile = this.add.image(sx, sy - rialzo, chiave)
+    tile.setDepth(depth)
   }
 
   /** Le due facce visibili del gradino di marciapiede. */
