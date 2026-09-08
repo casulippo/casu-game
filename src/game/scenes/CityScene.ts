@@ -589,10 +589,15 @@ export class CityScene extends Phaser.Scene {
       larghezza,
       altezza,
     )
-    // Nessuna interpolazione e nessun arrotondamento: la camera sta esattamente
-    // sul giocatore. Qualunque scarto tra i due si vedrebbe come tremolio del
-    // mondo mentre ci si muove.
-    this.cameras.main.startFollow(this.giocatore, false, 1, 1)
+    // Interpolazione leggera: incollata al giocatore, la camera ne copiava
+    // anche gli arresti bruschi contro i muri. Ammortizzarli richiede un po' di
+    // ritardo nell'inseguimento.
+    //
+    // In passato l'interpolazione faceva tremolare l'inquadratura, ma solo
+    // perché combinata con l'arrotondamento al pixel: gli avvicinamenti
+    // sub-pixel venivano arrotondati a valori alterni. Senza arrotondamento il
+    // problema non si pone.
+    this.cameras.main.startFollow(this.giocatore, false, 0.18, 0.18)
   }
 }
 
