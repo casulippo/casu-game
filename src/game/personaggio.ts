@@ -78,10 +78,17 @@ export function creaProtagonista(
   }
 }
 
-/** Dalla direzione di marcia sulla griglia alla riga del foglio. */
+/**
+ * Dalla direzione di marcia alla riga del foglio.
+ *
+ * Le pose disponibili sono quattro, disegnate di tre quarti; le direzioni di
+ * marcia sono quelle cardinali. Si sceglie la posa che guarda più o meno da
+ * quella parte: andando verso il basso si usa quella rivolta in avanti,
+ * verso l'alto quella di spalle.
+ */
 function direzioneDa(dir: Griglia): Direzione {
-  // In isometrica x cresce verso destra-basso, y verso sinistra-basso.
-  if (dir.x >= 0 && dir.y >= 0) return dir.x >= dir.y ? 'giu-destra' : 'giu-sinistra'
-  if (dir.x < 0 && dir.y < 0) return dir.x <= dir.y ? 'su-sinistra' : 'su-destra'
-  return dir.x > 0 ? 'su-destra' : 'giu-sinistra'
+  if (Math.abs(dir.x) > Math.abs(dir.y)) {
+    return dir.x > 0 ? 'giu-destra' : 'giu-sinistra'
+  }
+  return dir.y > 0 ? 'giu-destra' : 'su-sinistra'
 }

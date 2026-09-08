@@ -1,17 +1,23 @@
 /**
- * Proiezione isometrica 2:1.
+ * Proiezione dall'alto.
  *
  * Il gioco ragiona su una griglia cartesiana: la logica (NPC, routine, edifici)
  * conosce solo celle `x, y`. La proiezione in coordinate schermo avviene solo al
- * momento di disegnare. Nessun sistema di gioco deve sapere che la vista è obliqua.
+ * momento di disegnare, ed è tutta qui dentro: nessun sistema di gioco sa come
+ * è inquadrato il mondo.
+ *
+ * La vista è a griglia quadrata guardata dall'alto, ma non a piombo: degli
+ * edifici si vede ancora la facciata, come nei giochi d'avventura in due
+ * dimensioni. È il compromesso che dà profondità senza rinunciare alla
+ * leggibilità della pianta.
  */
 
 /** Larghezza di un tile a schermo, in pixel. */
-export const TILE_W = 64
-/** Altezza di un tile a schermo. Metà della larghezza: è ciò che rende la vista 2:1. */
-export const TILE_H = 32
+export const TILE_W = 48
+/** Altezza di un tile a schermo. Uguale alla larghezza: la griglia è quadrata. */
+export const TILE_H = 48
 /** Quanti pixel di altezza vale un piano di un edificio. */
-export const ALTEZZA_PIANO = 22
+export const ALTEZZA_PIANO = 26
 
 export interface Griglia {
   x: number
@@ -25,39 +31,31 @@ export interface Schermo {
 
 /** Dalla griglia di gioco alle coordinate schermo. */
 export function grigliaASchermo({ x, y }: Griglia): Schermo {
-  return {
-    sx: (x - y) * (TILE_W / 2),
-    sy: (x + y) * (TILE_H / 2),
-  }
+  return { sx: x * TILE_W, sy: y * TILE_H }
 }
 
 /** Dalle coordinate schermo alla griglia. Serve per i click del mouse. */
 export function schermoAGriglia({ sx, sy }: Schermo): Griglia {
-  const a = sx / (TILE_W / 2)
-  const b = sy / (TILE_H / 2)
-  return {
-    x: (b + a) / 2,
-    y: (b - a) / 2,
-  }
+  return { x: sx / TILE_W, y: sy / TILE_H }
 }
 
 /**
  * Ordine di disegno.
  *
- * In isometrica chi sta "più avanti" va disegnato sopra, altrimenti un personaggio
- * dietro un palazzo gli comparirebbe davanti. La somma delle coordinate cresce
- * andando verso il basso dello schermo, quindi è già l'ordine giusto.
+ * Chi sta più in basso sullo schermo è più vicino a chi guarda, quindi va
+ * disegnato sopra: altrimenti un personaggio davanti a una casa le finirebbe
+ * dietro.
  */
-export function profondita({ x, y }: Griglia): number {
-  return x + y
+export function profondita({ y }: Griglia): number {
+  return y
 }
 
 /**
- * Converte una direzione premuta sulla tastiera in uno spostamento sulla griglia.
+ * Converte una direzione premuta sulla tastiera in uno spostamento sulla
+ * griglia.
  *
- * Il giocatore ragiona rispetto allo schermo: "su" deve andare verso l'alto dello
- * schermo, non verso il nord della griglia. In isometrica le due cose differiscono,
- * e questa funzione è la traduzione.
+ * Con la vista dall'alto gli assi coincidono con quelli dello schermo, quindi
+ * la conversione è diretta.
  */
 export function direzioneSchermoAGriglia(
   su: boolean,
@@ -73,9 +71,6 @@ export function direzioneSchermoAGriglia(
 /**
  * Come sopra, ma per input analogici: un joystick touch spinto a metà, o il
  * trascinamento del mouse.
- *
- * La proiezione è lineare, quindi la stessa trasformazione che converte i punti
- * converte anche le direzioni.
  */
 export function direzioneDaVettoreSchermo(vsx: number, vsy: number): Griglia {
   const { x, y } = schermoAGriglia({ sx: vsx, sy: vsy })
@@ -87,12 +82,12 @@ export function direzioneDaVettoreSchermo(vsx: number, vsy: number): Griglia {
   return { x: x / modulo, y: y / modulo }
 }
 
-/** I quattro vertici del rombo di una cella, in coordinate schermo. */
+/** I quattro vertici della cella, in coordinate schermo. */
 export function verticiCella(cella: Griglia): number[] {
   const { sx, sy } = grigliaASchermo(cella)
   const mw = TILE_W / 2
   const mh = TILE_H / 2
 
-  // Partendo dal vertice superiore, in senso orario.
-  return [sx, sy - mh, sx + mw, sy, sx, sy + mh, sx - mw, sy]
+  // Partendo dall'angolo in alto a sinistra, in senso orario.
+  return [sx - mw, sy - mh, sx + mw, sy - mh, sx + mw, sy + mh, sx - mw, sy + mh]
 }

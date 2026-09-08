@@ -662,14 +662,14 @@ export class CityScene extends Phaser.Scene {
 
   private impostaCamera() {
     const lato = this.mappa.length
-    const larghezza = lato * TILE_W
-    const altezza = lato * TILE_H + 8 * ALTEZZA_PIANO
+    const margine = 4 * ALTEZZA_PIANO
 
+    // La mappa parte dall'origine e si estende in basso a destra.
     this.cameras.main.setBounds(
-      -larghezza / 2,
-      -6 * ALTEZZA_PIANO,
-      larghezza,
-      altezza,
+      -TILE_W / 2,
+      -TILE_H / 2 - margine,
+      lato * TILE_W,
+      lato * TILE_H + margine,
     )
     // Interpolazione leggera: incollata al giocatore, la camera ne copiava
     // anche gli arresti bruschi contro i muri. Ammortizzarli richiede un po' di

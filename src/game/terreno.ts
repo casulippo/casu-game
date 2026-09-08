@@ -60,14 +60,8 @@ export function preparaTile(scena: Phaser.Scene) {
       ctx.imageSmoothingEnabled = false
       ctx.save()
 
-      // Il rombo isometrico: la maschera che dà la forma al tile.
-      ctx.beginPath()
-      ctx.moveTo(TILE_W / 2, 0)
-      ctx.lineTo(TILE_W, TILE_H / 2)
-      ctx.lineTo(TILE_W / 2, TILE_H)
-      ctx.lineTo(0, TILE_H / 2)
-      ctx.closePath()
-      ctx.clip()
+      // Con la vista dall'alto la cella è un quadrato, quindi non serve
+      // ritagliarla: basta prelevare un pezzo di texture della misura giusta.
 
       // Un punto di partenza diverso per ogni variante, per rompere la regolarità.
       const ox = Math.floor((v * 97) % Math.max(1, larghezzaSorgente - TILE_W))
@@ -140,33 +134,23 @@ export function costruisciSuolo(
   ctx.imageSmoothingEnabled = false
 
   // L'origine del disegno: l'angolo più a sinistra e più in alto della mappa.
-  const originaX = -larghezza / 2
-  const originaY = -TILE_H / 2 - margine / 2
+  const originaX = -TILE_W / 2
+  const originaY = -TILE_H / 2
 
-  // In ordine di fascia diagonale, così i gradini si sovrappongono nel verso giusto.
-  for (let fascia = 0; fascia <= (lato - 1) * 2; fascia++) {
-    for (let y = Math.max(0, fascia - lato + 1); y <= Math.min(fascia, lato - 1); y++) {
-      const x = fascia - y
-      if (x < 0 || x >= lato) continue
-
+  // Con la vista dall'alto le celle non si sovrappongono: basta scorrerle in
+  // ordine di riga, e i gradini si disegnano prima del piano che li sovrasta.
+  for (let y = 0; y < lato; y++) {
+    for (let x = 0; x < lato; x++) {
       const info = descriviCella(x, y)
       const { sx, sy } = grigliaASchermo({ x, y })
       const px = sx - originaX
       const py = sy - originaY
 
-      // Superfici senza texture, come il mare: un rombo di colore pieno.
+      // Superfici senza texture, come il mare: un quadrato di colore pieno.
       if (!info.materiale) {
         if (info.coloreFisso === undefined) continue
-        const mw = TILE_W / 2
-        const mh = TILE_H / 2
         ctx.fillStyle = css(info.coloreFisso)
-        ctx.beginPath()
-        ctx.moveTo(px, py - mh)
-        ctx.lineTo(px + mw, py)
-        ctx.lineTo(px, py + mh)
-        ctx.lineTo(px - mw, py)
-        ctx.closePath()
-        ctx.fill()
+        ctx.fillRect(px - TILE_W / 2, py - TILE_H / 2, TILE_W, TILE_H)
         continue
       }
 
@@ -186,7 +170,13 @@ export function costruisciSuolo(
   return { chiave, x: originaX, y: originaY }
 }
 
-/** Le due facce visibili del gradino di marciapiede. */
+/**
+ * Il fronte del gradino di marciapiede.
+ *
+ * Dall'alto se ne vede solo il lato rivolto verso chi guarda, cioè quello in
+ * basso: è quella striscia a rendere il marciapiede rialzato invece che
+ * dipinto sull'asfalto.
+ */
 function disegnaFacce(
   ctx: CanvasRenderingContext2D,
   px: number,
@@ -194,26 +184,8 @@ function disegnaFacce(
   altezza: number,
   tinta: number,
 ) {
-  const mw = TILE_W / 2
-  const mh = TILE_H / 2
-
-  ctx.fillStyle = css(scala(tinta, 0.6))
-  ctx.beginPath()
-  ctx.moveTo(px - mw, py - altezza)
-  ctx.lineTo(px - mw, py)
-  ctx.lineTo(px, py + mh)
-  ctx.lineTo(px, py + mh - altezza)
-  ctx.closePath()
-  ctx.fill()
-
-  ctx.fillStyle = css(scala(tinta, 0.78))
-  ctx.beginPath()
-  ctx.moveTo(px, py + mh - altezza)
-  ctx.lineTo(px, py + mh)
-  ctx.lineTo(px + mw, py)
-  ctx.lineTo(px + mw, py - altezza)
-  ctx.closePath()
-  ctx.fill()
+  ctx.fillStyle = css(scala(tinta, 0.62))
+  ctx.fillRect(px - TILE_W / 2, py + TILE_H / 2 - altezza, TILE_W, altezza)
 }
 
 function scala(colore: number, fattore: number): number {

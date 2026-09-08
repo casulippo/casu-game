@@ -13,22 +13,18 @@ describe('grigliaASchermo', () => {
     expect(grigliaASchermo({ x: 0, y: 0 })).toEqual({ sx: 0, sy: 0 })
   })
 
-  it('sposta a destra e in basso muovendosi lungo x', () => {
-    expect(grigliaASchermo({ x: 1, y: 0 })).toEqual({
-      sx: TILE_W / 2,
-      sy: TILE_H / 2,
-    })
+  it('muovendosi lungo x si va a destra, e solo a destra', () => {
+    expect(grigliaASchermo({ x: 1, y: 0 })).toEqual({ sx: TILE_W, sy: 0 })
   })
 
-  it('sposta a sinistra e in basso muovendosi lungo y', () => {
-    expect(grigliaASchermo({ x: 0, y: 1 })).toEqual({
-      sx: -TILE_W / 2,
-      sy: TILE_H / 2,
-    })
+  it('muovendosi lungo y si scende, e solo si scende', () => {
+    expect(grigliaASchermo({ x: 0, y: 1 })).toEqual({ sx: 0, sy: TILE_H })
   })
 
-  it('celle sulla diagonale x=y stanno sulla verticale centrale', () => {
-    expect(grigliaASchermo({ x: 3, y: 3 }).sx).toBe(0)
+  it('le celle di una stessa riga stanno alla stessa altezza', () => {
+    expect(grigliaASchermo({ x: 2, y: 5 }).sy).toBe(
+      grigliaASchermo({ x: 9, y: 5 }).sy,
+    )
   })
 })
 
@@ -49,13 +45,11 @@ describe('schermoAGriglia', () => {
 
 describe('profondita', () => {
   it('ordina chi sta davanti dopo chi sta dietro', () => {
-    const dietro = { x: 2, y: 2 }
-    const davanti = { x: 5, y: 5 }
-    expect(profondita(davanti)).toBeGreaterThan(profondita(dietro))
+    expect(profondita({ x: 0, y: 5 })).toBeGreaterThan(profondita({ x: 0, y: 2 }))
   })
 
-  it('da la stessa profondita a celle sulla stessa fascia', () => {
-    expect(profondita({ x: 1, y: 4 })).toBe(profondita({ x: 4, y: 1 }))
+  it('non dipende dalla posizione orizzontale', () => {
+    expect(profondita({ x: 1, y: 4 })).toBe(profondita({ x: 30, y: 4 }))
   })
 })
 
