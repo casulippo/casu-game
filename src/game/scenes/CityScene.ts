@@ -35,6 +35,8 @@ import {
   materialeStrada,
   preparaTile,
 } from '../terreno'
+import { caricaEdifici, edificioPer, preparaEdifici } from '../edifici'
+import { creaProtagonista, caricaPersonaggio, type Protagonista } from '../personaggio'
 import {
   ancoraPrisma,
   texturaAlbero,
@@ -88,7 +90,13 @@ const ASPETTO: Record<string, Aspetto> = {
 export class CityScene extends Phaser.Scene {
   private mappa: Cella[][] = []
   private pos: Griglia = { x: 0, y: 0 }
-  private giocatore!: Phaser.GameObjects.Container
+  private giocatore!: Phaser.GameObjects.GameObject & {
+    setPosition(x: number, y: number): unknown
+    setDepth(v: number): unknown
+  }
+  private protagonista: Protagonista | null = null
+  private ultimaDirezione: Griglia = { x: 1, y: 1 }
+  private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
   private wasd!: Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>
   private tastoAzione!: Phaser.Input.Keyboard.Key
@@ -103,10 +111,13 @@ export class CityScene extends Phaser.Scene {
 
   preload() {
     caricaTexture(this)
+    caricaEdifici(this)
+    caricaPersonaggio(this)
   }
 
   create() {
     preparaTile(this)
+    preparaEdifici(this)
 
     this.mappa = generaCitta()
     this.pos = this.registry.get('posCitta') ?? puntoDiPartenza(this.mappa)
@@ -121,7 +132,8 @@ export class CityScene extends Phaser.Scene {
     this.disegnaAlberi()
     this.disegnaArredo()
     this.disegnaLuoghi()
-    this.giocatore = creaGiocatore(this)
+    this.protagonista = creaProtagonista(this, 0, 0)
+    this.giocatore = this.protagonista?.sprite ?? creaGiocatore(this)
     this.velo = this.creaVelo()
 
     this.tasti = this.input.keyboard!.createCursorKeys()
@@ -205,7 +217,10 @@ export class CityScene extends Phaser.Scene {
 
   private muovi(deltaSec: number) {
     const { dir, intensita } = this.direzioneRichiesta()
+    this.inMovimento = intensita > 0
     if (intensita === 0) return
+
+    this.ultimaDirezione = dir
 
     const passo = VELOCITA * deltaSec * intensita
 
@@ -242,6 +257,7 @@ export class CityScene extends Phaser.Scene {
 
     this.giocatore.setPosition(sx, sy - rialzo)
     this.giocatore.setDepth(profondita(this.pos) + 0.5)
+    this.protagonista?.aggiorna(this.ultimaDirezione, this.inMovimento)
   }
 
   /** Camminando sul marciapiede si sta un gradino più in alto. */
@@ -302,11 +318,12 @@ export class CityScene extends Phaser.Scene {
   }
 
   /**
-   * Il tessuto edilizio dei quartieri: gli edifici senza nome.
+   * Il tessuto edilizio dei quartieri.
    *
-   * Ogni combinazione di tinta e altezza viene disegnata una volta in una
-   * texture e poi riusata: centinaia di edifici condividono una manciata di
-   * immagini, e disegnarli costa quanto disegnare altrettanti quadrati.
+   * Ogni zona attinge al proprio repertorio di sprite: baracche in periferia,
+   * palazzi in centro, torri di vetro nella zona ricca. Dove uno sprite non
+   * c'è si ripiega sul volume colorato di prima, così la città resta leggibile
+   * anche se un'immagine manca.
    */
   private disegnaPalazzi() {
     for (let y = 0; y < this.mappa.length; y++) {
@@ -315,40 +332,63 @@ export class CityScene extends Phaser.Scene {
         if (this.celleDeiLuoghi.has(`${x},${y}`)) continue
 
         const q = quartiereIn(x, y)
-        const tinta = tintaEdificio(x, y)
-        const piani = pianiEdificio(x, y)
-        const altezza = piani * ALTEZZA_PIANO
         const { sx, sy } = grigliaASchermo({ x, y })
         const depth = profondita({ x, y })
+        const sprite = edificioPer(q.id, x, y)
 
-        const chiave = texturaPrisma(this, `ed-${tinta}-${piani}`, altezza, {
-          sinistra: scurisci(tinta, 0.62),
-          destra: scurisci(tinta, 0.82),
-          sopra: scurisci(tinta, 0.5),
-        })
-        const ancora = ancoraPrisma(altezza)
+        if (sprite) {
+          const img = this.add.image(sx, sy + TILE_H / 2, sprite.chiave)
+          // Ancorato alla base: l'edificio poggia sulla cella, non ci galleggia sopra.
+          img.setOrigin(0.5, 1)
+          img.setDepth(depth)
+          continue
+        }
 
-        const corpo = this.add.image(sx, sy, chiave)
-        corpo.setOrigin(ancora.x, ancora.y)
-        corpo.setDepth(depth)
-
-        // Le finestre sono una texture a parte, così possono accendersi la sera
-        // senza ridisegnare l'edificio.
-        const seme = x * 3.1 + y * 7.7
-        const chiaveFinestre = texturaFinestre(
-          this,
-          `fin-${piani}-${q.neon ? 1 : 0}-${Math.round(seme * 10) % 16}`,
-          altezza,
-          piani,
-          q.neon ? 0xff6bd8 : 0xffd28a,
-          seme,
-        )
-        const finestre = this.add.image(sx, sy, chiaveFinestre)
-        finestre.setOrigin(ancora.x, ancora.y)
-        finestre.setDepth(depth + 0.1)
-        this.luminosi.aggiungi(finestre, 0.9, 0.06)
+        this.palazzoDiRipiego(x, y, sx, sy, depth, q.neon)
       }
     }
+  }
+
+  /** Il volume colorato usato quando manca lo sprite dell'edificio. */
+  private palazzoDiRipiego(
+    x: number,
+    y: number,
+    sx: number,
+    sy: number,
+    depth: number,
+    neon: boolean,
+  ) {
+    const tinta = tintaEdificio(x, y)
+    const piani = pianiEdificio(x, y)
+    const altezza = piani * ALTEZZA_PIANO
+
+    const chiave = texturaPrisma(this, `ed-fb-${tinta}-${piani}`, altezza, {
+      sinistra: scurisci(tinta, 0.62),
+      destra: scurisci(tinta, 0.82),
+      sopra: scurisci(tinta, 0.5),
+    })
+    const ancora = ancoraPrisma(altezza)
+
+    const corpo = this.add.image(sx, sy, chiave)
+    corpo.setOrigin(ancora.x, ancora.y)
+    corpo.setDepth(depth)
+
+    const seme = x * 3.1 + y * 7.7
+    const finestre = this.add.image(
+      sx,
+      sy,
+      texturaFinestre(
+        this,
+        `fin-${piani}-${neon ? 1 : 0}-${Math.round(seme * 10) % 16}`,
+        altezza,
+        piani,
+        neon ? 0xff6bd8 : 0xffd28a,
+        seme,
+      ),
+    )
+    finestre.setOrigin(ancora.x, ancora.y)
+    finestre.setDepth(depth + 0.1)
+    this.luminosi.aggiungi(finestre, 0.9, 0.06)
   }
 
   private disegnaAlberi() {
