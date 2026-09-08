@@ -82,6 +82,9 @@ function terrenoIn(x: number, y: number): Cella {
   // Le arterie che separano i quartieri sono sempre percorribili.
   if (suArteria(x, y)) return 'strada'
 
+  // La periferia non è pianificata: niente isolati regolari, ma vicoli.
+  if (q.id === 'periferia') return terrenoPeriferia(x, y)
+
   const locX = x - q.origine.x
   const locY = y - q.origine.y
 
@@ -96,6 +99,46 @@ function terrenoIn(x: number, y: number): Cella {
   if (suBordo) return 'marciapiede'
 
   return costruito(x, y, q) ? 'edificio' : 'erba'
+}
+
+/**
+ * Il tessuto della periferia: vicoli invece di isolati.
+ *
+ * Un quartiere cresciuto senza piano non ha strade dritte. I passaggi
+ * serpeggiano, si stringono e si allargano, e tra l'uno e l'altro restano
+ * cortili e spiazzi. È questo, più degli edifici, a far sentire che si è
+ * altrove rispetto al centro.
+ *
+ * I corridoi principali si incrociano sempre, quindi il quartiere resta
+ * percorribile: la verifica è comunque affidata al test di percorribilità,
+ * perché con passaggi calcolati un vicolo murato non darebbe altro segnale.
+ */
+function terrenoPeriferia(x: number, y: number): Cella {
+  if (vicolo(x, y)) return 'strada'
+
+  // Spiazzi e cortili tra un edificio e l'altro.
+  if (casuale(x, y, 55.31, 19.77) < 0.22) return 'erba'
+
+  return 'edificio'
+}
+
+function vicolo(x: number, y: number): boolean {
+  // Passaggi che attraversano il quartiere, ondeggiando.
+  for (const base of [17, 21, 25, 29, 33, 37, 41, 45]) {
+    const scarto = Math.round(Math.sin(x * 0.42 + base) * 1.8)
+    const centro = base + scarto
+    // Larghezza variabile: certi tratti si strozzano, altri si aprono.
+    const largo = Math.sin(x * 0.7 + base * 1.3) > -0.2
+    if (y === centro || (largo && y === centro + 1)) return true
+  }
+
+  // Passaggi trasversali, più radi.
+  for (const base of [3, 7, 11, 15]) {
+    const scarto = Math.round(Math.sin(y * 0.38 + base) * 1.6)
+    if (x === base + scarto) return true
+  }
+
+  return false
 }
 
 /** Le strade di confine tra un quartiere e l'altro. */

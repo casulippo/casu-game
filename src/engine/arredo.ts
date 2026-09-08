@@ -13,9 +13,17 @@ export type TipoArredo =
   | 'auto-rottame'
   | 'palo-storto'
   | 'panni'
+  | 'muro'
 
 export interface Arredo extends Griglia {
   tipo: TipoArredo
+  /** Per i muri: quale dei quattro materiali usare. */
+  variante?: number
+  /**
+   * Per i muri: verso quale asse corre il segmento.
+   * Il disegno esiste in un verso solo e viene specchiato per l'altro.
+   */
+  specchiato?: boolean
 }
 
 /** Quali elementi sbarrano il passo. Un lampione è sottile, ci si passa accanto. */
@@ -32,6 +40,7 @@ const BLOCCA: Record<TipoArredo, boolean> = {
   // Pali e fili stanno in alto: ci si passa sotto.
   'palo-storto': false,
   panni: false,
+  muro: true,
 }
 
 export function bloccaIlPasso(tipo: TipoArredo): boolean {
@@ -107,9 +116,42 @@ function degradoDiPeriferia(): Arredo[] {
   return pezzi
 }
 
+/**
+ * Recinzioni e muri di cinta della periferia.
+ *
+ * Chiudono qualche spiazzo lungo i vicoli: senza, i cortili sfumano l'uno
+ * nell'altro e il quartiere sembra un unico spazio aperto invece di un
+ * insieme di ritagli contesi.
+ *
+ * L'orientamento del segmento è dato dal verso in cui corre il muro; il
+ * disegno esiste in un verso solo e viene specchiato per l'altro.
+ */
+function recinzioni(): Arredo[] {
+  const pezzi: Arredo[] = []
+
+  for (let y = 16; y < 46; y++) {
+    for (let x = 2; x < 16; x++) {
+      const rumore = Math.sin(x * 61.7 + y * 13.9) * 5417.19
+      const frazione = rumore - Math.floor(rumore)
+      if (frazione > 0.06) continue
+
+      pezzi.push({
+        x,
+        y,
+        tipo: 'muro',
+        variante: Math.floor(frazione * 60) % 4,
+        specchiato: frazione * 100 - Math.floor(frazione * 100) > 0.5,
+      })
+    }
+  }
+
+  return pezzi
+}
+
 export const ARREDO: Arredo[] = [
   ...lampioniSulleArterie(),
   ...degradoDiPeriferia(),
+  ...recinzioni(),
 
   // Porto: cassonetti e mezzi fermi nei piazzali.
   { x: 6, y: 8, tipo: 'cassonetto' },

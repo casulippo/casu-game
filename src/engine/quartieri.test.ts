@@ -83,6 +83,27 @@ describe('la citta e percorribile', () => {
     }
   })
 
+  /**
+   * Non basta metterci piede: un quartiere in cui si raggiunge solo il bordo
+   * è di fatto inesplorabile. Con i vicoli calcolati della periferia è un
+   * rischio concreto, e a occhio non si noterebbe.
+   */
+  it('di ogni quartiere e percorribile una porzione consistente', () => {
+    for (const q of QUARTIERI) {
+      const celleTotali = q.larghezza * q.altezza
+      const raggiunte = [...raggiungibili].filter((chiave) => {
+        const [x, y] = chiave.split(',').map(Number)
+        return quartiereIn(x, y).id === q.id
+      }).length
+
+      const quota = raggiunte / celleTotali
+      expect(
+        quota,
+        `${q.nome}: percorribile solo il ${(quota * 100).toFixed(1)}%`,
+      ).toBeGreaterThan(0.15)
+    }
+  })
+
   it('si raggiunge la porta di ogni luogo', () => {
     for (const luogo of LUOGHI) {
       expect(raggiungibili.has(`${luogo.porta.x},${luogo.porta.y}`)).toBe(true)

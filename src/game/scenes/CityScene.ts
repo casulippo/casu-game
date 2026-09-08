@@ -36,7 +36,13 @@ import {
   preparaTile,
 } from '../terreno'
 import { caricaEdifici, edificioPer, preparaEdifici } from '../edifici'
-import { LUMINOSI, caricaArredo, pezzoPer, preparaArredo } from '../arredoSprite'
+import {
+  LUMINOSI,
+  caricaArredo,
+  muroPer,
+  pezzoPer,
+  preparaArredo,
+} from '../arredoSprite'
 import { creaProtagonista, caricaPersonaggio, type Protagonista } from '../personaggio'
 import {
   ancoraPrisma,
@@ -417,6 +423,19 @@ export class CityScene extends Phaser.Scene {
 
       if (pezzo.tipo === 'lampione') {
         this.disegnaLampione(pezzo, sx, sy, depth)
+        continue
+      }
+
+      if (pezzo.tipo === 'muro') {
+        const muro = muroPer(pezzo.variante ?? 0)
+        if (!muro) continue
+
+        const img = this.add.image(sx, sy + TILE_H / 2, muro.chiave, muro.frame)
+        img.setOrigin(0.5, 1)
+        img.setScale(muro.scala)
+        // Il disegno esiste in un verso solo: l'altro si ottiene specchiando.
+        img.setFlipX(pezzo.specchiato ?? false)
+        img.setDepth(depth)
         continue
       }
 

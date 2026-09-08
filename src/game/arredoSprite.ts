@@ -42,6 +42,34 @@ export const LUMINOSI: Partial<Record<TipoArredo, { raggio: number; forza: numbe
 
 export function caricaArredo(scena: Phaser.Scene) {
   scena.load.image('arr-src-slum', 'arredo/slum.jpg')
+  scena.load.image('arr-src-muri', 'arredo/muri.jpg')
+}
+
+/** I quattro materiali dei muri, nell'ordine del foglio. */
+export const MURI_PER_RIGA = 4
+
+export interface MuroPronto {
+  chiave: string
+  frame: number
+  scala: number
+}
+
+let muri: { chiave: string; scala: number } | null = null
+
+/**
+ * Il segmento di muro da usare.
+ *
+ * Il foglio contiene i materiali in un solo orientamento: l'altro verso si
+ * ottiene specchiando l'immagine. Con illuminazione piatta come questa la
+ * differenza non si nota, e risparmia di rigenerare il foglio.
+ */
+export function muroPer(variante: number): MuroPronto | null {
+  if (!muri) return null
+  return {
+    chiave: muri.chiave,
+    frame: variante % MURI_PER_RIGA,
+    scala: muri.scala,
+  }
 }
 
 export interface PezzoPronto {
@@ -57,15 +85,25 @@ export function preparaArredo(scena: Phaser.Scene) {
 
   // Riquadri generosi: la riduzione fine avviene poi con la scala dello sprite.
   const foglio = preparaFoglio(scena, 'arr-src-slum', 'arr-slum', COLONNE, RIGHE, 128)
-  if (!foglio) return
-
-  ORDINE.forEach((tipo, indice) => {
-    pronti.set(tipo, {
-      chiave: foglio.chiave,
-      frame: indice,
-      scala: ((SCALA[tipo] ?? 1) * TILE_W) / foglio.larghezzaRiquadro,
+  if (foglio) {
+    ORDINE.forEach((tipo, indice) => {
+      pronti.set(tipo, {
+        chiave: foglio.chiave,
+        frame: indice,
+        scala: ((SCALA[tipo] ?? 1) * TILE_W) / foglio.larghezzaRiquadro,
+      })
     })
-  })
+  }
+
+  // Del foglio dei muri serve una riga sola: l'altro orientamento si ottiene
+  // specchiando, quindi la seconda riga è ridondante.
+  const foglioMuri = preparaFoglio(scena, 'arr-src-muri', 'arr-muri', 4, 2, 128)
+  if (foglioMuri) {
+    muri = {
+      chiave: foglioMuri.chiave,
+      scala: (1.05 * TILE_W) / foglioMuri.larghezzaRiquadro,
+    }
+  }
 }
 
 export function pezzoPer(tipo: TipoArredo): PezzoPronto | null {
