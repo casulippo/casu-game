@@ -105,10 +105,11 @@ function degradoDiPeriferia(): Arredo[] {
       const rumore = Math.sin(x * 33.17 + y * 71.53) * 12793.31
       const frazione = rumore - Math.floor(rumore)
 
-      // Circa un quinto delle celle disponibili ospita qualcosa.
-      if (frazione > 0.2) continue
+      // Circa una cella su dieci ospita qualcosa: il degrado si nota di più
+      // se lascia respirare, mentre riempire tutto appiattisce la lettura.
+      if (frazione > 0.1) continue
 
-      const scelta = Math.floor((frazione / 0.2) * repertorio.length)
+      const scelta = Math.floor((frazione / 0.1) * repertorio.length)
       pezzi.push({ x, y, tipo: repertorio[Math.min(scelta, repertorio.length - 1)] })
     }
   }
@@ -133,7 +134,7 @@ function recinzioni(): Arredo[] {
     for (let x = 2; x < 16; x++) {
       const rumore = Math.sin(x * 61.7 + y * 13.9) * 5417.19
       const frazione = rumore - Math.floor(rumore)
-      if (frazione > 0.06) continue
+      if (frazione > 0.03) continue
 
       pezzi.push({
         x,

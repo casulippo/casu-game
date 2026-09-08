@@ -116,8 +116,9 @@ function terrenoIn(x: number, y: number): Cella {
 function terrenoPeriferia(x: number, y: number): Cella {
   if (vicolo(x, y)) return 'strada'
 
-  // Spiazzi e cortili tra un edificio e l'altro.
-  if (casuale(x, y, 55.31, 19.77) < 0.22) return 'erba'
+  // Spiazzi e cortili tra un edificio e l'altro. Sono abbondanti: un quartiere
+  // tutto costruito diventa un labirinto in cui non si respira.
+  if (casuale(x, y, 55.31, 19.77) < 0.45) return 'erba'
 
   return 'edificio'
 }
