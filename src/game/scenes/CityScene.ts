@@ -17,6 +17,7 @@ import {
   type Cella,
 } from '../../engine/city'
 import { LUOGHI, luogoAllaPortata, type Luogo } from '../../engine/luoghi'
+import { interazioneInCitta } from '../../engine/interazione'
 import { faseGiorno, oreDaTempoReale, type FaseGiorno } from '../../engine/time'
 import { gameStore } from '../../store'
 import { leggiSpinta } from '../input'
@@ -112,8 +113,7 @@ export class CityScene extends Phaser.Scene {
   // -------------------------------------------------------------- interazione
 
   private aggiornaLuogoVicino() {
-    const luogo = luogoAllaPortata(this.pos)
-    gameStore.getState().segnalaLuogoVicino(luogo?.id ?? null)
+    gameStore.getState().segnalaInterazione(interazioneInCitta(this.pos))
   }
 
   /**

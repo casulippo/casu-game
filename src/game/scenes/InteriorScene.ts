@@ -78,8 +78,16 @@ export class InteriorScene extends Phaser.Scene {
   // -------------------------------------------------------------- interazione
 
   private aggiornaUscitaVicina() {
-    const vicino = sullUscita(this.mappa, this.pos) ? 'uscita' : null
-    gameStore.getState().segnalaLuogoVicino(vicino)
+    const stato = gameStore.getState()
+
+    // Se lo store dice che siamo già fuori, la scena sta per cambiare: non
+    // annunciare più un'uscita, o la UI si troverebbe in città con in mano
+    // un'azione da interno.
+    if (stato.ambiente !== 'interno') return
+
+    stato.segnalaInterazione(
+      sullUscita(this.mappa, this.pos) ? { tipo: 'esci' } : null,
+    )
   }
 
   private controllaUscita() {

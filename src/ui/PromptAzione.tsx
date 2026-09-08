@@ -1,38 +1,42 @@
 import { useGame } from '../store'
-import { luogoPerId } from '../engine/luoghi'
 
 /**
  * Il pulsante di interazione.
  *
  * Su telefono non esiste il tasto E, quindi l'azione deve essere raggiungibile
- * col pollice. Sta in basso a destra, opposto al joystick.
+ * col pollice. Sta in basso al centro, sopra al joystick.
+ *
+ * Il tipo di `interazione` è discriminato, quindi ogni caso porta con sé i
+ * propri dati: non si può finire a cercare il nome di un luogo che non c'è.
  */
 export function PromptAzione() {
-  const ambiente = useGame((s) => s.ambiente)
-  const luogoVicino = useGame((s) => s.luogoVicino)
+  const interazione = useGame((s) => s.interazione)
   const entraIn = useGame((s) => s.entraIn)
   const esci = useGame((s) => s.esci)
 
-  if (!luogoVicino) return null
+  if (!interazione) return null
 
-  if (ambiente === 'interno') {
-    return <Pulsante etichetta="Esci" azione={esci} />
+  switch (interazione.tipo) {
+    case 'esci':
+      return <Pulsante etichetta="Esci" azione={esci} />
+
+    case 'entra':
+      return (
+        <Pulsante
+          etichetta={`Entra in ${interazione.luogo.nome}`}
+          azione={() => entraIn(interazione.luogo.id)}
+        />
+      )
+
+    case 'bloccato':
+      return (
+        <Avviso
+          testo={`${interazione.luogo.nome} — ${
+            interazione.luogo.motivoChiusura ?? 'chiuso'
+          }`}
+        />
+      )
   }
-
-  const luogo = luogoPerId(luogoVicino)
-
-  if (!luogo.accessibile) {
-    return (
-      <Avviso testo={`${luogo.nome} — ${luogo.motivoChiusura ?? 'chiuso'}`} />
-    )
-  }
-
-  return (
-    <Pulsante
-      etichetta={`Entra in ${luogo.nome}`}
-      azione={() => entraIn(luogo.id)}
-    />
-  )
 }
 
 function Pulsante({
@@ -43,7 +47,7 @@ function Pulsante({
   azione: () => void
 }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4 sm:bottom-10">
+    <Barra>
       <button
         type="button"
         onClick={azione}
@@ -54,16 +58,24 @@ function Pulsante({
           (E)
         </span>
       </button>
-    </div>
+    </Barra>
   )
 }
 
 function Avviso({ testo }: { testo: string }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4 sm:bottom-10">
+    <Barra>
       <p className="rounded-full bg-slate-900/85 px-5 py-2.5 text-sm text-slate-300 ring-1 ring-slate-700 backdrop-blur-sm">
         {testo}
       </p>
+    </Barra>
+  )
+}
+
+function Barra({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 bottom-6 flex justify-center px-4 sm:bottom-10">
+      {children}
     </div>
   )
 }

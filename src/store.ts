@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { statoIniziale, type GameState, type Quartiere } from './engine/state'
 import { avanza } from './engine/time'
+import { stessaInterazione, type Interazione } from './engine/interazione'
 
 /** Dove si trova il giocatore: per strada, o dentro un luogo. */
 export type Ambiente = 'citta' | 'interno'
@@ -17,18 +18,18 @@ interface GameStore extends GameState {
   /** Il luogo in cui si è entrati, se siamo dentro. */
   luogoCorrente: string | null
   /**
-   * Il luogo a portata di interazione, se ce n'è uno.
+   * L'azione disponibile da dove si trova il giocatore.
    *
-   * Aggiornato dalla scena solo quando cambia davvero, non a ogni frame:
+   * Aggiornata dalla scena solo quando cambia davvero, non a ogni frame:
    * ogni scrittura qui fa ri-renderizzare la UI.
    */
-  luogoVicino: string | null
+  interazione: Interazione
 
   avanzaTempo: (oreGioco: number) => void
   vaiA: (quartiere: Quartiere) => void
   entraIn: (luogoId: string) => void
   esci: () => void
-  segnalaLuogoVicino: (luogoId: string | null) => void
+  segnalaInterazione: (interazione: Interazione) => void
   reset: () => void
   carica: (stato: GameState) => void
 }
@@ -37,7 +38,7 @@ export const useGame = create<GameStore>()((set) => ({
   ...statoIniziale(),
   ambiente: 'citta',
   luogoCorrente: null,
-  luogoVicino: null,
+  interazione: null,
 
   avanzaTempo: (oreGioco) =>
     set((s) => ({ tempo: avanza(s.tempo, oreGioco) })),
@@ -45,14 +46,22 @@ export const useGame = create<GameStore>()((set) => ({
   vaiA: (quartiere) => set({ quartiereCorrente: quartiere }),
 
   entraIn: (luogoId) =>
-    set({ ambiente: 'interno', luogoCorrente: luogoId, luogoVicino: null }),
+    set({ ambiente: 'interno', luogoCorrente: luogoId, interazione: null }),
 
-  esci: () => set({ ambiente: 'citta', luogoCorrente: null, luogoVicino: null }),
+  esci: () => set({ ambiente: 'citta', luogoCorrente: null, interazione: null }),
 
-  segnalaLuogoVicino: (luogoId) =>
-    set((s) => (s.luogoVicino === luogoId ? s : { luogoVicino: luogoId })),
+  segnalaInterazione: (interazione) =>
+    set((s) =>
+      stessaInterazione(s.interazione, interazione) ? s : { interazione },
+    ),
 
-  reset: () => set({ ...statoIniziale(), ambiente: 'citta', luogoCorrente: null }),
+  reset: () =>
+    set({
+      ...statoIniziale(),
+      ambiente: 'citta',
+      luogoCorrente: null,
+      interazione: null,
+    }),
 
   carica: (stato) => set(stato),
 }))
