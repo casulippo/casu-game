@@ -35,6 +35,21 @@ import {
   materialeStrada,
   preparaTile,
 } from '../terreno'
+import {
+  ancoraPrisma,
+  texturaAlbero,
+  texturaAlone,
+  texturaFinestre,
+  texturaPrisma,
+} from '../sprites'
+
+/** L'aspetto dei pezzi di arredo che sono semplici volumi. */
+const STILE_ARREDO: Record<string, { sinistra: number; destra: number; sopra: number }> = {
+  auto: { sinistra: 0x5c2f2f, destra: 0x8c3b3b, sopra: 0xa04747 },
+  cassonetto: { sinistra: 0x2f5c46, destra: 0x3b7256, sopra: 0x498a68 },
+  panchina: { sinistra: 0x6b4f33, destra: 0x82613f, sopra: 0x99754d },
+  cespuglio: { sinistra: 0x2f5f3a, destra: 0x3a7346, sopra: 0x458553 },
+}
 
 /** Celle attraversate in un secondo. */
 const VELOCITA = 3.5
@@ -81,6 +96,7 @@ export class CityScene extends Phaser.Scene {
   private velo!: Phaser.GameObjects.Rectangle
   /** Le celle occupate dai luoghi con nome, che si disegnano a parte. */
   private celleDeiLuoghi = new Set<string>()
+  private ultimoAggiornamentoLuce = 0
   constructor() {
     super('city')
   }
@@ -100,7 +116,6 @@ export class CityScene extends Phaser.Scene {
       LUOGHI.flatMap((l) => celleOccupate(l)).map((c) => `${c.x},${c.y}`),
     )
 
-    this.disegnaMare()
     this.disegnaTerreno()
     this.disegnaPalazzi()
     this.disegnaAlberi()
@@ -115,7 +130,7 @@ export class CityScene extends Phaser.Scene {
 
     this.impostaCamera()
     this.aggiornaGiocatore()
-    this.aggiornaLuce()
+    this.aggiornaLuce(true)
   }
 
   update(_time: number, deltaMs: number) {
@@ -134,7 +149,14 @@ export class CityScene extends Phaser.Scene {
    * L'illuminazione segue l'ora di gioco: un velo colorato moltiplicato sopra
    * la scena, e le luci artificiali che si accendono al calare del sole.
    */
-  private aggiornaLuce() {
+  private aggiornaLuce(forza = false) {
+    // Il ciclo giorno-notte dura un'ora reale: la luce cambia cosi lentamente
+    // che ricalcolarla sessanta volte al secondo e lavoro sprecato, e
+    // riassegnare colore di sfondo e velo a ogni frame costa.
+    const adesso = this.time.now
+    if (!forza && adesso - this.ultimoAggiornamentoLuce < 250) return
+    this.ultimoAggiornamentoLuce = adesso
+
     const luce = illuminazione(gameStore.getState().tempo)
 
     this.cameras.main.setBackgroundColor(luce.cielo)
@@ -244,7 +266,12 @@ export class CityScene extends Phaser.Scene {
     const suolo = costruisciSuolo(this, this.mappa.length, (x, y) => {
       const terreno = terrenoSotto(x, y)
       if (terreno === 'acqua') {
-        return { materiale: null, rialzo: 0, coloreCordolo: null }
+        return {
+          materiale: null,
+          rialzo: 0,
+          coloreCordolo: null,
+          coloreFisso: 0x1e3f5c,
+        }
       }
 
       const q = quartiereIn(x, y)
@@ -274,241 +301,127 @@ export class CityScene extends Phaser.Scene {
     immagine.setDepth(-1000)
   }
 
-  /** Il mare, dipinto sotto tutto il resto. */
-  private disegnaMare() {
-    const g = this.add.graphics()
-    g.setDepth(-1200)
-    g.fillStyle(0x1e3f5c, 1)
-
-    for (let y = 0; y < this.mappa.length; y++) {
-      for (let x = 0; x < this.mappa[y].length; x++) {
-        if (this.mappa[y][x] !== 'acqua') continue
-        g.fillPoints(puntiDaVertici(verticiCella({ x, y })), true)
-      }
-    }
-  }
-
   /**
    * Il tessuto edilizio dei quartieri: gli edifici senza nome.
    *
-   * Raggruppati per fascia diagonale — le celle con la stessa somma x+y non
-   * possono coprirsi tra loro, quindi condividono un oggetto di disegno.
-   * Migliaia di edifici diventano qualche decina di draw call.
+   * Ogni combinazione di tinta e altezza viene disegnata una volta in una
+   * texture e poi riusata: centinaia di edifici condividono una manciata di
+   * immagini, e disegnarli costa quanto disegnare altrettanti quadrati.
    */
   private disegnaPalazzi() {
-    const perFascia = new Map<number, Griglia[]>()
-
     for (let y = 0; y < this.mappa.length; y++) {
       for (let x = 0; x < this.mappa[y].length; x++) {
         if (this.mappa[y][x] !== 'edificio') continue
         if (this.celleDeiLuoghi.has(`${x},${y}`)) continue
 
-        const fascia = profondita({ x, y })
-        if (!perFascia.has(fascia)) perFascia.set(fascia, [])
-        perFascia.get(fascia)!.push({ x, y })
-      }
-    }
+        const q = quartiereIn(x, y)
+        const tinta = tintaEdificio(x, y)
+        const piani = pianiEdificio(x, y)
+        const altezza = piani * ALTEZZA_PIANO
+        const { sx, sy } = grigliaASchermo({ x, y })
+        const depth = profondita({ x, y })
 
-    for (const [fascia, celle] of perFascia) {
-      const volumi = this.add.graphics()
-      volumi.setDepth(fascia)
-
-      // Le finestre della fascia stanno in un secondo livello, la cui opacità
-      // varia tutta insieme col calare della luce. Come oggetti separati
-      // sarebbero decine di migliaia di sprite; così sono un disegno per fascia.
-      const finestre = this.add.graphics()
-      finestre.setDepth(fascia + 0.1)
-      this.luminosi.aggiungi(finestre, 0.85, 0.06)
-
-      for (const cella of celle) {
-        const tinta = tintaEdificio(cella.x, cella.y)
-        const altezza = pianiEdificio(cella.x, cella.y) * ALTEZZA_PIANO
-
-        this.blocco(volumi, cella, altezza, {
+        const chiave = texturaPrisma(this, `ed-${tinta}-${piani}`, altezza, {
           sinistra: scurisci(tinta, 0.62),
           destra: scurisci(tinta, 0.82),
           sopra: scurisci(tinta, 0.5),
         })
+        const ancora = ancoraPrisma(altezza)
 
-        this.finestreDiFacciata(finestre, cella, altezza)
+        const corpo = this.add.image(sx, sy, chiave)
+        corpo.setOrigin(ancora.x, ancora.y)
+        corpo.setDepth(depth)
+
+        // Le finestre sono una texture a parte, così possono accendersi la sera
+        // senza ridisegnare l'edificio.
+        const seme = x * 3.1 + y * 7.7
+        const chiaveFinestre = texturaFinestre(
+          this,
+          `fin-${piani}-${q.neon ? 1 : 0}-${Math.round(seme * 10) % 16}`,
+          altezza,
+          piani,
+          q.neon ? 0xff6bd8 : 0xffd28a,
+          seme,
+        )
+        const finestre = this.add.image(sx, sy, chiaveFinestre)
+        finestre.setOrigin(ancora.x, ancora.y)
+        finestre.setDepth(depth + 0.1)
+        this.luminosi.aggiungi(finestre, 0.9, 0.06)
       }
     }
   }
 
-  /** Le finestre dei palazzi anonimi, che si accendono la sera. */
-  private finestreDiFacciata(
-    g: Phaser.GameObjects.Graphics,
-    cella: Griglia,
-    altezza: number,
-  ) {
-    const q = quartiereIn(cella.x, cella.y)
-    const piani = Math.floor(altezza / ALTEZZA_PIANO)
-    const { sx, sy } = grigliaASchermo(cella)
-
-    g.fillStyle(q.neon ? 0xff6bd8 : 0xffd28a, 1)
-
-    for (let piano = 0; piano < piani; piano++) {
-      // Accese in modo irregolare ma stabile: niente sfarfallio a ogni frame.
-      if (Math.sin(cella.x * 3.1 + cella.y * 7.7 + piano * 2.3) < 0.15) continue
-
-      const y = sy - piano * ALTEZZA_PIANO - ALTEZZA_PIANO * 0.7
-      g.fillRect(sx + 5, y, 6, 8)
-      g.fillRect(sx - 11, y, 6, 8)
-    }
-  }
-
-  /** Un solo oggetto di disegno per fascia, non uno per albero. */
   private disegnaAlberi() {
-    const perFascia = new Map<number, Phaser.GameObjects.Graphics>()
+    const chiave = texturaAlbero(this)
+    const ancora = ancoraPrisma(60)
 
     for (let y = 0; y < this.mappa.length; y++) {
       for (let x = 0; x < this.mappa[y].length; x++) {
         if (this.mappa[y][x] !== 'albero') continue
 
         const { sx, sy } = grigliaASchermo({ x, y })
-        const fascia = profondita({ x, y })
-
-        if (!perFascia.has(fascia)) {
-          const nuovo = this.add.graphics()
-          nuovo.setDepth(fascia)
-          perFascia.set(fascia, nuovo)
-        }
-        const g = perFascia.get(fascia)!
-
-        g.fillStyle(0x000000, 0.28)
-        g.fillEllipse(sx, sy + 2, TILE_W * 0.34, TILE_H * 0.34)
-        g.fillStyle(0x53422f, 1)
-        g.fillRect(sx - 3, sy - 28, 6, 28)
-        g.fillStyle(0x2f6039, 1)
-        g.fillCircle(sx, sy - 36, 16)
-        g.fillStyle(0x3d7a48, 1)
-        g.fillCircle(sx - 6, sy - 42, 11)
-        g.fillStyle(0x4d9257, 1)
-        g.fillCircle(sx + 5, sy - 45, 7)
+        const albero = this.add.image(sx, sy, chiave)
+        albero.setOrigin(ancora.x, ancora.y)
+        albero.setDepth(profondita({ x, y }))
       }
     }
   }
 
   private disegnaArredo() {
     for (const pezzo of ARREDO) {
-      switch (pezzo.tipo) {
-        case 'lampione':
-          this.disegnaLampione(pezzo)
-          break
-        case 'auto':
-          this.disegnaAuto(pezzo)
-          break
-        case 'cassonetto':
-          this.blocchetto(pezzo, 15, 0x2f5c46, 0x3b7256, 0x498a68)
-          break
-        case 'panchina':
-          this.disegnaPanchina(pezzo)
-          break
-        case 'cespuglio':
-          this.disegnaCespuglio(pezzo)
-          break
+      const { sx, sy } = grigliaASchermo(pezzo)
+      const depth = profondita(pezzo)
+
+      if (pezzo.tipo === 'lampione') {
+        this.disegnaLampione(pezzo, sx, sy, depth)
+        continue
       }
+
+      const stile = STILE_ARREDO[pezzo.tipo]
+      const altezza =
+        pezzo.tipo === 'auto' ? 13 : pezzo.tipo === 'cassonetto' ? 15 : 10
+
+      const chiave = texturaPrisma(
+        this,
+        `arr-${pezzo.tipo}`,
+        altezza,
+        stile,
+      )
+      const ancora = ancoraPrisma(altezza)
+
+      const img = this.add.image(sx, sy, chiave)
+      img.setOrigin(ancora.x, ancora.y)
+      img.setDepth(depth)
     }
   }
 
-  private disegnaLampione(pezzo: Arredo) {
-    const { sx, sy } = grigliaASchermo(pezzo)
-    const base = sy - ALTEZZA_CORDOLO
+  private disegnaLampione(pezzo: Arredo, sx: number, sy: number, depth: number) {
     const altezza = 62
+    const chiave = texturaPrisma(
+      this,
+      'arr-lampione',
+      altezza,
+      { sinistra: 0x3c4350, destra: 0x454d5b, sopra: 0x4a5260 },
+    )
+    const ancora = ancoraPrisma(altezza)
 
-    const g = this.add.graphics()
-    g.setDepth(profondita(pezzo))
-    g.fillStyle(0x000000, 0.25)
-    g.fillEllipse(sx, base + 2, TILE_W * 0.22, TILE_H * 0.22)
-    g.fillStyle(0x3c4350, 1)
-    g.fillRect(sx - 2, base - altezza, 4, altezza)
-    g.fillStyle(0x4a5260, 1)
-    g.fillRect(sx - 7, base - altezza - 5, 14, 6)
+    const palo = this.add.image(sx, sy - ALTEZZA_CORDOLO, chiave)
+    palo.setOrigin(ancora.x, ancora.y)
+    palo.setDepth(depth)
+    palo.setScale(0.12, 1)
 
-    // La lampada e il suo alone si accendono col buio.
-    const lampada = this.add.circle(sx, base - altezza - 1, 4, 0xffd9a0)
-    lampada.setDepth(profondita(pezzo) + 0.1)
-    this.luminosi.aggiungi(lampada, 1)
-
-    const alone = this.add.circle(sx, base - altezza + 4, 46, 0xffc46b)
-    alone.setDepth(profondita(pezzo) - 0.2)
+    const alone = this.add.image(sx, sy - ALTEZZA_CORDOLO - altezza, texturaAlone(this, 64))
+    alone.setDepth(depth - 0.2)
     alone.setBlendMode(Phaser.BlendModes.ADD)
-    this.luminosi.aggiungi(alone, 0.16)
+    this.luminosi.aggiungi(alone, 0.55)
 
-    // Il cerchio di luce a terra.
-    const pozza = this.add.ellipse(sx, base + 4, TILE_W * 1.5, TILE_H * 1.5, 0xffc46b)
+    const pozza = this.add.image(sx, sy - ALTEZZA_CORDOLO + 6, texturaAlone(this, 56))
+    pozza.setScale(1.4, 0.7)
     pozza.setDepth(-999)
     pozza.setBlendMode(Phaser.BlendModes.ADD)
-    this.luminosi.aggiungi(pozza, 0.12)
-  }
+    this.luminosi.aggiungi(pozza, 0.4)
 
-  private disegnaAuto(pezzo: Arredo) {
-    const { sx, sy } = grigliaASchermo(pezzo)
-    const colori = [0x8c3b3b, 0x2f5b8c, 0x3f6b4a, 0x8a7a3f]
-    const colore = colori[(pezzo.x * 3 + pezzo.y * 7) % colori.length]
-
-    const g = this.add.graphics()
-    g.setDepth(profondita(pezzo))
-
-    g.fillStyle(0x000000, 0.3)
-    g.fillEllipse(sx, sy + 3, TILE_W * 0.62, TILE_H * 0.55)
-
-    this.blocco(g, pezzo, 13, {
-      sinistra: scurisci(colore, 0.7),
-      destra: colore,
-      sopra: schiarisci(colore, 1.15),
-    })
-
-    // L'abitacolo, un blocchetto più stretto e scuro sopra la scocca.
-    const { sx: cx, sy: cy } = grigliaASchermo(pezzo)
-    g.fillStyle(0x1e2530, 0.9)
-    g.fillEllipse(cx, cy - 20, TILE_W * 0.34, TILE_H * 0.42)
-  }
-
-  private disegnaPanchina(pezzo: Arredo) {
-    const { sx, sy } = grigliaASchermo(pezzo)
-    const g = this.add.graphics()
-    g.setDepth(profondita(pezzo))
-
-    g.fillStyle(0x000000, 0.22)
-    g.fillEllipse(sx, sy + 2, TILE_W * 0.42, TILE_H * 0.4)
-    this.blocco(g, pezzo, 9, {
-      sinistra: 0x6b4f33,
-      destra: 0x82613f,
-      sopra: 0x99754d,
-    })
-    g.fillStyle(0x6b4f33, 1)
-    g.fillRect(sx - 12, sy - 26, 24, 9)
-  }
-
-  private disegnaCespuglio(pezzo: Arredo) {
-    const { sx, sy } = grigliaASchermo(pezzo)
-    const g = this.add.graphics()
-    g.setDepth(profondita(pezzo))
-
-    g.fillStyle(0x000000, 0.22)
-    g.fillEllipse(sx, sy + 2, TILE_W * 0.4, TILE_H * 0.4)
-    g.fillStyle(0x2f5f3a, 1)
-    g.fillCircle(sx - 6, sy - 8, 10)
-    g.fillStyle(0x3a7346, 1)
-    g.fillCircle(sx + 5, sy - 10, 9)
-    g.fillStyle(0x458553, 1)
-    g.fillCircle(sx, sy - 15, 8)
-  }
-
-  private blocchetto(
-    cella: Griglia,
-    altezza: number,
-    sinistra: number,
-    destra: number,
-    sopra: number,
-  ) {
-    const g = this.add.graphics()
-    g.setDepth(profondita(cella))
-    const { sx, sy } = grigliaASchermo(cella)
-    g.fillStyle(0x000000, 0.25)
-    g.fillEllipse(sx, sy + 2, TILE_W * 0.42, TILE_H * 0.4)
-    this.blocco(g, cella, altezza, { sinistra, destra, sopra })
+    void pezzo
   }
 
   private disegnaLuoghi() {
@@ -665,43 +578,6 @@ export class CityScene extends Phaser.Scene {
     }
   }
 
-  /** Un prisma isometrico alto `altezza` sulla cella indicata. */
-  private blocco(
-    g: Phaser.GameObjects.Graphics,
-    cella: Griglia,
-    altezza: number,
-    colori: { sinistra: number; destra: number; sopra: number },
-  ) {
-    const [tx, ty, rx, ry, bx, by, lx, ly] = verticiCella(cella)
-
-    g.fillStyle(colori.sinistra, 1)
-    g.fillPoints(
-      puntiDaVertici([lx, ly - altezza, lx, ly, bx, by, bx, by - altezza]),
-      true,
-    )
-
-    g.fillStyle(colori.destra, 1)
-    g.fillPoints(
-      puntiDaVertici([bx, by - altezza, bx, by, rx, ry, rx, ry - altezza]),
-      true,
-    )
-
-    g.fillStyle(colori.sopra, 1)
-    g.fillPoints(
-      puntiDaVertici([
-        tx,
-        ty - altezza,
-        rx,
-        ry - altezza,
-        bx,
-        by - altezza,
-        lx,
-        ly - altezza,
-      ]),
-      true,
-    )
-  }
-
   private impostaCamera() {
     const lato = this.mappa.length
     const larghezza = lato * TILE_W
@@ -725,10 +601,6 @@ function coloreCss(colore: number): string {
 }
 
 function scurisci(colore: number, fattore: number): number {
-  return scala(colore, fattore)
-}
-
-function schiarisci(colore: number, fattore: number): number {
   return scala(colore, fattore)
 }
 

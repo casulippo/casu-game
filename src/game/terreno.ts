@@ -120,6 +120,8 @@ export function costruisciSuolo(
     materiale: Materiale | null
     rialzo: number
     coloreCordolo: number | null
+    /** Usato al posto della texture, per le superfici senza materiale. */
+    coloreFisso?: number
   },
 ): SuoloDipinto | null {
   const chiave = 'suolo-citta'
@@ -148,11 +150,25 @@ export function costruisciSuolo(
       if (x < 0 || x >= lato) continue
 
       const info = descriviCella(x, y)
-      if (!info.materiale) continue
-
       const { sx, sy } = grigliaASchermo({ x, y })
       const px = sx - originaX
       const py = sy - originaY
+
+      // Superfici senza texture, come il mare: un rombo di colore pieno.
+      if (!info.materiale) {
+        if (info.coloreFisso === undefined) continue
+        const mw = TILE_W / 2
+        const mh = TILE_H / 2
+        ctx.fillStyle = css(info.coloreFisso)
+        ctx.beginPath()
+        ctx.moveTo(px, py - mh)
+        ctx.lineTo(px + mw, py)
+        ctx.lineTo(px, py + mh)
+        ctx.lineTo(px - mw, py)
+        ctx.closePath()
+        ctx.fill()
+        continue
+      }
 
       if (info.coloreCordolo !== null && info.rialzo > 0) {
         disegnaFacce(ctx, px, py, info.rialzo, info.coloreCordolo)
