@@ -1,4 +1,5 @@
 import type { Griglia } from './iso'
+import { pianoStradale } from './strade'
 
 export type TipoArredo =
   | 'lampione'
@@ -54,19 +55,37 @@ export function bloccaIlPasso(tipo: TipoArredo): boolean {
  * carreggiata, auto in sosta, panchine sul verde.
  */
 /**
- * Lampioni lungo le arterie principali, a cadenza regolare.
- * Generati invece che elencati: sono decine, e a mano sarebbero solo rumore.
+ * Lampioni lungo le strade, a cadenza regolare.
+ *
+ * Ricavati dal piano stradale invece che elencati: seguono le strade dovunque
+ * il piano le metta, e un elenco di centinaia di coordinate scritte a mano
+ * sarebbe illeggibile e sbagliato al primo ritocco della maglia.
+ *
+ * Stanno sul filo esterno della carreggiata, che è dove il piano lascia il
+ * marciapiede, e su un lato solo: illuminano lo stesso e costano metà.
  */
-function lampioniSulleArterie(): Arredo[] {
+function lampioniSulleStrade(): Arredo[] {
   const pezzi: Arredo[] = []
+  const piano = pianoStradale()
 
-  // Lungo le due arterie verticali.
-  for (const x of [17, 33]) {
-    for (let y = 4; y < 48; y += 6) pezzi.push({ x, y, tipo: 'lampione' })
+  const passo = (rango: string) => (rango === 'viale' ? 7 : 11)
+
+  for (const s of piano.verticali) {
+    if (s.rango === 'vicolo') continue
+    const x = s.da - 1
+    if (x < 0) continue
+    for (let y = s.inizio + 4; y < s.fine - 2; y += passo(s.rango)) {
+      pezzi.push({ x, y, tipo: 'lampione' })
+    }
   }
-  // Lungo quelle orizzontali.
-  for (const y of [15, 23, 33]) {
-    for (let x = 4; x < 48; x += 7) pezzi.push({ x, y, tipo: 'lampione' })
+
+  for (const s of piano.orizzontali) {
+    if (s.rango === 'vicolo') continue
+    const y = s.da - 1
+    if (y < 0) continue
+    for (let x = s.inizio + 6; x < s.fine - 2; x += passo(s.rango)) {
+      pezzi.push({ x, y, tipo: 'lampione' })
+    }
   }
 
   return pezzi
@@ -85,9 +104,9 @@ function degradoDiPeriferia(): Arredo[] {
 
   // Confini della periferia, come dichiarati in quartieri.ts.
   const daX = 1
-  const aX = 17
-  const daY = 15
-  const aY = 47
+  const aX = 31
+  const daY = 49
+  const aY = 95
 
   const repertorio: TipoArredo[] = [
     'rifiuti',
@@ -105,11 +124,11 @@ function degradoDiPeriferia(): Arredo[] {
       const rumore = Math.sin(x * 33.17 + y * 71.53) * 12793.31
       const frazione = rumore - Math.floor(rumore)
 
-      // Circa una cella su dieci ospita qualcosa: il degrado si nota di più
-      // se lascia respirare, mentre riempire tutto appiattisce la lettura.
-      if (frazione > 0.1) continue
+      // Una cella su venti circa ospita qualcosa: il degrado si nota di più se
+      // lascia respirare, mentre riempire tutto appiattisce la lettura.
+      if (frazione > 0.055) continue
 
-      const scelta = Math.floor((frazione / 0.1) * repertorio.length)
+      const scelta = Math.floor((frazione / 0.055) * repertorio.length)
       pezzi.push({ x, y, tipo: repertorio[Math.min(scelta, repertorio.length - 1)] })
     }
   }
@@ -130,11 +149,11 @@ function degradoDiPeriferia(): Arredo[] {
 function recinzioni(): Arredo[] {
   const pezzi: Arredo[] = []
 
-  for (let y = 16; y < 46; y++) {
-    for (let x = 2; x < 16; x++) {
+  for (let y = 50; y < 94; y++) {
+    for (let x = 2; x < 30; x++) {
       const rumore = Math.sin(x * 61.7 + y * 13.9) * 5417.19
       const frazione = rumore - Math.floor(rumore)
-      if (frazione > 0.03) continue
+      if (frazione > 0.015) continue
 
       pezzi.push({
         x,
@@ -150,48 +169,41 @@ function recinzioni(): Arredo[] {
 }
 
 export const ARREDO: Arredo[] = [
-  ...lampioniSulleArterie(),
+  ...lampioniSulleStrade(),
   ...degradoDiPeriferia(),
   ...recinzioni(),
 
   // Porto: cassonetti e mezzi fermi nei piazzali.
-  { x: 6, y: 8, tipo: 'cassonetto' },
-  { x: 10, y: 9, tipo: 'cassonetto' },
-  { x: 8, y: 13, tipo: 'auto' },
-  { x: 13, y: 11, tipo: 'auto' },
+  { x: 16, y: 30, tipo: 'cassonetto' },
+  { x: 22, y: 33, tipo: 'cassonetto' },
+  { x: 19, y: 40, tipo: 'auto' },
+  { x: 25, y: 37, tipo: 'auto' },
 
-  // Periferia: degrado e auto abbandonate.
-  { x: 5, y: 21, tipo: 'cassonetto' },
-  { x: 9, y: 27, tipo: 'cassonetto' },
-  { x: 4, y: 33, tipo: 'auto' },
-  { x: 11, y: 39, tipo: 'auto' },
-  { x: 7, y: 44, tipo: 'cassonetto' },
+  // Centro storico: panchine e verde lungo le vie.
+  { x: 40, y: 20, tipo: 'panchina' },
+  { x: 47, y: 27, tipo: 'panchina' },
+  { x: 52, y: 18, tipo: 'cespuglio' },
+  { x: 44, y: 35, tipo: 'panchina' },
+  { x: 51, y: 38, tipo: 'cespuglio' },
 
-  // Centro storico: panchine e verde attorno alle piazze.
-  { x: 21, y: 17, tipo: 'panchina' },
-  { x: 26, y: 21, tipo: 'panchina' },
-  { x: 29, y: 17, tipo: 'cespuglio' },
-  { x: 22, y: 27, tipo: 'panchina' },
-  { x: 27, y: 29, tipo: 'cespuglio' },
+  // Zona ricca: verde curato attorno al parco.
+  { x: 69, y: 20, tipo: 'cespuglio' },
+  { x: 88, y: 18, tipo: 'cespuglio' },
+  { x: 90, y: 30, tipo: 'panchina' },
+  { x: 68, y: 34, tipo: 'panchina' },
+  { x: 84, y: 8, tipo: 'auto' },
 
   // Zona notturna: auto in sosta davanti ai locali.
-  { x: 21, y: 35, tipo: 'auto' },
-  { x: 27, y: 39, tipo: 'auto' },
-  { x: 24, y: 44, tipo: 'auto' },
-
-  // Zona ricca: verde curato.
-  { x: 37, y: 5, tipo: 'cespuglio' },
-  { x: 40, y: 9, tipo: 'cespuglio' },
-  { x: 44, y: 13, tipo: 'panchina' },
-  { x: 38, y: 17, tipo: 'panchina' },
-  { x: 43, y: 4, tipo: 'auto' },
+  { x: 40, y: 76, tipo: 'auto' },
+  { x: 52, y: 82, tipo: 'auto' },
+  { x: 46, y: 90, tipo: 'auto' },
 
   // Residenziale: giardini e auto nei vialetti.
-  { x: 37, y: 29, tipo: 'cespuglio' },
-  { x: 44, y: 27, tipo: 'cespuglio' },
-  { x: 41, y: 39, tipo: 'auto' },
-  { x: 36, y: 44, tipo: 'panchina' },
-  { x: 45, y: 43, tipo: 'cespuglio' },
+  { x: 70, y: 58, tipo: 'cespuglio' },
+  { x: 86, y: 63, tipo: 'cespuglio' },
+  { x: 78, y: 78, tipo: 'auto' },
+  { x: 69, y: 88, tipo: 'panchina' },
+  { x: 90, y: 86, tipo: 'cespuglio' },
 ]
 
 export function arredoIn(x: number, y: number): Arredo | undefined {

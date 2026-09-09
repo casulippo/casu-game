@@ -11,18 +11,16 @@ import { TILE_H, TILE_W } from '../engine/iso'
  *
  * Disegnando ogni pezzo una volta sola in una texture, ogni istanza diventa
  * un'immagine: un quadrato con sopra un'immagine, che la scheda grafica
- * disegna a costo quasi nullo. È anche la stessa forma che avranno gli sprite
- * veri, quindi il codice non cambierà più quando arriveranno.
+ * disegna a costo quasi nullo.
+ *
+ * Tutto qui è piatto, guardato dall'alto: nessuna faccia obliqua. L'unica
+ * concessione alla profondità è una fascia di facciata sul lato verso chi
+ * guarda, la stessa tecnica del cordolo dei marciapiedi in `terreno.ts` — così
+ * la mappa resta un solo linguaggio visivo invece di due mescolati.
  */
 
 /** Margine sopra il pezzo, per ombre e sporgenze. */
 const MARGINE = 4
-
-interface Colori {
-  sinistra: number
-  destra: number
-  sopra: number
-}
 
 function tela(larghezza: number, altezza: number) {
   const c = document.createElement('canvas')
@@ -37,107 +35,99 @@ function css(colore: number): string {
   return `#${colore.toString(16).padStart(6, '0')}`
 }
 
-function poligono(ctx: CanvasRenderingContext2D, punti: number[], colore: string) {
-  ctx.fillStyle = colore
-  ctx.beginPath()
-  ctx.moveTo(punti[0], punti[1])
-  for (let i = 2; i < punti.length; i += 2) ctx.lineTo(punti[i], punti[i + 1])
-  ctx.closePath()
-  ctx.fill()
+function scala(colore: number, fattore: number): number {
+  const canale = (spostamento: number) =>
+    Math.min(255, Math.round(((colore >> spostamento) & 0xff) * fattore))
+  return (canale(16) << 16) | (canale(8) << 8) | canale(0)
+}
+
+export interface ColoriVolume {
+  tetto: number
+  facciata: number
+  /** Se manca, si ricava scurendo il tetto. */
+  bordo?: number
 }
 
 /**
- * Un prisma isometrico alto `altezza`, largo una cella.
- * L'origine dell'immagine è il centro della cella alla base.
+ * Un volume visto dall'alto: pianta rettangolare (o a ellisse), con una
+ * fascia di facciata sul lato verso chi guarda a dare il senso dell'altezza.
+ * Usata per edifici, lampioni e arredo: uno stile solo per tutto ciò che sta
+ * sopra il terreno.
  */
-export function texturaPrisma(
+export function texturaVolume(
   scena: Phaser.Scene,
   chiave: string,
-  altezza: number,
-  colori: Colori,
-  extra?: (ctx: CanvasRenderingContext2D, cx: number, base: number) => void,
+  larghezzaPx: number,
+  profonditaPx: number,
+  altezzaFacciata: number,
+  colori: ColoriVolume,
+  opzioni?: {
+    forma?: 'rettangolo' | 'ellisse'
+    extra?: (ctx: CanvasRenderingContext2D, larghezza: number, altezzaTetto: number) => void
+  },
 ): string {
   if (scena.textures.exists(chiave)) return chiave
 
-  const h = Math.max(1, Math.round(altezza))
-  const larghezza = TILE_W
-  const alta = h + TILE_H + MARGINE * 2
+  const larghezza = Math.max(1, Math.round(larghezzaPx))
+  const altezzaTetto = Math.max(1, Math.round(profonditaPx))
+  const h = Math.max(0, Math.round(altezzaFacciata))
+  const alta = altezzaTetto + h
 
   const { canvas, ctx } = tela(larghezza, alta)
   if (!ctx) return chiave
 
-  // Centro della cella alla base, dentro il canvas.
-  const cx = larghezza / 2
-  const base = alta - MARGINE - TILE_H / 2
+  const forma = opzioni?.forma ?? 'rettangolo'
+  const bordo = colori.bordo ?? scala(colori.tetto, 0.55)
 
-  const mw = TILE_W / 2
-  const mh = TILE_H / 2
-
-  // Faccia sinistra.
-  poligono(
-    ctx,
-    [cx - mw, base - h, cx - mw, base, cx, base + mh, cx, base + mh - h],
-    css(colori.sinistra),
-  )
-  // Faccia destra.
-  poligono(
-    ctx,
-    [cx, base + mh - h, cx, base + mh, cx + mw, base, cx + mw, base - h],
-    css(colori.destra),
-  )
-  // Piano superiore.
-  poligono(
-    ctx,
-    [cx, base - mh - h, cx + mw, base - h, cx, base + mh - h, cx - mw, base - h],
-    css(colori.sopra),
-  )
-
-  extra?.(ctx, cx, base)
-
-  scena.textures.addCanvas(chiave, canvas)
-  return chiave
-}
-
-/**
- * L'ancoraggio da usare per le immagini generate da `texturaPrisma`,
- * così che il centro della cella cada dove ci si aspetta.
- */
-export function ancoraPrisma(altezza: number): { x: number; y: number } {
-  const h = Math.max(1, Math.round(altezza))
-  const alta = h + TILE_H + MARGINE * 2
-  return { x: 0.5, y: (alta - MARGINE - TILE_H / 2) / alta }
-}
-
-/** Le finestre di un edificio, in una texture a parte da accendere la sera. */
-export function texturaFinestre(
-  scena: Phaser.Scene,
-  chiave: string,
-  altezza: number,
-  piani: number,
-  colore: number,
-  seme: number,
-): string {
-  if (scena.textures.exists(chiave)) return chiave
-
-  const h = Math.max(1, Math.round(altezza))
-  const alta = h + TILE_H + MARGINE * 2
-  const { canvas, ctx } = tela(TILE_W, alta)
-  if (!ctx) return chiave
-
-  const cx = TILE_W / 2
-  const base = alta - MARGINE - TILE_H / 2
-  const passo = h / Math.max(1, piani)
-
-  ctx.fillStyle = css(colore)
-  for (let piano = 0; piano < piani; piano++) {
-    if (Math.sin(seme * 3.1 + piano * 2.3) < 0.15) continue
-    const y = base - piano * passo - passo * 0.7
-    ctx.fillRect(cx + 5, y, 6, 8)
-    ctx.fillRect(cx - 11, y, 6, 8)
+  const sagoma = () => {
+    ctx.beginPath()
+    if (forma === 'ellisse') {
+      ctx.ellipse(larghezza / 2, alta / 2, larghezza / 2, alta / 2, 0, 0, Math.PI * 2)
+    } else {
+      ctx.rect(0, 0, larghezza, alta)
+    }
   }
 
+  // Il tetto copre tutta la sagoma; la facciata si sovrappone sulla fascia
+  // inferiore, come il cordolo del marciapiede si sovrappone all'asfalto.
+  ctx.save()
+  sagoma()
+  ctx.clip()
+  ctx.fillStyle = css(colori.tetto)
+  ctx.fillRect(0, 0, larghezza, alta)
+  if (h > 0) {
+    ctx.fillStyle = css(colori.facciata)
+    ctx.fillRect(0, altezzaTetto, larghezza, h)
+  }
+  ctx.restore()
+
+  ctx.strokeStyle = css(bordo)
+  ctx.lineWidth = 1
+  sagoma()
+  ctx.stroke()
+
+  if (h > 0 && forma === 'rettangolo') {
+    ctx.strokeStyle = css(bordo)
+    ctx.beginPath()
+    ctx.moveTo(0, altezzaTetto + 0.5)
+    ctx.lineTo(larghezza, altezzaTetto + 0.5)
+    ctx.stroke()
+  }
+
+  opzioni?.extra?.(ctx, larghezza, altezzaTetto)
+
   scena.textures.addCanvas(chiave, canvas)
   return chiave
+}
+
+/** L'ancoraggio per `texturaVolume`: il punto è il centro del lato in basso. */
+export function ancoraVolume(
+  profonditaPx: number,
+  altezzaFacciata: number,
+): { x: number; y: number } {
+  const altezzaTetto = Math.max(1, Math.round(profonditaPx))
+  const h = Math.max(0, Math.round(altezzaFacciata))
+  return { x: 0.5, y: altezzaTetto / (altezzaTetto + h) }
 }
 
 /** Un albero, con chioma e ombra. */
@@ -170,6 +160,40 @@ export function texturaAlbero(scena: Phaser.Scene): string {
     ctx.arc(cx + dx, base + dy, r, 0, Math.PI * 2)
     ctx.fill()
   }
+
+  scena.textures.addCanvas(chiave, canvas)
+  return chiave
+}
+
+/** L'ancoraggio per `texturaAlbero`: il centro della cella alla base. */
+export function ancoraAlbero(): { x: number; y: number } {
+  const alta = 60 + TILE_H + MARGINE * 2
+  return { x: 0.5, y: (alta - MARGINE - TILE_H / 2) / alta }
+}
+
+/** Un lampione visto dall'alto: solo il cerchio della lampada e la sua ombra. */
+export function texturaLampione(scena: Phaser.Scene): string {
+  const chiave = 'sp-lampione'
+  if (scena.textures.exists(chiave)) return chiave
+
+  const lato = 16
+  const { canvas, ctx } = tela(lato, lato)
+  if (!ctx) return chiave
+
+  ctx.fillStyle = 'rgba(0,0,0,0.3)'
+  ctx.beginPath()
+  ctx.ellipse(lato / 2, lato / 2 + 3, 5, 2.5, 0, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = css(0x454d5b)
+  ctx.beginPath()
+  ctx.arc(lato / 2, lato / 2, 4.5, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.fillStyle = css(0xffdca0)
+  ctx.beginPath()
+  ctx.arc(lato / 2, lato / 2, 2, 0, Math.PI * 2)
+  ctx.fill()
 
   scena.textures.addCanvas(chiave, canvas)
   return chiave

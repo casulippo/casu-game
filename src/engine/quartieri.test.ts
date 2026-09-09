@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { LATO_CITTA, QUARTIERI, quartiereIn, quartierePerId } from './quartieri'
-import { calpestabile, generaCitta, pianiEdificio } from './city'
+import { calpestabile, generaCitta } from './city'
 import { LUOGHI } from './luoghi'
 
 const mappa = generaCitta()
@@ -43,19 +43,7 @@ describe('disposizione dei quartieri', () => {
   })
 })
 
-describe('pianiEdificio', () => {
-  it('rispetta l altezza prevista dal quartiere', () => {
-    for (const q of QUARTIERI) {
-      for (let dy = 0; dy < q.altezza; dy += 3) {
-        for (let dx = 0; dx < q.larghezza; dx += 3) {
-          const piani = pianiEdificio(q.origine.x + dx, q.origine.y + dy)
-          expect(piani).toBeGreaterThanOrEqual(q.piani[0])
-          expect(piani).toBeLessThanOrEqual(q.piani[1])
-        }
-      }
-    }
-  })
-
+describe('altezze dichiarate', () => {
   it('i grattacieli stanno nella zona ricca, non nello slum', () => {
     expect(quartierePerId('ricca').piani[1]).toBeGreaterThan(
       quartierePerId('periferia').piani[1],

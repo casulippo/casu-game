@@ -13,15 +13,15 @@ import {
 import {
   calpestabile,
   generaCitta,
-  pianiEdificio,
+  mezzeriaIn,
   puntoDiPartenza,
+  strisceIn,
   terrenoSotto,
-  tintaEdificio,
   type Cella,
 } from '../../engine/city'
 import { quartiereIn } from '../../engine/quartieri'
 import { ARREDO, type Arredo } from '../../engine/arredo'
-import { LUOGHI, celleOccupate, type Luogo } from '../../engine/luoghi'
+import { LUOGHI, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
 import { illuminazione } from '../../engine/illuminazione'
 import { oreDaTempoReale } from '../../engine/time'
@@ -29,13 +29,11 @@ import { gameStore } from '../../store'
 import { leggiSpinta } from '../input'
 import { Luminosi, creaGiocatore, puntiDaVertici } from './comuni'
 import {
-  caricaTexture,
   costruisciSuolo,
   materialeMarciapiede,
   materialeStrada,
   preparaTile,
 } from '../terreno'
-import { caricaEdifici, edificioPer, preparaEdifici } from '../edifici'
 import {
   LUMINOSI,
   caricaArredo,
@@ -45,19 +43,29 @@ import {
 } from '../arredoSprite'
 import { creaProtagonista, caricaPersonaggio, type Protagonista } from '../personaggio'
 import {
-  ancoraPrisma,
+  ancoraAlbero,
+  ancoraVolume,
   texturaAlbero,
   texturaAlone,
-  texturaFinestre,
-  texturaPrisma,
+  texturaLampione,
+  texturaVolume,
 } from '../sprites'
 
-/** L'aspetto dei pezzi di arredo che sono semplici volumi. */
-const STILE_ARREDO: Record<string, { sinistra: number; destra: number; sopra: number }> = {
-  auto: { sinistra: 0x5c2f2f, destra: 0x8c3b3b, sopra: 0xa04747 },
-  cassonetto: { sinistra: 0x2f5c46, destra: 0x3b7256, sopra: 0x498a68 },
-  panchina: { sinistra: 0x6b4f33, destra: 0x82613f, sopra: 0x99754d },
-  cespuglio: { sinistra: 0x2f5f3a, destra: 0x3a7346, sopra: 0x458553 },
+/** L'aspetto dei pezzi di arredo che sono semplici volumi piatti. */
+const STILE_ARREDO: Record<
+  string,
+  { tetto: number; facciata: number; larghezza: number; profondita: number; ellisse?: boolean }
+> = {
+  auto: { tetto: 0xa04747, facciata: 0x5c2f2f, larghezza: 40, profondita: 22 },
+  cassonetto: { tetto: 0x498a68, facciata: 0x2f5c46, larghezza: 26, profondita: 20 },
+  panchina: { tetto: 0x99754d, facciata: 0x6b4f33, larghezza: 34, profondita: 12 },
+  cespuglio: {
+    tetto: 0x458553,
+    facciata: 0x2f5f3a,
+    larghezza: 30,
+    profondita: 26,
+    ellisse: true,
+  },
 }
 
 /** Celle attraversate in un secondo. */
@@ -109,35 +117,25 @@ export class CityScene extends Phaser.Scene {
   private tastoAzione!: Phaser.Input.Keyboard.Key
   private luminosi = new Luminosi()
   private velo!: Phaser.GameObjects.Rectangle
-  /** Le celle occupate dai luoghi con nome, che si disegnano a parte. */
-  private celleDeiLuoghi = new Set<string>()
   private ultimoAggiornamentoLuce = 0
   constructor() {
     super('city')
   }
 
   preload() {
-    caricaTexture(this)
-    caricaEdifici(this)
     caricaArredo(this)
     caricaPersonaggio(this)
   }
 
   create() {
     preparaTile(this)
-    preparaEdifici(this)
     preparaArredo(this)
 
     this.mappa = generaCitta()
     this.pos = this.registry.get('posCitta') ?? puntoDiPartenza(this.mappa)
     this.luminosi = new Luminosi()
 
-    this.celleDeiLuoghi = new Set(
-      LUOGHI.flatMap((l) => celleOccupate(l)).map((c) => `${c.x},${c.y}`),
-    )
-
     this.disegnaTerreno()
-    this.disegnaPalazzi()
     this.disegnaAlberi()
     this.disegnaArredo()
     this.disegnaLuoghi()
@@ -280,26 +278,21 @@ export class CityScene extends Phaser.Scene {
   /**
    * Il suolo, stampato una volta sola su un'unica immagine.
    *
-   * Ogni cella è un rombo ritagliato dalle texture. Disegnarle come oggetti
-   * separati significherebbe migliaia di sprite; qui il risultato è un solo
-   * oggetto, dipinto in fase di avvio.
+   * Disegnare ogni cella come oggetto separato significherebbe migliaia di
+   * sprite; qui il risultato è una manciata di immagini, dipinte all'avvio.
    *
    * Terreno e cordoli stanno insieme perché vivono entrambi a livello del
-   * suolo: dipingerli in ordine di fascia risolve da sé le sovrapposizioni.
+   * suolo: dipingerli in ordine di riga risolve da sé le sovrapposizioni.
    */
   private disegnaTerreno() {
     const suolo = costruisciSuolo(this, this.mappa.length, (x, y) => {
       const terreno = terrenoSotto(x, y)
       if (terreno === 'acqua') {
-        return {
-          materiale: null,
-          rialzo: 0,
-          coloreCordolo: null,
-          coloreFisso: 0x1e3f5c,
-        }
+        return { materiale: null, rialzo: 0, coloreCordolo: null, colore: 0x1e3f5c }
       }
 
       const q = quartiereIn(x, y)
+      const strada = terreno === 'strada'
       const marciapiede = terreno === 'marciapiede'
       const rialzo = marciapiede
         ? q.pavimentazione === 'sterrato'
@@ -308,101 +301,29 @@ export class CityScene extends Phaser.Scene {
         : 0
 
       return {
-        materiale:
-          terreno === 'strada'
-            ? materialeStrada(q.pavimentazione)
-            : marciapiede
-              ? materialeMarciapiede(q.pavimentazione)
-              : 'erba',
+        materiale: strada
+          ? materialeStrada(q.pavimentazione)
+          : marciapiede
+            ? materialeMarciapiede(q.pavimentazione)
+            : 'erba',
         rialzo,
         coloreCordolo: marciapiede ? q.marciapiede : null,
+        colore: strada ? q.strada : marciapiede ? q.marciapiede : q.suolo,
+        mezzeria: strada ? mezzeriaIn(x, y) : undefined,
+        strisce: strada ? strisceIn(x, y) : null,
       }
     })
 
-    if (!suolo) return
-
-    const immagine = this.add.image(suolo.x, suolo.y, suolo.chiave)
-    immagine.setOrigin(0, 0)
-    immagine.setDepth(-1000)
-  }
-
-  /**
-   * Il tessuto edilizio dei quartieri.
-   *
-   * Ogni zona attinge al proprio repertorio di sprite: baracche in periferia,
-   * palazzi in centro, torri di vetro nella zona ricca. Dove uno sprite non
-   * c'è si ripiega sul volume colorato di prima, così la città resta leggibile
-   * anche se un'immagine manca.
-   */
-  private disegnaPalazzi() {
-    for (let y = 0; y < this.mappa.length; y++) {
-      for (let x = 0; x < this.mappa[y].length; x++) {
-        if (this.mappa[y][x] !== 'edificio') continue
-        if (this.celleDeiLuoghi.has(`${x},${y}`)) continue
-
-        const q = quartiereIn(x, y)
-        const { sx, sy } = grigliaASchermo({ x, y })
-        const depth = profondita({ x, y })
-        const sprite = edificioPer(q.id, x, y)
-
-        if (sprite) {
-          const img = this.add.image(sx, sy + TILE_H / 2, sprite.chiave)
-          // Ancorato alla base: l'edificio poggia sulla cella, non ci galleggia sopra.
-          img.setOrigin(0.5, 1)
-          img.setDepth(depth)
-          continue
-        }
-
-        this.palazzoDiRipiego(x, y, sx, sy, depth, q.neon)
-      }
+    for (const pezzo of suolo) {
+      const immagine = this.add.image(pezzo.x, pezzo.y, pezzo.chiave)
+      immagine.setOrigin(0, 0)
+      immagine.setDepth(-1000)
     }
-  }
-
-  /** Il volume colorato usato quando manca lo sprite dell'edificio. */
-  private palazzoDiRipiego(
-    x: number,
-    y: number,
-    sx: number,
-    sy: number,
-    depth: number,
-    neon: boolean,
-  ) {
-    const tinta = tintaEdificio(x, y)
-    const piani = pianiEdificio(x, y)
-    const altezza = piani * ALTEZZA_PIANO
-
-    const chiave = texturaPrisma(this, `ed-fb-${tinta}-${piani}`, altezza, {
-      sinistra: scurisci(tinta, 0.62),
-      destra: scurisci(tinta, 0.82),
-      sopra: scurisci(tinta, 0.5),
-    })
-    const ancora = ancoraPrisma(altezza)
-
-    const corpo = this.add.image(sx, sy, chiave)
-    corpo.setOrigin(ancora.x, ancora.y)
-    corpo.setDepth(depth)
-
-    const seme = x * 3.1 + y * 7.7
-    const finestre = this.add.image(
-      sx,
-      sy,
-      texturaFinestre(
-        this,
-        `fin-${piani}-${neon ? 1 : 0}-${Math.round(seme * 10) % 16}`,
-        altezza,
-        piani,
-        neon ? 0xff6bd8 : 0xffd28a,
-        seme,
-      ),
-    )
-    finestre.setOrigin(ancora.x, ancora.y)
-    finestre.setDepth(depth + 0.1)
-    this.luminosi.aggiungi(finestre, 0.9, 0.06)
   }
 
   private disegnaAlberi() {
     const chiave = texturaAlbero(this)
-    const ancora = ancoraPrisma(60)
+    const ancora = ancoraAlbero()
 
     for (let y = 0; y < this.mappa.length; y++) {
       for (let x = 0; x < this.mappa[y].length; x++) {
@@ -452,37 +373,34 @@ export class CityScene extends Phaser.Scene {
         continue
       }
 
-      // Gli altri restano volumi colorati.
+      // Gli altri restano volumi piatti dai colori fissi.
       const stile = STILE_ARREDO[pezzo.tipo]
       if (!stile) continue
 
-      const altezza =
-        pezzo.tipo === 'auto' ? 13 : pezzo.tipo === 'cassonetto' ? 15 : 10
+      const altezzaFacciata = pezzo.tipo === 'auto' ? 7 : pezzo.tipo === 'cassonetto' ? 8 : 4
 
-      const chiave = texturaPrisma(this, `arr-${pezzo.tipo}`, altezza, stile)
-      const ancora = ancoraPrisma(altezza)
+      const chiave = texturaVolume(
+        this,
+        `arr-${pezzo.tipo}`,
+        stile.larghezza,
+        stile.profondita,
+        altezzaFacciata,
+        { tetto: stile.tetto, facciata: stile.facciata },
+        { forma: stile.ellisse ? 'ellisse' : 'rettangolo' },
+      )
+      const ancora = ancoraVolume(stile.profondita, altezzaFacciata)
 
-      const img = this.add.image(sx, sy, chiave)
+      const img = this.add.image(sx, sy + TILE_H / 2, chiave)
       img.setOrigin(ancora.x, ancora.y)
       img.setDepth(depth)
     }
   }
 
   private disegnaLampione(pezzo: Arredo, sx: number, sy: number, depth: number) {
-    const altezza = 62
-    const chiave = texturaPrisma(this, 'arr-lampione', altezza, {
-      sinistra: 0x3c4350,
-      destra: 0x454d5b,
-      sopra: 0x4a5260,
-    })
-    const ancora = ancoraPrisma(altezza)
+    const img = this.add.image(sx, sy, texturaLampione(this))
+    img.setDepth(depth)
 
-    const palo = this.add.image(sx, sy - ALTEZZA_CORDOLO, chiave)
-    palo.setOrigin(ancora.x, ancora.y)
-    palo.setDepth(depth)
-    palo.setScale(0.12, 1)
-
-    this.aggiungiFuoco(sx, sy - ALTEZZA_CORDOLO - altezza / 2, depth, 64, 0.55)
+    this.aggiungiFuoco(sx, sy, depth, 64, 0.55)
     void pezzo
   }
 
@@ -514,89 +432,45 @@ export class CityScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Il lotto riservato a un luogo.
+   *
+   * Finché si lavora alla rete stradale gli edifici non si disegnano, ma queste
+   * celle restano invalicabili: lasciarle vuote significherebbe sbattere contro
+   * un muro che non c'è. Un rettangolo neutro dice dove sorgerà la casa senza
+   * fingere di essere già la casa.
+   */
   private disegnaEdificio(luogo: Luogo) {
-    const aspetto = ASPETTO[luogo.tipo]
-    const h = luogo.piani * ALTEZZA_PIANO
+    const { left, top, depth } = this.rettangoloLuogo(luogo)
 
+    const lotto = this.add.rectangle(
+      left,
+      top,
+      luogo.larghezza * TILE_W,
+      luogo.profondita * TILE_H,
+      0x5b5f68,
+    )
+    lotto.setOrigin(0, 0)
+    lotto.setStrokeStyle(2, 0x3a3d44)
+    lotto.setDepth(depth)
+  }
+
+  /** Il rettangolo a schermo occupato da un luogo, e i punti utili a chi lo disegna. */
+  private rettangoloLuogo(luogo: Luogo) {
     const x0 = luogo.origine.x
     const y0 = luogo.origine.y
     const x1 = x0 + luogo.larghezza - 1
     const y1 = y0 + luogo.profondita - 1
 
     const alto = grigliaASchermo({ x: x0, y: y0 })
-    const destra = grigliaASchermo({ x: x1, y: y0 })
     const basso = grigliaASchermo({ x: x1, y: y1 })
-    const sinistra = grigliaASchermo({ x: x0, y: y1 })
 
-    const tx = alto.sx
-    const ty = alto.sy - TILE_H / 2
-    const rx = destra.sx + TILE_W / 2
-    const ry = destra.sy
-    const bx = basso.sx
-    const by = basso.sy + TILE_H / 2
-    const lx = sinistra.sx - TILE_W / 2
-    const ly = sinistra.sy
+    const left = alto.sx - TILE_W / 2
+    const top = alto.sy - TILE_H / 2
+    const sud = basso.sy + TILE_H / 2
+    const centroX = (left + (basso.sx + TILE_W / 2)) / 2
 
-    const g = this.add.graphics()
-    g.setDepth(profondita({ x: x1, y: y1 }))
-
-    g.fillStyle(aspetto.sinistra, 1)
-    g.fillPoints(puntiDaVertici([lx, ly - h, lx, ly, bx, by, bx, by - h]), true)
-
-    g.fillStyle(aspetto.destra, 1)
-    g.fillPoints(puntiDaVertici([bx, by - h, bx, by, rx, ry, rx, ry - h]), true)
-
-    // Una fascia di zoccolatura in basso: l'edificio poggia invece di galleggiare.
-    g.fillStyle(scurisci(aspetto.sinistra, 0.75), 1)
-    g.fillPoints(puntiDaVertici([lx, ly - 9, lx, ly, bx, by, bx, by - 9]), true)
-    g.fillStyle(scurisci(aspetto.destra, 0.75), 1)
-    g.fillPoints(puntiDaVertici([bx, by - 9, bx, by, rx, ry, rx, ry - 9]), true)
-
-    g.fillStyle(aspetto.tetto, 1)
-    g.lineStyle(1, 0x1e222b, 0.85)
-    const tetto = puntiDaVertici([tx, ty - h, rx, ry - h, bx, by - h, lx, ly - h])
-    g.fillPoints(tetto, true)
-    g.strokePoints(tetto, true)
-
-    this.disegnaFinestre(luogo, { bx, by, lx, ly, rx, ry }, h)
-  }
-
-  /** Le finestre sono oggetti a sé: devono potersi accendere la sera. */
-  private disegnaFinestre(
-    luogo: Luogo,
-    v: { bx: number; by: number; lx: number; ly: number; rx: number; ry: number },
-    altezza: number,
-  ) {
-    const depth = profondita({
-      x: luogo.origine.x + luogo.larghezza - 1,
-      y: luogo.origine.y + luogo.profondita - 1,
-    })
-    const acceso = luogo.tipo === 'supermercato' ? 0xa9e4cc : 0xffd28a
-
-    const passi = luogo.tipo === 'supermercato' ? 5 : 2
-    const altezzaVetrina = luogo.tipo === 'supermercato' ? 20 : 12
-    const larghezzaVetrina = luogo.tipo === 'supermercato' ? 15 : 11
-
-    for (let i = 1; i <= passi; i++) {
-      const t = i / (passi + 1)
-      const x = v.bx + (v.rx - v.bx) * t
-      const y = v.by + (v.ry - v.by) * t
-
-      // Piano terra su un lato, primo piano se l'edificio è alto.
-      const quote = luogo.tipo === 'supermercato' ? [26] : [26, altezza - 12]
-
-      for (const quota of quote) {
-        const vetro = this.add.rectangle(
-          x,
-          y - quota,
-          larghezzaVetrina,
-          altezzaVetrina,
-          acceso,
-        )
-        vetro.setDepth(depth + 0.1)
-        this.luminosi.aggiungi(vetro, 0.85, 0.12)
-      }
-    }
+    return { left, top, sud, centroX, depth: profondita({ x: x1, y: y1 }) }
   }
 
   private disegnaSoglia(luogo: Luogo) {
@@ -618,14 +492,11 @@ export class CityScene extends Phaser.Scene {
   }
 
   private disegnaInsegna(luogo: Luogo) {
-    const centro = {
-      x: luogo.origine.x + (luogo.larghezza - 1) / 2,
-      y: luogo.origine.y + (luogo.profondita - 1) / 2,
-    }
-    const { sx, sy } = grigliaASchermo(centro)
-    const altezza = luogo.piani * ALTEZZA_PIANO
+    const { top, centroX } = this.rettangoloLuogo(luogo)
+    const sx = centroX
+    const quotaInsegna = top - 20
 
-    const testo = this.add.text(sx, sy - altezza - 32, luogo.nome.toUpperCase(), {
+    const testo = this.add.text(sx, quotaInsegna, luogo.nome.toUpperCase(), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#f8fafc',
@@ -638,7 +509,7 @@ export class CityScene extends Phaser.Scene {
     // Di notte l'insegna alona come un neon.
     const neon = this.add.rectangle(
       sx,
-      sy - altezza - 32 - testo.height / 2,
+      quotaInsegna - testo.height / 2,
       testo.width + 16,
       testo.height + 12,
       ASPETTO[luogo.tipo].insegna,
@@ -648,7 +519,7 @@ export class CityScene extends Phaser.Scene {
     this.luminosi.aggiungi(neon, 0.4)
 
     if (!luogo.accessibile && luogo.motivoChiusura) {
-      const chiuso = this.add.text(sx, sy - altezza - 16, luogo.motivoChiusura, {
+      const chiuso = this.add.text(sx, quotaInsegna + 16, luogo.motivoChiusura, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
         color: '#cbd5e1',
@@ -663,6 +534,10 @@ export class CityScene extends Phaser.Scene {
   private impostaCamera() {
     const lato = this.mappa.length
     const margine = 4 * ALTEZZA_PIANO
+
+    // Inquadratura più larga: da vicino si vedevano tre isolati e la griglia
+    // delle strade non si leggeva, che è poi il senso di una vista dall'alto.
+    this.cameras.main.setZoom(0.7)
 
     // La mappa parte dall'origine e si estende in basso a destra.
     this.cameras.main.setBounds(
@@ -687,12 +562,3 @@ function coloreCss(colore: number): string {
   return `#${colore.toString(16).padStart(6, '0')}`
 }
 
-function scurisci(colore: number, fattore: number): number {
-  return scala(colore, fattore)
-}
-
-function scala(colore: number, fattore: number): number {
-  const canale = (spostamento: number) =>
-    Math.min(255, Math.round(((colore >> spostamento) & 0xff) * fattore))
-  return (canale(16) << 16) | (canale(8) << 8) | canale(0)
-}
