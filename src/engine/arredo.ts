@@ -49,12 +49,6 @@ export function bloccaIlPasso(tipo: TipoArredo): boolean {
 }
 
 /**
- * L'arredo urbano, posizionato a mano.
- *
- * Sono i dettagli che distinguono una città da una griglia: lampioni lungo la
- * carreggiata, auto in sosta, panchine sul verde.
- */
-/**
  * Lampioni lungo le strade, a cadenza regolare.
  *
  * Ricavati dal piano stradale invece che elencati: seguono le strade dovunque
@@ -205,7 +199,3 @@ export const ARREDO: Arredo[] = [
   { x: 69, y: 88, tipo: 'panchina' },
   { x: 90, y: 86, tipo: 'cespuglio' },
 ]
-
-export function arredoIn(x: number, y: number): Arredo | undefined {
-  return ARREDO.find((a) => a.x === x && a.y === y)
-}

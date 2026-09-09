@@ -16,7 +16,7 @@ import type { Pavimentazione } from '../engine/quartieri'
  * non si distingueva dal marciapiede.
  */
 
-export const MATERIALI = {
+const MATERIALI = {
   asfalto: 'asfalto',
   ciottolato: 'ciottolato',
   sterrato: 'sterrato',
@@ -425,7 +425,7 @@ function css(colore: number): string {
 }
 
 /** La variante da usare per una cella: stabile, così la mappa non sfarfalla. */
-export function varianteDi(x: number, y: number): number {
+function varianteDi(x: number, y: number): number {
   const rumore = Math.sin(x * 27.13 + y * 61.79) * 8123.77
   return Math.floor((rumore - Math.floor(rumore)) * VARIANTI)
 }

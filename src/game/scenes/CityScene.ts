@@ -1,6 +1,5 @@
 import Phaser from 'phaser'
 import {
-  ALTEZZA_PIANO,
   TILE_H,
   TILE_W,
   direzioneDaVettoreSchermo,
@@ -75,33 +74,23 @@ const VELOCITA = 3.5
 /** Il marciapiede sta un gradino sopra l'asfalto: è ciò che dà spessore alla strada. */
 const ALTEZZA_CORDOLO = 7
 
-interface Aspetto {
-  sinistra: number
-  destra: number
-  tetto: number
-  insegna: number
-}
-
-const ASPETTO: Record<string, Aspetto> = {
-  supermercato: {
-    sinistra: 0x8d5638,
-    destra: 0xba7248,
-    tetto: 0x69717d,
-    insegna: 0x2f9c62,
-  },
-  casa: {
-    sinistra: 0x7d7160,
-    destra: 0xab9a80,
-    tetto: 0xa8442f,
-    insegna: 0xd8a24a,
-  },
+/**
+ * Il colore dell'insegna di ogni luogo.
+ *
+ * L'aspetto dell'edificio sta in `game/edifici.ts`: qui resta solo la targa,
+ * che è un elemento della scena e non del disegno dell'edificio.
+ */
+const COLORE_INSEGNA: Record<string, number> = {
+  supermercato: 0x2f9c62,
+  casa: 0xd8a24a,
 }
 
 /**
- * La città in vista isometrica.
+ * La città vista dall'alto.
  *
- * La matematica della proiezione vive in `engine/iso.ts`, la mappa in
- * `engine/city.ts`, la luce in `engine/illuminazione.ts`: qui si disegna soltanto.
+ * La proiezione vive in `engine/iso.ts`, la mappa in `engine/city.ts`, le
+ * strade in `engine/strade.ts`, la luce in `engine/illuminazione.ts`: qui si
+ * disegna soltanto.
  */
 export class CityScene extends Phaser.Scene {
   private mappa: Cella[][] = []
@@ -489,7 +478,7 @@ export class CityScene extends Phaser.Scene {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#f8fafc',
-      backgroundColor: coloreCss(ASPETTO[luogo.tipo].insegna),
+      backgroundColor: coloreCss(COLORE_INSEGNA[luogo.tipo]),
       padding: { x: 8, y: 3 },
     })
     testo.setOrigin(0.5, 1)
@@ -501,7 +490,7 @@ export class CityScene extends Phaser.Scene {
       quotaInsegna - testo.height / 2,
       testo.width + 16,
       testo.height + 12,
-      ASPETTO[luogo.tipo].insegna,
+      COLORE_INSEGNA[luogo.tipo],
     )
     neon.setDepth(9_999)
     neon.setBlendMode(Phaser.BlendModes.ADD)
@@ -522,7 +511,9 @@ export class CityScene extends Phaser.Scene {
 
   private impostaCamera() {
     const lato = this.mappa.length
-    const margine = 4 * ALTEZZA_PIANO
+    // Un po' di aria sopra il bordo nord, dove le facciate degli edifici e le
+    // insegne sporgono oltre la prima riga di celle.
+    const margine = 2 * TILE_H
 
     // Inquadratura più larga: da vicino si vedevano tre isolati e la griglia
     // delle strade non si leggeva, che è poi il senso di una vista dall'alto.

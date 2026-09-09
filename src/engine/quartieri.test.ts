@@ -43,10 +43,10 @@ describe('disposizione dei quartieri', () => {
   })
 })
 
-describe('altezze dichiarate', () => {
-  it('i grattacieli stanno nella zona ricca, non nello slum', () => {
-    expect(quartierePerId('ricca').piani[1]).toBeGreaterThan(
-      quartierePerId('periferia').piani[1],
+describe('misura degli isolati', () => {
+  it('il centro storico ha isolati più minuti dei piazzali del porto', () => {
+    expect(quartierePerId('centro').isolato[1]).toBeLessThan(
+      quartierePerId('porto').isolato[0],
     )
   })
 })

@@ -16,8 +16,6 @@
 export const TILE_W = 48
 /** Altezza di un tile a schermo. Uguale alla larghezza: la griglia è quadrata. */
 export const TILE_H = 48
-/** Quanti pixel di altezza vale un piano di un edificio. */
-export const ALTEZZA_PIANO = 26
 
 export interface Griglia {
   x: number

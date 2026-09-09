@@ -16,8 +16,9 @@ const LARGHEZZA = 44
 /**
  * L'ordine delle righe nel foglio.
  *
- * In isometrica le direzioni sono diagonali rispetto alla griglia: "giù a
- * destra" significa x crescente, non semplicemente "sud".
+ * Il foglio ha le quattro pose in diagonale, ereditate da quando la vista era
+ * isometrica: sulla griglia dall'alto si sceglie quella più vicina alla
+ * direzione di marcia.
  */
 const DIREZIONI = ['giu-destra', 'giu-sinistra', 'su-sinistra', 'su-destra'] as const
 export type Direzione = (typeof DIREZIONI)[number]

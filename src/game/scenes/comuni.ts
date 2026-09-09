@@ -5,7 +5,10 @@ import { TILE_H, TILE_W } from '../../engine/iso'
 
 /**
  * Il personaggio: ombra, corpo, testa.
- * Segnaposto in attesa degli sprite, ma già leggibile in isometrica.
+ *
+ * È il ripiego per quando lo sprite disegnato non si carica: brutto ma
+ * leggibile, e soprattutto visibile — un giocatore invisibile è peggio di un
+ * giocatore fatto di tre forme geometriche.
  */
 export function creaGiocatore(scena: Phaser.Scene): Phaser.GameObjects.Container {
   const ombra = scena.add.ellipse(0, 0, TILE_W * 0.4, TILE_H * 0.4, 0x000000, 0.35)

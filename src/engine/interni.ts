@@ -142,7 +142,7 @@ function dentroIlMobile(mobile: Mobile, x: number, y: number): boolean {
 }
 
 /** Distanza entro cui un mobile risponde, in celle. */
-export const RAGGIO_MOBILE = 1.4
+const RAGGIO_MOBILE = 1.4
 
 /**
  * Il mobile con cui si può interagire da dove ci si trova.
