@@ -68,8 +68,8 @@ describe('uscita e luoghi non si confondono', () => {
 
   it('entrare porta sempre un luogo completo, mai un identificativo sciolto', () => {
     const azione = interazioneInCitta(sullaPorta(casa))
-    expect(azione).not.toBeNull()
-    if (azione && azione.tipo !== 'esci') {
+    expect(azione?.tipo).toBe('entra')
+    if (azione?.tipo === 'entra') {
       expect(azione.luogo.nome).toBeTruthy()
       expect(azione.luogo.id).toBe('casa')
     }

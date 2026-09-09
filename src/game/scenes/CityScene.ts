@@ -34,6 +34,7 @@ import {
   materialeStrada,
   preparaTile,
 } from '../terreno'
+import { disegnaLuogo } from '../edifici'
 import {
   LUMINOSI,
   caricaArredo,
@@ -432,27 +433,15 @@ export class CityScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Il lotto riservato a un luogo.
-   *
-   * Finché si lavora alla rete stradale gli edifici non si disegnano, ma queste
-   * celle restano invalicabili: lasciarle vuote significherebbe sbattere contro
-   * un muro che non c'è. Un rettangolo neutro dice dove sorgerà la casa senza
-   * fingere di essere già la casa.
-   */
   private disegnaEdificio(luogo: Luogo) {
-    const { left, top, depth } = this.rettangoloLuogo(luogo)
+    const { centroX, sud, depth } = this.rettangoloLuogo(luogo)
 
-    const lotto = this.add.rectangle(
-      left,
-      top,
-      luogo.larghezza * TILE_W,
-      luogo.profondita * TILE_H,
-      0x5b5f68,
-    )
-    lotto.setOrigin(0, 0)
-    lotto.setStrokeStyle(2, 0x3a3d44)
-    lotto.setDepth(depth)
+    const pezzo = disegnaLuogo(this, luogo)
+    if (!pezzo) return
+
+    const immagine = this.add.image(centroX, sud, pezzo.chiave)
+    immagine.setOrigin(pezzo.ancora.x, pezzo.ancora.y)
+    immagine.setDepth(depth)
   }
 
   /** Il rettangolo a schermo occupato da un luogo, e i punti utili a chi lo disegna. */

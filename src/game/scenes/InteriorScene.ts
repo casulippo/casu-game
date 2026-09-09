@@ -1,45 +1,49 @@
 import Phaser from 'phaser'
 import {
-  ALTEZZA_PIANO,
+  TILE_H,
+  TILE_W,
   direzioneDaVettoreSchermo,
   direzioneSchermoAGriglia,
   grigliaASchermo,
   profondita,
-  verticiCella,
   type Griglia,
 } from '../../engine/iso'
 import {
   calpestabileInterno,
+  celleDelMobile,
   generaInterno,
   ingresso,
-  sullUscita,
-  type CellaInterno,
+  type Interno,
+  type Mobile,
 } from '../../engine/interni'
+import { interazioneInInterno } from '../../engine/interazione'
 import { oreDaTempoReale } from '../../engine/time'
 import { gameStore } from '../../store'
 import { leggiSpinta } from '../input'
-import { creaGiocatore, puntiDaVertici } from './comuni'
+import { creaGiocatore } from './comuni'
+import { creaProtagonista, caricaPersonaggio, type Protagonista } from '../personaggio'
+import { costruisciStanza, disegnaMobile } from '../interni'
 
 const VELOCITA = 3.2
 
-const COLORE_PAVIMENTO: Record<CellaInterno, number> = {
-  pavimento: 0x7a5c3e,
-  muro: 0x4a3a2a,
-  letto: 0x6e5238,
-  tavolo: 0x6e5238,
-  uscita: 0xc9a15b,
-}
-
 /**
- * L'interno di un luogo.
+ * L'interno di una casa.
  *
- * Stessa proiezione isometrica dell'esterno, stessa logica di movimento: cambia
- * solo la mappa e il fatto che qui l'azione riporta fuori invece che dentro.
+ * Stessa vista dall'alto dell'esterno e stesso linguaggio visivo: pianta
+ * piatta, con una fascia di parete sul lato verso chi guarda. Prima qui si
+ * disegnavano prismi isometrici, rimasti da quando la città era in
+ * isometrica — dentro e fuori sembravano due giochi diversi.
  */
 export class InteriorScene extends Phaser.Scene {
-  private mappa: CellaInterno[][] = []
+  private interno!: Interno
   private pos: Griglia = { x: 0, y: 0 }
-  private giocatore!: Phaser.GameObjects.Container
+  private giocatore!: Phaser.GameObjects.GameObject & {
+    setPosition(x: number, y: number): unknown
+    setDepth(v: number): unknown
+  }
+  private protagonista: Protagonista | null = null
+  private ultimaDirezione: Griglia = { x: 0, y: 1 }
+  private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
   private wasd!: Record<'W' | 'A' | 'S' | 'D', Phaser.Input.Keyboard.Key>
   private tastoAzione!: Phaser.Input.Keyboard.Key
@@ -48,14 +52,20 @@ export class InteriorScene extends Phaser.Scene {
     super('interno')
   }
 
-  create() {
-    this.mappa = generaInterno()
-    this.pos = ingresso(this.mappa)
+  preload() {
+    caricaPersonaggio(this)
+  }
 
-    this.disegnaPavimento()
-    this.disegnaMuri()
+  create() {
+    const idCasa = gameStore.getState().luogoCorrente ?? 'casa'
+    this.interno = generaInterno(idCasa)
+    this.pos = ingresso(this.interno)
+
+    this.disegnaStanza()
     this.disegnaMobili()
-    this.giocatore = creaGiocatore(this)
+
+    this.protagonista = creaProtagonista(this, 0, 0)
+    this.giocatore = this.protagonista?.sprite ?? creaGiocatore(this)
 
     this.tasti = this.input.keyboard!.createCursorKeys()
     this.wasd = this.input.keyboard!.addKeys('W,A,S,D') as typeof this.wasd
@@ -69,7 +79,7 @@ export class InteriorScene extends Phaser.Scene {
   update(_time: number, deltaMs: number) {
     this.muovi(deltaMs / 1000)
     this.aggiornaGiocatore()
-    this.aggiornaUscitaVicina()
+    this.aggiornaInterazione()
     this.controllaUscita()
 
     gameStore.getState().avanzaTempo(oreDaTempoReale(deltaMs))
@@ -77,17 +87,15 @@ export class InteriorScene extends Phaser.Scene {
 
   // -------------------------------------------------------------- interazione
 
-  private aggiornaUscitaVicina() {
+  private aggiornaInterazione() {
     const stato = gameStore.getState()
 
     // Se lo store dice che siamo già fuori, la scena sta per cambiare: non
-    // annunciare più un'uscita, o la UI si troverebbe in città con in mano
-    // un'azione da interno.
+    // annunciare più un'azione da interno, o la UI si troverebbe in città con
+    // in mano un letto in cui dormire.
     if (stato.ambiente !== 'interno') return
 
-    stato.segnalaInterazione(
-      sullUscita(this.mappa, this.pos) ? { tipo: 'esci' } : null,
-    )
+    stato.segnalaInterazione(interazioneInInterno(this.interno, this.pos))
   }
 
   private controllaUscita() {
@@ -100,22 +108,26 @@ export class InteriorScene extends Phaser.Scene {
     }
 
     if (!Phaser.Input.Keyboard.JustDown(this.tastoAzione)) return
-    if (sullUscita(this.mappa, this.pos)) stato.esci()
+
+    const azione = interazioneInInterno(this.interno, this.pos)
+    if (azione?.tipo === 'esci') stato.esci()
   }
 
   // ---------------------------------------------------------------- movimento
 
   private muovi(deltaSec: number) {
     const { dir, intensita } = this.direzioneRichiesta()
+    this.inMovimento = intensita > 0
     if (intensita === 0) return
 
+    this.ultimaDirezione = dir
     const passo = VELOCITA * deltaSec * intensita
 
     const nuovaX = this.pos.x + dir.x * passo
-    if (calpestabileInterno(this.mappa, nuovaX, this.pos.y)) this.pos.x = nuovaX
+    if (calpestabileInterno(this.interno, nuovaX, this.pos.y)) this.pos.x = nuovaX
 
     const nuovaY = this.pos.y + dir.y * passo
-    if (calpestabileInterno(this.mappa, this.pos.x, nuovaY)) this.pos.y = nuovaY
+    if (calpestabileInterno(this.interno, this.pos.x, nuovaY)) this.pos.y = nuovaY
   }
 
   private direzioneRichiesta(): { dir: Griglia; intensita: number } {
@@ -141,96 +153,56 @@ export class InteriorScene extends Phaser.Scene {
     const { sx, sy } = grigliaASchermo(this.pos)
     this.giocatore.setPosition(sx, sy)
     this.giocatore.setDepth(profondita(this.pos) + 0.5)
+    this.protagonista?.aggiorna(this.ultimaDirezione, this.inMovimento)
   }
 
   // ---------------------------------------------------------------- rendering
 
-  private disegnaPavimento() {
-    const g = this.add.graphics()
-    g.setDepth(-1000)
+  private disegnaStanza() {
+    const stanza = costruisciStanza(this, this.interno)
+    if (!stanza) return
 
-    for (let y = 0; y < this.mappa.length; y++) {
-      for (let x = 0; x < this.mappa[y].length; x++) {
-        const cella = this.mappa[y][x]
-        if (cella === 'muro') continue
-
-        g.fillStyle(COLORE_PAVIMENTO[cella === 'uscita' ? 'uscita' : 'pavimento'], 1)
-        g.lineStyle(1, 0x000000, 0.16)
-        const punti = puntiDaVertici(verticiCella({ x, y }))
-        g.fillPoints(punti, true)
-        g.strokePoints(punti, true)
-      }
-    }
-  }
-
-  private disegnaMuri() {
-    for (let y = 0; y < this.mappa.length; y++) {
-      for (let x = 0; x < this.mappa[y].length; x++) {
-        if (this.mappa[y][x] !== 'muro') continue
-        this.disegnaBlocco({ x, y }, ALTEZZA_PIANO * 1.6, 0x4a3a2a, 0x5d4a35, 0x6b573f)
-      }
-    }
+    const immagine = this.add.image(stanza.x, stanza.y, stanza.chiave)
+    immagine.setOrigin(0, 0)
+    immagine.setDepth(-1000)
   }
 
   private disegnaMobili() {
-    for (let y = 0; y < this.mappa.length; y++) {
-      for (let x = 0; x < this.mappa[y].length; x++) {
-        const cella = this.mappa[y][x]
-        if (cella === 'letto') {
-          this.disegnaBlocco({ x, y }, 12, 0x7c3f46, 0x9d5158, 0xd8dde8)
-        } else if (cella === 'tavolo') {
-          this.disegnaBlocco({ x, y }, 16, 0x5a4632, 0x6f5740, 0x8a6d4f)
-        }
-      }
-    }
+    for (const mobile of this.interno.mobili) this.piazzaMobile(mobile)
   }
 
-  private disegnaBlocco(
-    cella: Griglia,
-    altezza: number,
-    coloreSinistra: number,
-    coloreDestra: number,
-    coloreTetto: number,
-  ) {
-    const [tx, ty, rx, ry, bx, by, lx, ly] = verticiCella(cella)
+  private piazzaMobile(mobile: Mobile) {
+    const pezzo = disegnaMobile(this, mobile)
+    if (!pezzo) return
 
-    const g = this.add.graphics()
-    g.setDepth(profondita(cella))
-
-    g.fillStyle(coloreSinistra, 1)
-    g.fillPoints(
-      puntiDaVertici([lx, ly - altezza, lx, ly, bx, by, bx, by - altezza]),
-      true,
-    )
-
-    g.fillStyle(coloreDestra, 1)
-    g.fillPoints(
-      puntiDaVertici([bx, by - altezza, bx, by, rx, ry, rx, ry - altezza]),
-      true,
-    )
-
-    g.fillStyle(coloreTetto, 1)
-    g.lineStyle(1, 0x241c14, 0.8)
-    const sopra = puntiDaVertici([
-      tx,
-      ty - altezza,
-      rx,
-      ry - altezza,
-      bx,
-      by - altezza,
-      lx,
-      ly - altezza,
-    ])
-    g.fillPoints(sopra, true)
-    g.strokePoints(sopra, true)
-  }
-
-  /** La stanza è piccola: sta tutta a schermo, la camera non insegue. */
-  private centraCamera() {
+    // Ancorato al bordo basso dell'ingombro, come gli edifici in città: la
+    // parete del mobile sporge verso chi guarda.
+    const celle = celleDelMobile(mobile)
+    const ultima = celle[celle.length - 1]
     const centro = grigliaASchermo({
-      x: this.mappa[0].length / 2,
-      y: this.mappa.length / 2,
+      x: mobile.origine.x + (mobile.larghezza - 1) / 2,
+      y: ultima.y,
     })
-    this.cameras.main.centerOn(centro.sx, centro.sy - ALTEZZA_PIANO)
+
+    const immagine = this.add.image(centro.sx, centro.sy + TILE_H / 2, pezzo.chiave)
+    immagine.setOrigin(pezzo.ancora.x, pezzo.ancora.y)
+    immagine.setDepth(profondita({ x: mobile.origine.x, y: ultima.y }))
+  }
+
+  /** La casa sta tutta a schermo: la camera non insegue, inquadra e basta. */
+  private centraCamera() {
+    const larghezza = this.interno.celle[0].length
+    const altezza = this.interno.celle.length
+
+    const centro = grigliaASchermo({
+      x: (larghezza - 1) / 2,
+      y: (altezza - 1) / 2,
+    })
+    this.cameras.main.centerOn(centro.sx, centro.sy)
+
+    // Un po' di margine attorno alle pareti, così la stanza non tocca i bordi.
+    const zoomX = this.scale.width / ((larghezza + 2) * TILE_W)
+    const zoomY = this.scale.height / ((altezza + 3) * TILE_H)
+    this.cameras.main.setZoom(Math.min(zoomX, zoomY))
   }
 }

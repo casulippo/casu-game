@@ -2,6 +2,13 @@ import { create } from 'zustand'
 import { statoIniziale, type GameState, type Quartiere } from './engine/state'
 import { avanza } from './engine/time'
 import { stessaInterazione, type Interazione } from './engine/interazione'
+import {
+  cresceLaFame,
+  dormi,
+  mangia,
+  nascondiSoldi,
+  riprendiSoldi,
+} from './engine/azioniCasa'
 
 /** Dove si trova il giocatore: per strada, o dentro un luogo. */
 export type Ambiente = 'citta' | 'interno'
@@ -30,6 +37,13 @@ interface GameStore extends GameState {
   entraIn: (luogoId: string) => void
   esci: () => void
   segnalaInterazione: (interazione: Interazione) => void
+
+  /** Le azioni di casa: le regole stanno in `engine/azioniCasa.ts`. */
+  dormi: (ore: number) => void
+  mangia: () => void
+  nascondi: (importo: number) => void
+  riprendi: (importo: number) => void
+
   reset: () => void
   carica: (stato: GameState) => void
 }
@@ -41,7 +55,10 @@ export const useGame = create<GameStore>()((set) => ({
   interazione: null,
 
   avanzaTempo: (oreGioco) =>
-    set((s) => ({ tempo: avanza(s.tempo, oreGioco) })),
+    set((s) => ({
+      tempo: avanza(s.tempo, oreGioco),
+      fame: cresceLaFame(s.fame, oreGioco),
+    })),
 
   vaiA: (quartiere) => set({ quartiereCorrente: quartiere }),
 
@@ -54,6 +71,11 @@ export const useGame = create<GameStore>()((set) => ({
     set((s) =>
       stessaInterazione(s.interazione, interazione) ? s : { interazione },
     ),
+
+  dormi: (ore) => set((s) => dormi(s, ore)),
+  mangia: () => set((s) => mangia(s)),
+  nascondi: (importo) => set((s) => nascondiSoldi(s, importo)),
+  riprendi: (importo) => set((s) => riprendiSoldi(s, importo)),
 
   reset: () =>
     set({

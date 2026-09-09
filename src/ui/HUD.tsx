@@ -44,6 +44,8 @@ function Riquadro({
 export function HUD() {
   const tempo = useGame((s) => s.tempo)
   const giocatore = useGame((s) => s.giocatore)
+  const fame = useGame((s) => s.fame)
+  const sonno = useGame((s) => s.sonno)
   const quartiere = useGame((s) => s.quartiereCorrente)
   const luogoCorrente = useGame((s) => s.luogoCorrente)
   const avanzaTempo = useGame((s) => s.avanzaTempo)
@@ -69,11 +71,20 @@ export function HUD() {
       </button>
       <Riquadro label="Fase" value={ETICHETTE_FASE[faseGiorno(tempo)]} />
       <Riquadro label="Dove" value={dove} />
+      <Riquadro label="Fame" value={`${Math.round(fame.livello)}%`} />
+      <Riquadro label="Sonno" value={debitoLeggibile(sonno.debito)} soloDesktop />
       <Riquadro label="Puliti" value={`${giocatore.soldiPuliti} €`} soloDesktop />
-      <Riquadro label="Età" value={`${giocatore.eta} anni`} soloDesktop />
       <Riquadro label="Sporchi" value={`${giocatore.soldiSporchi} €`} soloDesktop />
+      {giocatore.soldiNascosti > 0 && (
+        <Riquadro label="Nascosti" value={`${giocatore.soldiNascosti} €`} soloDesktop />
+      )}
     </div>
   )
+}
+
+/** Il debito di sonno in ore: a zero si dice «a posto», non «0 h». */
+function debitoLeggibile(debito: number): string {
+  return debito <= 0 ? 'a posto' : `-${Math.round(debito)} h`
 }
 
 function nomeLuogo(id: string): string {
