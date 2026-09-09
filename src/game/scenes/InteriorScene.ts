@@ -21,7 +21,7 @@ import { oreDaTempoReale } from '../../engine/time'
 import { gameStore } from '../../store'
 import { leggiSpinta } from '../input'
 import { creaGiocatore } from './comuni'
-import { creaProtagonista, caricaPersonaggio, type Protagonista } from '../personaggio'
+import { caricaPersonaggi, creaPersonaggio, type Personaggio } from '../personaggio'
 import { costruisciStanza, disegnaMobile } from '../interni'
 
 const VELOCITA = 3.2
@@ -41,7 +41,7 @@ export class InteriorScene extends Phaser.Scene {
     setPosition(x: number, y: number): unknown
     setDepth(v: number): unknown
   }
-  private protagonista: Protagonista | null = null
+  private protagonista: Personaggio | null = null
   private ultimaDirezione: Griglia = { x: 0, y: 1 }
   private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -53,7 +53,7 @@ export class InteriorScene extends Phaser.Scene {
   }
 
   preload() {
-    caricaPersonaggio(this)
+    caricaPersonaggi(this)
   }
 
   create() {
@@ -64,7 +64,7 @@ export class InteriorScene extends Phaser.Scene {
     this.disegnaStanza()
     this.disegnaMobili()
 
-    this.protagonista = creaProtagonista(this, 0, 0)
+    this.protagonista = creaPersonaggio(this, 'kai', 0, 0)
     this.giocatore = this.protagonista?.sprite ?? creaGiocatore(this)
 
     this.tasti = this.input.keyboard!.createCursorKeys()

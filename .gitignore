@@ -29,3 +29,7 @@ dist-ssr
 # Windows
 Thumbs.db
 desktop.ini
+
+# Python (strumenti)
+__pycache__/
+*.pyc

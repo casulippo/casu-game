@@ -20,6 +20,7 @@ import {
 } from '../../engine/city'
 import { quartiereIn } from '../../engine/quartieri'
 import { ARREDO, type Arredo } from '../../engine/arredo'
+import { NPC } from '../../engine/npc'
 import { LUOGHI, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
 import { illuminazione } from '../../engine/illuminazione'
@@ -41,7 +42,12 @@ import {
   pezzoPer,
   preparaArredo,
 } from '../arredoSprite'
-import { creaProtagonista, caricaPersonaggio, type Protagonista } from '../personaggio'
+import {
+  caricaPersonaggi,
+  creaPersonaggio,
+  fotogrammaFermo,
+  type Personaggio,
+} from '../personaggio'
 import {
   ancoraAlbero,
   ancoraVolume,
@@ -99,7 +105,7 @@ export class CityScene extends Phaser.Scene {
     setPosition(x: number, y: number): unknown
     setDepth(v: number): unknown
   }
-  private protagonista: Protagonista | null = null
+  private protagonista: Personaggio | null = null
   private ultimaDirezione: Griglia = { x: 1, y: 1 }
   private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -114,7 +120,7 @@ export class CityScene extends Phaser.Scene {
 
   preload() {
     caricaArredo(this)
-    caricaPersonaggio(this)
+    caricaPersonaggi(this)
   }
 
   create() {
@@ -129,7 +135,8 @@ export class CityScene extends Phaser.Scene {
     this.disegnaAlberi()
     this.disegnaArredo()
     this.disegnaLuoghi()
-    this.protagonista = creaProtagonista(this, 0, 0)
+    this.disegnaNpc()
+    this.protagonista = creaPersonaggio(this, 'kai', 0, 0)
     this.giocatore = this.protagonista?.sprite ?? creaGiocatore(this)
     this.velo = this.creaVelo()
 
@@ -308,6 +315,25 @@ export class CityScene extends Phaser.Scene {
       const immagine = this.add.image(pezzo.x, pezzo.y, pezzo.chiave)
       immagine.setOrigin(0, 0)
       immagine.setDepth(-1000)
+    }
+  }
+
+  /**
+   * Le persone ferme in città.
+   *
+   * Non camminano ancora, quindi basta il primo fotogramma della direzione in
+   * cui guardano: creare l'animazione e non farla partire lascerebbe lo sprite
+   * sul fotogramma zero, che è sempre quello di fronte.
+   */
+  private disegnaNpc() {
+    for (const npc of NPC) {
+      const personaggio = creaPersonaggio(this, npc.sprite, 0, 0)
+      if (!personaggio) continue
+
+      const { sx, sy } = grigliaASchermo(npc)
+      personaggio.sprite.setPosition(sx, sy + TILE_H / 2)
+      personaggio.sprite.setFrame(fotogrammaFermo(npc.verso))
+      personaggio.sprite.setDepth(profondita(npc))
     }
   }
 
