@@ -1,4 +1,5 @@
 import type { TipoArma } from './armi'
+import type { Scontro } from './combattimento'
 
 /**
  * Il modello dati del gioco.
@@ -59,8 +60,6 @@ export interface Giocatore {
   incassoTotale: number
   livello: number
   statistiche: Statistiche
-  /** Quanto la polizia ti sta addosso, 0-4. È questo a far partire i raid. */
-  livelloRicerca: 0 | 1 | 2 | 3 | 4
   roba: Inventario
   /** Quella che si ha in mano. */
   arma: TipoArma
@@ -115,6 +114,17 @@ export interface Mercato {
   grammiPresiOggi: number
 }
 
+/**
+ * Quanto la polizia ti sta addosso.
+ *
+ * Il calore è un numero da 0 a 100 che sale con quello che fai e scende col
+ * tempo che passa tranquillo. Il livello di ricerca da 0 a 4 che si vede a
+ * schermo è solo la sua faccia leggibile.
+ */
+export interface Polizia {
+  calore: number
+}
+
 /** Quello che si è lasciato in un nascondiglio. */
 export interface Deposito {
   soldi: number
@@ -128,7 +138,10 @@ export interface GameState {
   sonno: Sonno
   fame: Fame
   mercato: Mercato
+  polizia: Polizia
   quartiereCorrente: Quartiere
+  /** Lo scontro in corso, se ce n'è uno. */
+  scontro: Scontro | null
   /**
    * Cosa c'è in ogni nascondiglio, per id.
    *
@@ -150,7 +163,6 @@ export function statoIniziale(nome = 'Casu'): GameState {
       incassoTotale: 0,
       livello: 1,
       statistiche: { mira: 30, vita: 100, socialita: 40, bellezza: 40 },
-      livelloRicerca: 0,
       roba: {},
       arma: 'coltello',
       armi: ['coltello'],
@@ -159,7 +171,9 @@ export function statoIniziale(nome = 'Casu'): GameState {
     sonno: { debito: 0 },
     fame: { livello: 20 },
     mercato: { quotaClienti: 1, grammiPresiOggi: 0 },
+    polizia: { calore: 0 },
     quartiereCorrente: 'palazzoni',
+    scontro: null,
     nascondigli: {},
   }
 }

@@ -1,5 +1,6 @@
 import type { Fame, GameState, Giocatore, Sonno } from './state'
 import { FAME_PER_ORA } from './state'
+import { raffredda } from './polizia'
 import { avanza } from './time'
 
 /**
@@ -38,13 +39,16 @@ export function dormi(stato: GameState, ore: number): GameState {
     debito: Math.max(0, stato.sonno.debito - (dormite - FABBISOGNO_SONNO)),
   }
 
-  return {
-    ...stato,
-    sonno,
-    fame: cresceLaFame(stato.fame, dormite),
-    tempo: avanza(stato.tempo, dormite),
-    mercato: { ...stato.mercato, grammiPresiOggi: 0 },
-  }
+  return raffredda(
+    {
+      ...stato,
+      sonno,
+      fame: cresceLaFame(stato.fame, dormite),
+      tempo: avanza(stato.tempo, dormite),
+      mercato: { ...stato.mercato, grammiPresiOggi: 0 },
+    },
+    dormite,
+  )
 }
 
 /** Mangiare: sazia, costa un'ora, e non toglie il sonno arretrato. */
