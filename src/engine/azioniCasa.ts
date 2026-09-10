@@ -10,6 +10,7 @@ import {
 } from './cibo'
 import { laNotteChePassa } from './gossip'
 import { raffredda } from './polizia'
+import { avanzaSpaccini } from './spaccini'
 import { avanza } from './time'
 
 /**
@@ -45,16 +46,17 @@ export function dormi(stato: GameState, ore: number): GameState {
     debito: Math.max(0, stato.sonno.debito - (dormite - FABBISOGNO_SONNO)),
   }
 
-  return raffredda(
-    laNotteChePassa({
-      ...stato,
-      sonno,
-      fame: cresceLaFame(stato.fame, dormite),
-      tempo: avanza(stato.tempo, dormite),
-      mercato: { ...stato.mercato, grammiPresiOggi: 0 },
-    }),
-    dormite,
-  )
+  const domani: GameState = {
+    ...stato,
+    sonno,
+    fame: cresceLaFame(stato.fame, dormite),
+    tempo: avanza(stato.tempo, dormite),
+    mercato: { ...stato.mercato, grammiPresiOggi: 0 },
+  }
+
+  // Mentre dormi il mondo va avanti: gli spaccini vendono, la voce gira, i
+  // ricordi sbiadiscono e la polizia si dimentica un po' di te.
+  return raffredda(laNotteChePassa(avanzaSpaccini(domani, dormite)), dormite)
 }
 
 /**

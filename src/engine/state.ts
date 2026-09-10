@@ -3,6 +3,7 @@ import type { Scontro } from './combattimento'
 import type { TipoStrumento } from './strumenti'
 import type { TipoCibo } from './cibo'
 import type { Ricordo } from './memoria'
+import type { Spaccino } from './spaccini'
 
 /**
  * Il modello dati del gioco.
@@ -127,6 +128,12 @@ export interface Mercato {
    * mangiare e dormire.
    */
   grammiPresiOggi: number
+  /**
+   * Quante volte si è venduto ai ragazzini dei parchetti.
+   *
+   * Alla seconda sono loro a chiedere di lavorare per te.
+   */
+  venditeAiRagazzini: number
 }
 
 /**
@@ -157,6 +164,8 @@ export interface GameState {
   armeria: Armeria
   /** Quello che la città si ricorda di te. */
   ricordi: Ricordo[]
+  /** Chi vende per te, e cosa ti deve. */
+  spaccini: Spaccino[]
   /** Cosa c'è in frigo, per tipo di cibo. */
   frigo: Partial<Record<TipoCibo, number>>
   quartiereCorrente: Quartiere
@@ -191,10 +200,11 @@ export function statoIniziale(nome = 'Casu'): GameState {
     tempo: { giorno: 1, ora: 8, minuto: 0 },
     sonno: { debito: 0 },
     fame: { livello: 20 },
-    mercato: { quotaClienti: 1, grammiPresiOggi: 0 },
+    mercato: { quotaClienti: 1, grammiPresiOggi: 0, venditeAiRagazzini: 0 },
     polizia: { calore: 0 },
     armeria: { favori: 0 },
     ricordi: [],
+    spaccini: [],
     frigo: { panino: 2 },
     quartiereCorrente: 'palazzoni',
     scontro: null,

@@ -49,7 +49,7 @@ describe('dormi', () => {
   })
 
   it('riapre il credito al bazar: il tetto si azzera solo dormendo', () => {
-    const aFineGiornata = stato({ mercato: { quotaClienti: 1, grammiPresiOggi: 40 } })
+    const aFineGiornata = stato({ mercato: { quotaClienti: 1, grammiPresiOggi: 40, venditeAiRagazzini: 0 } })
     expect(dormi(aFineGiornata, FABBISOGNO_SONNO).mercato.grammiPresiOggi).toBe(0)
   })
 })
