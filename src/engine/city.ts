@@ -26,7 +26,8 @@ export { LATO_CITTA }
  */
 const PARCHI = [
   { x: 70, y: 12, larghezza: 17, altezza: 15 },
-  { x: 38, y: 60, larghezza: 12, altezza: 11 },
+  // Il parchetto delle bandelle: è qui che si combatte il primo scontro.
+  { x: 10, y: 28, larghezza: 12, altezza: 11 },
 ]
 
 /**

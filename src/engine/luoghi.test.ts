@@ -6,6 +6,8 @@ import {
   luogoAllaPortata,
   luogoPerId,
 } from './luoghi'
+import { calpestabile, generaCitta, terrenoSotto } from './city'
+import { quartiereIn } from './quartieri'
 
 const casa = luogoPerId('casa')
 const supermercato = luogoPerId('supermercato')
@@ -81,5 +83,65 @@ describe('luogoAllaPortata', () => {
 describe('luogoPerId', () => {
   it('protesta se il luogo non esiste', () => {
     expect(() => luogoPerId('bar-inesistente')).toThrow()
+  })
+})
+
+describe('dove stanno i luoghi sulla mappa', () => {
+  const mappa = generaCitta()
+
+  it('a ogni porta ci si arriva camminando', () => {
+    for (const luogo of LUOGHI) {
+      expect(calpestabile(mappa, luogo.porta.x, luogo.porta.y)).toBe(true)
+    }
+  })
+
+  it('nessun edificio finisce in acqua o dentro una strada', () => {
+    for (const luogo of LUOGHI) {
+      for (const cella of celleOccupate(luogo)) {
+        expect(terrenoSotto(cella.x, cella.y)).toBe('erba')
+      }
+    }
+  })
+
+  it('nessuno si sovrappone a un altro', () => {
+    const occupate = new Set<string>()
+    for (const luogo of LUOGHI) {
+      for (const cella of celleOccupate(luogo)) {
+        const chiave = `${cella.x},${cella.y}`
+        expect(occupate.has(chiave)).toBe(false)
+        occupate.add(chiave)
+      }
+    }
+  })
+
+  /** La mappa fissata nel design: ognuno nel quartiere della sua fazione. */
+  it('stanno nel quartiere che gli spetta', () => {
+    const atteso: Record<string, string> = {
+      casa: 'palazzoni',
+      bazar: 'palazzoni',
+      armeria: 'bandelle',
+      'mercato-nero': 'mafia',
+      supermercato: 'residenziale',
+    }
+
+    for (const luogo of LUOGHI) {
+      expect(quartiereIn(luogo.origine.x, luogo.origine.y).id).toBe(atteso[luogo.id])
+    }
+  })
+
+  it('il bazar sta a due passi da casa, dietro le case a schiera', () => {
+    const bazar = luogoPerId('bazar')
+    const distanza = Math.hypot(
+      bazar.porta.x - casa.porta.x,
+      bazar.porta.y - casa.porta.y,
+    )
+    expect(distanza).toBeLessThan(12)
+  })
+
+  it('le botteghe si servono dalla soglia, non si visitano', () => {
+    for (const id of ['bazar', 'armeria', 'mercato-nero']) {
+      expect(luogoPerId(id).bottega).toBe(true)
+    }
+    expect(casa.bottega).toBeUndefined()
   })
 })

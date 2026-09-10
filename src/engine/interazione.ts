@@ -11,6 +11,7 @@ import { mobileAllaPortata, sullUscita, type Interno, type Mobile } from './inte
  */
 export type Interazione =
   | { tipo: 'entra'; luogo: Luogo }
+  | { tipo: 'bottega'; luogo: Luogo }
   | { tipo: 'bloccato'; luogo: Luogo }
   | { tipo: 'esci' }
   | { tipo: 'mobile'; mobile: Mobile }
@@ -24,7 +25,8 @@ export function interazioneInCitta(
   const luogo = luogoAllaPortata(posizione, luoghi)
   if (!luogo) return null
 
-  return luogo.accessibile ? { tipo: 'entra', luogo } : { tipo: 'bloccato', luogo }
+  if (!luogo.accessibile) return { tipo: 'bloccato', luogo }
+  return luogo.bottega ? { tipo: 'bottega', luogo } : { tipo: 'entra', luogo }
 }
 
 /**

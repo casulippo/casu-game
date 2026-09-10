@@ -98,6 +98,9 @@ const ALTEZZA_CORDOLO = 7
 const COLORE_INSEGNA: Record<string, number> = {
   supermercato: 0x2f9c62,
   casa: 0xd8a24a,
+  bazar: 0xc9563f,
+  armeria: 0x6f7f8c,
+  'mercato-nero': 0x7d4b9c,
 }
 
 /** Un NPC con tutto ciò che gli serve per girovagare ed essere disegnato. */
