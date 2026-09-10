@@ -1,10 +1,5 @@
 import { useRef, useState } from 'react'
-import {
-  FERMO,
-  RAGGIO_LEVETTA,
-  posizioneLevetta,
-  spinta,
-} from '../engine/joystick'
+import { FERMO, RAGGIO_LEVETTA, spinta } from '../engine/joystick'
 import { impostaSpinta } from '../game/input'
 
 const DIAMETRO_BASE = RAGGIO_LEVETTA * 2
@@ -37,8 +32,11 @@ export function TouchControls() {
     const rect = area.current!.getBoundingClientRect()
     const dito = { x: e.clientX - rect.left, y: e.clientY - rect.top }
 
-    setLevetta(posizioneLevetta(centro, dito))
-    impostaSpinta(spinta(centro, dito))
+    // La levetta disegnata segue lo stesso asse della spinta: mostrarla libera
+    // sulla diagonale mentre il personaggio si muove dritto sembrerebbe rotto.
+    const s = spinta(centro, dito)
+    setLevetta({ x: s.x * s.intensita * RAGGIO_LEVETTA, y: s.y * s.intensita * RAGGIO_LEVETTA })
+    impostaSpinta(s)
   }
 
   function fine(e: React.PointerEvent<HTMLDivElement>) {

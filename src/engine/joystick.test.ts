@@ -43,9 +43,28 @@ describe('spinta', () => {
   })
 
   it('punta nella direzione del dito', () => {
+    const aDestra = spinta(centro, { x: centro.x + 50, y: centro.y - 10 })
+    expect(aDestra.x).toBeGreaterThan(0)
+    expect(aDestra.y).toBe(0)
+  })
+
+  it('aggancia ai quattro assi: niente diagonali dal touch', () => {
     const suADestra = spinta(centro, { x: centro.x + 50, y: centro.y - 50 })
-    expect(suADestra.x).toBeGreaterThan(0)
-    expect(suADestra.y).toBeLessThan(0)
+    // Con dx e dy uguali comanda l'asse verticale: |dx| > |dy| è falso a parità.
+    expect(suADestra.x === 0 || suADestra.y === 0).toBe(true)
+    expect(suADestra.x === 0).not.toBe(suADestra.y === 0)
+  })
+
+  it('non restituisce mai una diagonale, qualunque sia l angolo del dito', () => {
+    for (let angolo = 0; angolo < 360; angolo += 15) {
+      const rad = (angolo * Math.PI) / 180
+      const dito = {
+        x: centro.x + Math.cos(rad) * RAGGIO_LEVETTA,
+        y: centro.y + Math.sin(rad) * RAGGIO_LEVETTA,
+      }
+      const s = spinta(centro, dito)
+      expect(s.x === 0 || s.y === 0).toBe(true)
+    }
   })
 })
 

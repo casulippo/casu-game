@@ -36,6 +36,10 @@ export const FERMO: SpintaJoystick = { x: 0, y: 0, intensita: 0 }
  *
  * Oltre il raggio la levetta non esce: continuare a trascinare cambia la
  * direzione ma non la velocità.
+ *
+ * La direzione è agganciata ai quattro assi cardinali: comanda quello più
+ * marcato tra dx e dy, l'altro viene azzerato. Niente diagonali dal touch,
+ * come da tastiera si otterrebbero solo premendo due tasti insieme.
  */
 export function spinta(
   centro: Punto,
@@ -51,11 +55,9 @@ export function spinta(
 
   const intensita = Math.min(distanza / raggio, 1)
 
-  return {
-    x: dx / distanza,
-    y: dy / distanza,
-    intensita,
-  }
+  return Math.abs(dx) > Math.abs(dy)
+    ? { x: Math.sign(dx), y: 0, intensita }
+    : { x: 0, y: Math.sign(dy), intensita }
 }
 
 /**
