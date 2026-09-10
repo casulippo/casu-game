@@ -1,6 +1,4 @@
 import Phaser from 'phaser'
-import { TILE_H, TILE_W } from '../engine/iso'
-import { DIREZIONE_OMBRA } from './scenes/comuni'
 
 /**
  * Genera texture per gli elementi statici della scena.
@@ -19,9 +17,6 @@ import { DIREZIONE_OMBRA } from './scenes/comuni'
  * guarda, la stessa tecnica del cordolo dei marciapiedi in `terreno.ts` — così
  * la mappa resta un solo linguaggio visivo invece di due mescolati.
  */
-
-/** Margine sopra il pezzo, per ombre e sporgenze. */
-const MARGINE = 4
 
 function tela(larghezza: number, altezza: number) {
   const c = document.createElement('canvas')
@@ -131,52 +126,36 @@ export function ancoraVolume(
   return { x: 0.5, y: altezzaTetto / (altezzaTetto + h) }
 }
 
-/** Un albero, con chioma e ombra. */
-export function texturaAlbero(scena: Phaser.Scene): string {
-  const chiave = 'sp-albero'
-  if (scena.textures.exists(chiave)) return chiave
+/**
+ * Gli alberi: render fotorealistici dall'alto, non più disegnati da codice.
+ *
+ * Ogni albero porta già la propria ombra incisa nel PNG — estratta in
+ * `strumenti/albero.py` mantenendo la stessa direzione di `DIREZIONE_OMBRA`,
+ * così che alberi e personaggi condividano lo stesso sole pur venendo da
+ * pipeline diverse. L'ancora non è il centro dell'immagine: è il centro della
+ * sola chioma, calcolato da quello script, perché il riquadro include anche
+ * l'ombra che si allunga verso basso-destra.
+ */
+export const ALBERI = ['verde', 'autunno', 'conifera'] as const
+export type TipoAlbero = (typeof ALBERI)[number]
 
-  const alta = 60 + TILE_H + MARGINE * 2
-  const { canvas, ctx } = tela(TILE_W, alta)
-  if (!ctx) return chiave
-
-  const cx = TILE_W / 2
-  const base = alta - MARGINE - TILE_H / 2
-
-  // L'ombra cade dallo stesso sole di personaggi e edifici: da alto-sinistra,
-  // allungata verso basso-destra. Un'ombra centrata sotto la chioma
-  // tradirebbe subito che ogni oggetto ha la sua luce per conto suo.
-  ctx.fillStyle = 'rgba(0,0,0,0.26)'
-  ctx.save()
-  ctx.translate(cx + DIREZIONE_OMBRA.x * 14, base + 2 + DIREZIONE_OMBRA.y * 14)
-  ctx.rotate(Math.atan2(DIREZIONE_OMBRA.y, DIREZIONE_OMBRA.x))
-  ctx.beginPath()
-  ctx.ellipse(0, 0, TILE_W * 0.24, TILE_H * 0.13, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.restore()
-
-  ctx.fillStyle = css(0x53422f)
-  ctx.fillRect(cx - 3, base - 28, 6, 28)
-
-  for (const [dx, dy, r, colore] of [
-    [0, -36, 16, 0x2f6039],
-    [-6, -42, 11, 0x3d7a48],
-    [5, -45, 7, 0x4d9257],
-  ] as const) {
-    ctx.fillStyle = css(colore)
-    ctx.beginPath()
-    ctx.arc(cx + dx, base + dy, r, 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  scena.textures.addCanvas(chiave, canvas)
-  return chiave
+/** Calcolata da `strumenti/albero.py`: centro della chioma, non del riquadro. */
+const ANCORA_ALBERO: Record<TipoAlbero, { x: number; y: number }> = {
+  verde: { x: 0.406, y: 0.417 },
+  autunno: { x: 0.409, y: 0.418 },
+  conifera: { x: 0.386, y: 0.429 },
 }
 
-/** L'ancoraggio per `texturaAlbero`: il centro della cella alla base. */
-export function ancoraAlbero(): { x: number; y: number } {
-  const alta = 60 + TILE_H + MARGINE * 2
-  return { x: 0.5, y: (alta - MARGINE - TILE_H / 2) / alta }
+export function caricaAlberi(scena: Phaser.Scene) {
+  for (const tipo of ALBERI) scena.load.image(chiaveAlbero(tipo), `alberi/${tipo}.png`)
+}
+
+export function chiaveAlbero(tipo: TipoAlbero): string {
+  return `albero-${tipo}`
+}
+
+export function ancoraAlbero(tipo: TipoAlbero): { x: number; y: number } {
+  return ANCORA_ALBERO[tipo]
 }
 
 /** Un lampione visto dall'alto: solo il cerchio della lampada e la sua ombra. */

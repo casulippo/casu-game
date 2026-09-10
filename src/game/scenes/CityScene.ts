@@ -35,10 +35,10 @@ import {
   puntiDaVertici,
 } from './comuni'
 import {
+  caricaTerreno,
   costruisciSuolo,
   materialeMarciapiede,
   materialeStrada,
-  preparaTile,
 } from '../terreno'
 import { disegnaLuogo } from '../edifici'
 import {
@@ -55,9 +55,11 @@ import {
   type Personaggio,
 } from '../personaggio'
 import {
+  ALBERI,
   ancoraAlbero,
   ancoraVolume,
-  texturaAlbero,
+  caricaAlberi,
+  chiaveAlbero,
   texturaAlone,
   texturaLampione,
   texturaVolume,
@@ -128,10 +130,11 @@ export class CityScene extends Phaser.Scene {
   preload() {
     caricaArredo(this)
     caricaPersonaggi(this)
+    caricaAlberi(this)
+    caricaTerreno(this)
   }
 
   create() {
-    preparaTile(this)
     preparaArredo(this)
 
     this.mappa = generaCitta()
@@ -363,16 +366,21 @@ export class CityScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Gli alberi: quale varietà tocca a ogni cella è deciso una volta sola,
+   * dalle coordinate — così la mappa non cambia aspetto a ogni ricarica pur
+   * senza salvare nulla.
+   */
   private disegnaAlberi() {
-    const chiave = texturaAlbero(this)
-    const ancora = ancoraAlbero()
-
     for (let y = 0; y < this.mappa.length; y++) {
       for (let x = 0; x < this.mappa[y].length; x++) {
         if (this.mappa[y][x] !== 'albero') continue
 
+        const tipo = ALBERI[Math.floor(varianteAlbero(x, y) * ALBERI.length)]
+        const ancora = ancoraAlbero(tipo)
+
         const { sx, sy } = grigliaASchermo({ x, y })
-        const albero = this.add.image(sx, sy, chiave)
+        const albero = this.add.image(sx, sy, chiaveAlbero(tipo))
         albero.setOrigin(ancora.x, ancora.y)
         albero.setDepth(profondita({ x, y }))
       }
@@ -592,5 +600,11 @@ export class CityScene extends Phaser.Scene {
 
 function coloreCss(colore: number): string {
   return `#${colore.toString(16).padStart(6, '0')}`
+}
+
+/** Rumore deterministico tra 0 e 1, per scegliere la varietà di un albero. */
+function varianteAlbero(x: number, y: number): number {
+  const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453
+  return n - Math.floor(n)
 }
 

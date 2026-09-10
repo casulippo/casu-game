@@ -4,16 +4,19 @@ import type { Attraversamento, Mezzeria } from '../engine/city'
 import type { Pavimentazione } from '../engine/quartieri'
 
 /**
- * Le superfici del suolo.
+ * Le superfici del suolo: fotografie vere, non più texture disegnate da codice.
  *
- * Il colore lo decide la palette del quartiere, il materiale ci mette solo la
- * grana: i motivi qui sotto sono velature neutre — ombre e luci trasparenti —
- * stampate sopra la tinta piena. È l'unico modo perché il contrasto tra strada,
- * marciapiede e verde resti quello dichiarato in `quartieri.ts`.
+ * Ogni materiale è un'unica immagine seamless (1024x1024, si ripete senza
+ * cuciture) in `public/terreno/`. Il gioco non la ridimensiona in tante
+ * varianti: la campiona a finestre di una cella, alla posizione che quella
+ * cella occupa nel mondo — così il disegno continua identico attraverso i
+ * confini dei blocchi in cui il suolo viene dipinto, senza bisogno di
+ * generare nulla in anticipo.
  *
- * Prima erano fotografie: portavano il proprio colore e la propria luce, e ogni
- * superficie finiva per somigliare alle altre in un impasto in cui la strada
- * non si distingueva dal marciapiede.
+ * Le fotografie non portano ombre proprie: quelle sono affare di chi ci sta
+ * sopra (alberi, personaggi, edifici), tutti allineati sullo stesso sole in
+ * `comuni.ts`. Un tile con l'ombra già dentro la proietterebbe due volte, o
+ * nella direzione sbagliata a seconda di dove cade sulla mappa.
  */
 
 const MATERIALI = {
@@ -26,174 +29,86 @@ const MATERIALI = {
 
 export type Materiale = keyof typeof MATERIALI
 
-/**
- * Quante varianti generare per materiale: senza, la ripetizione dello stesso
- * riquadro si nota subito come un motivo regolare.
- */
-const VARIANTI = 6
+/** Lato della fotografia sorgente, in pixel: tutte e cinque sono quadrate uguali. */
+const LATO_SORGENTE = 1024
 
-export function preparaTile(scena: Phaser.Scene) {
+function chiaveSorgente(materiale: Materiale): string {
+  return `terreno-src-${materiale}`
+}
+
+export function caricaTerreno(scena: Phaser.Scene) {
   for (const nome of Object.keys(MATERIALI) as Materiale[]) {
-    for (let v = 0; v < VARIANTI; v++) {
-      const chiave = nomeTile(nome, v)
-      if (scena.textures.exists(chiave)) continue
-
-      const tela = document.createElement('canvas')
-      tela.width = TILE_W
-      tela.height = TILE_H
-
-      const ctx = tela.getContext('2d')
-      if (!ctx) continue
-
-      ctx.imageSmoothingEnabled = false
-      motivo(ctx, nome, seminatore(nome.length * 31 + v * 7919))
-
-      scena.textures.addCanvas(chiave, tela)
-    }
+    scena.load.image(chiaveSorgente(nome), `terreno/${nome}.jpg`)
   }
 }
 
-/** Un generatore deterministico: la città non cambia grana a ogni avvio. */
-function seminatore(seme: number): () => number {
-  let stato = seme || 1
-  return () => {
-    stato = (stato * 1664525 + 1013904223) % 4294967296
-    return stato / 4294967296
-  }
-}
-
-function ombra(forza: number): string {
-  return `rgba(0,0,0,${forza})`
-}
-
-function luce(forza: number): string {
-  return `rgba(255,255,255,${forza})`
-}
-
-/** La grana di un materiale, come velatura trasparente. */
-function motivo(ctx: CanvasRenderingContext2D, materiale: Materiale, rnd: () => number) {
-  switch (materiale) {
-    case 'asfalto':
-      return grana(ctx, rnd, 90, 0.09, 30, 0.05)
-
-    case 'sterrato':
-      return sterrato(ctx, rnd)
-
-    case 'lastricato':
-      return lastre(ctx, rnd, 24, 16)
-
-    case 'ciottolato':
-      return ciottoli(ctx, rnd)
-
-    case 'erba':
-      return ciuffi(ctx, rnd)
-  }
-}
-
-/** Puntinatura fine: la base di ogni superficie battuta. */
-function grana(
+/**
+ * Disegna una cella di terreno campionando la fotografia alla sua posizione
+ * nel mondo, non a una posizione relativa al pezzo di canvas che la ospita.
+ *
+ * È questo a far continuare il disegno da un blocco all'altro: due celle
+ * adiacenti che cadono in blocchi diversi campionano comunque punti adiacenti
+ * della stessa foto.
+ *
+ * Quando la finestra scavalca il bordo della foto (che si ripete), va
+ * spezzata in più rettangoli — fino a quattro, se cade proprio sull'angolo.
+ * È l'equivalente su canvas 2D del `GL_REPEAT` di una scheda grafica.
+ */
+function disegnaTerrenoRipetuto(
   ctx: CanvasRenderingContext2D,
-  rnd: () => number,
-  scuri: number,
-  forzaScuri: number,
-  chiari: number,
-  forzaChiari: number,
+  sorgente: CanvasImageSource,
+  mondoX: number,
+  mondoY: number,
+  destX: number,
+  destY: number,
 ) {
-  ctx.fillStyle = ombra(forzaScuri)
-  for (let i = 0; i < scuri; i++) {
-    ctx.fillRect(Math.floor(rnd() * TILE_W), Math.floor(rnd() * TILE_H), 1, 1)
-  }
+  const sx = ((mondoX % LATO_SORGENTE) + LATO_SORGENTE) % LATO_SORGENTE
+  const sy = ((mondoY % LATO_SORGENTE) + LATO_SORGENTE) % LATO_SORGENTE
 
-  ctx.fillStyle = luce(forzaChiari)
-  for (let i = 0; i < chiari; i++) {
-    ctx.fillRect(Math.floor(rnd() * TILE_W), Math.floor(rnd() * TILE_H), 1, 1)
-  }
-}
+  const largoA = Math.min(TILE_W, LATO_SORGENTE - sx)
+  const altoA = Math.min(TILE_H, LATO_SORGENTE - sy)
 
-/** Terra battuta: chiazze larghe e qualche sasso. */
-function sterrato(ctx: CanvasRenderingContext2D, rnd: () => number) {
-  for (let i = 0; i < 7; i++) {
-    ctx.fillStyle = rnd() > 0.5 ? ombra(0.07) : luce(0.05)
-    ctx.beginPath()
-    ctx.ellipse(
-      rnd() * TILE_W,
-      rnd() * TILE_H,
-      3 + rnd() * 7,
-      2 + rnd() * 5,
-      rnd() * Math.PI,
+  ctx.drawImage(sorgente, sx, sy, largoA, altoA, destX, destY, largoA, altoA)
+
+  if (largoA < TILE_W) {
+    ctx.drawImage(
+      sorgente,
       0,
-      Math.PI * 2,
+      sy,
+      TILE_W - largoA,
+      altoA,
+      destX + largoA,
+      destY,
+      TILE_W - largoA,
+      altoA,
     )
-    ctx.fill()
   }
-
-  grana(ctx, rnd, 60, 0.08, 25, 0.06)
-}
-
-/** Lastre squadrate, con la fuga scura tra l'una e l'altra. */
-function lastre(
-  ctx: CanvasRenderingContext2D,
-  rnd: () => number,
-  larga: number,
-  alta: number,
-) {
-  for (let y = 0; y < TILE_H; y += alta) {
-    for (let x = 0; x < TILE_W; x += larga) {
-      ctx.fillStyle = rnd() > 0.5 ? luce(0.04) : ombra(0.04)
-      ctx.fillRect(x, y, larga - 1, alta - 1)
-    }
+  if (altoA < TILE_H) {
+    ctx.drawImage(
+      sorgente,
+      sx,
+      0,
+      largoA,
+      TILE_H - altoA,
+      destX,
+      destY + altoA,
+      largoA,
+      TILE_H - altoA,
+    )
   }
-
-  ctx.fillStyle = ombra(0.18)
-  for (let y = 0; y < TILE_H; y += alta) ctx.fillRect(0, y, TILE_W, 1)
-  for (let x = 0; x < TILE_W; x += larga) ctx.fillRect(x, 0, 1, TILE_H)
-
-  grana(ctx, rnd, 25, 0.05, 10, 0.04)
-}
-
-/** Sanpietrini: file sfalsate di sassi tondeggianti. */
-function ciottoli(ctx: CanvasRenderingContext2D, rnd: () => number) {
-  const passo = 8
-
-  for (let y = 0; y < TILE_H; y += passo) {
-    const sfalso = (y / passo) % 2 === 0 ? 0 : passo / 2
-    for (let x = -passo; x < TILE_W + passo; x += passo) {
-      ctx.fillStyle = rnd() > 0.5 ? luce(0.06) : ombra(0.06)
-      ctx.beginPath()
-      ctx.ellipse(
-        x + sfalso + passo / 2,
-        y + passo / 2,
-        passo / 2 - 0.8,
-        passo / 2 - 1.2,
-        0,
-        0,
-        Math.PI * 2,
-      )
-      ctx.fill()
-    }
+  if (largoA < TILE_W && altoA < TILE_H) {
+    ctx.drawImage(
+      sorgente,
+      0,
+      0,
+      TILE_W - largoA,
+      TILE_H - altoA,
+      destX + largoA,
+      destY + altoA,
+      TILE_W - largoA,
+      TILE_H - altoA,
+    )
   }
-
-  grana(ctx, rnd, 40, 0.07, 15, 0.05)
-}
-
-/** Prato: ciuffi corti, chiari e scuri, senza colore proprio. */
-function ciuffi(ctx: CanvasRenderingContext2D, rnd: () => number) {
-  for (let i = 0; i < 130; i++) {
-    ctx.fillStyle = rnd() > 0.45 ? ombra(0.09) : luce(0.07)
-    ctx.fillRect(Math.floor(rnd() * TILE_W), Math.floor(rnd() * TILE_H), 1, 2 + Math.floor(rnd() * 2))
-  }
-
-  // Qualche chiazza più fitta, perché il prato non sia uniforme.
-  for (let i = 0; i < 4; i++) {
-    ctx.fillStyle = ombra(0.05)
-    ctx.beginPath()
-    ctx.ellipse(rnd() * TILE_W, rnd() * TILE_H, 4 + rnd() * 6, 3 + rnd() * 5, 0, 0, Math.PI * 2)
-    ctx.fill()
-  }
-}
-
-export function nomeTile(materiale: Materiale, variante: number): string {
-  return `tile-${materiale}-${variante}`
 }
 
 export interface SuoloDipinto {
@@ -207,7 +122,7 @@ export interface DescrizioneCella {
   materiale: Materiale | null
   rialzo: number
   coloreCordolo: number | null
-  /** Il colore della superficie: è lui a dare il tono, la grana vela soltanto. */
+  /** Usato solo dove non c'è una fotografia (l'acqua). */
   colore: number
   mezzeria?: Mezzeria
   strisce?: Attraversamento | null
@@ -281,7 +196,7 @@ function dipingiBlocco(
       const sinistra = (x - x0) * TILE_W
       const alto = (y - y0) * TILE_H + SPORGENZA
 
-      // Superfici senza grana, come il mare: un quadrato di colore pieno.
+      // Superfici senza fotografia, come il mare: un quadrato di colore pieno.
       if (!info.materiale) {
         ctx.fillStyle = css(info.colore)
         ctx.fillRect(sinistra, alto, TILE_W, TILE_H)
@@ -294,14 +209,11 @@ function dipingiBlocco(
 
       const cima = alto - info.rialzo
 
-      ctx.fillStyle = css(info.colore)
-      ctx.fillRect(sinistra, cima, TILE_W, TILE_H)
-
       const sorgente = scena.textures
-        .get(nomeTile(info.materiale, varianteDi(x, y)))
+        .get(chiaveSorgente(info.materiale))
         .getSourceImage() as CanvasImageSource
 
-      ctx.drawImage(sorgente, sinistra, cima)
+      disegnaTerrenoRipetuto(ctx, sorgente, x * TILE_W, y * TILE_H, sinistra, cima)
 
       if (info.strisce) disegnaStrisce(ctx, sinistra, cima, info.strisce)
       else if (info.mezzeria) disegnaMezzeria(ctx, sinistra, cima, info.mezzeria)
@@ -422,12 +334,6 @@ function scala(colore: number, fattore: number): number {
 
 function css(colore: number): string {
   return `#${colore.toString(16).padStart(6, '0')}`
-}
-
-/** La variante da usare per una cella: stabile, così la mappa non sfarfalla. */
-function varianteDi(x: number, y: number): number {
-  const rumore = Math.sin(x * 27.13 + y * 61.79) * 8123.77
-  return Math.floor((rumore - Math.floor(rumore)) * VARIANTI)
 }
 
 /** Il materiale della carreggiata, secondo la pavimentazione del quartiere. */
