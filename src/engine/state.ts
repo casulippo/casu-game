@@ -1,6 +1,7 @@
 import type { TipoArma } from './armi'
 import type { Scontro } from './combattimento'
 import type { TipoStrumento } from './strumenti'
+import type { TipoCibo } from './cibo'
 
 /**
  * Il modello dati del gioco.
@@ -153,6 +154,8 @@ export interface GameState {
   mercato: Mercato
   polizia: Polizia
   armeria: Armeria
+  /** Cosa c'è in frigo, per tipo di cibo. */
+  frigo: Partial<Record<TipoCibo, number>>
   quartiereCorrente: Quartiere
   /** Lo scontro in corso, se ce n'è uno. */
   scontro: Scontro | null
@@ -176,7 +179,7 @@ export function statoIniziale(nome = 'Casu'): GameState {
       soldiNascosti: 0,
       incassoTotale: 0,
       livello: 1,
-      statistiche: { mira: 30, vita: 100, socialita: 40, bellezza: 40 },
+      statistiche: { mira: 30, vita: 80, socialita: 40, bellezza: 40 },
       roba: {},
       arma: 'coltello',
       armi: ['coltello'],
@@ -188,6 +191,7 @@ export function statoIniziale(nome = 'Casu'): GameState {
     mercato: { quotaClienti: 1, grammiPresiOggi: 0 },
     polizia: { calore: 0 },
     armeria: { favori: 0 },
+    frigo: { panino: 2 },
     quartiereCorrente: 'palazzoni',
     scontro: null,
     nascondigli: {},

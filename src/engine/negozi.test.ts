@@ -10,7 +10,8 @@ import {
   unFavoreAllArmiere,
 } from './negozi'
 import { armaPerId } from './armi'
-import { statisticheEffettive, strumentoPerId } from './strumenti'
+import { strumentoPerId } from './strumenti'
+import { statisticheEffettive } from './statistiche'
 import { statoIniziale, type GameState } from './state'
 
 function stato(modifiche: Partial<GameState> = {}): GameState {
@@ -117,7 +118,7 @@ describe('il mercato nero', () => {
     s = compraStrumento(s, 'giubbotto').stato
     s = compraStrumento(s, 'anfibi').stato
 
-    expect(statisticheEffettive(s).vita).toBe(100 + 40 + 10)
+    expect(statisticheEffettive(s).vita).toBe(80 + 40 + 10)
   })
 
   it('senza contante si guarda e basta', () => {
@@ -130,6 +131,6 @@ describe('il mercato nero', () => {
 
   it('le statistiche base non vengono toccate: il bonus si somma a parte', () => {
     const protetto = compraStrumento(conSoldi(5_000), 'giubbotto').stato
-    expect(protetto.giocatore.statistiche.vita).toBe(100)
+    expect(protetto.giocatore.statistiche.vita).toBe(80)
   })
 })

@@ -1,4 +1,4 @@
-import type { GameState, Statistiche } from './state'
+import type { Statistiche } from './state'
 
 /**
  * Gli strumenti.
@@ -63,24 +63,4 @@ export function strumentoPerId(id: TipoStrumento): DatiStrumento {
   const trovato = STRUMENTI.find((s) => s.id === id)
   if (!trovato) throw new Error(`Strumento sconosciuto: ${id}`)
   return trovato
-}
-
-/**
- * Le statistiche che contano davvero: base più quello che si ha addosso.
- *
- * È questa che leggono il combattimento e la vendita, non la base nuda.
- */
-export function statisticheEffettive(stato: GameState): Statistiche {
-  return stato.giocatore.strumenti.reduce<Statistiche>(
-    (somma, id) => {
-      const { bonus } = strumentoPerId(id)
-      return {
-        mira: somma.mira + (bonus.mira ?? 0),
-        vita: somma.vita + (bonus.vita ?? 0),
-        socialita: somma.socialita + (bonus.socialita ?? 0),
-        bellezza: somma.bellezza + (bonus.bellezza ?? 0),
-      }
-    },
-    { ...stato.giocatore.statistiche },
-  )
 }

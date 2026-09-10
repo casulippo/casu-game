@@ -2,7 +2,7 @@ import type { Droga, GameState, Quartiere } from './state'
 import { conRoba, drogaPerId, grammiDi } from './droga'
 import { livelloPer } from './livello'
 import { quartierePerId } from './quartieri'
-import { statisticheEffettive } from './strumenti'
+import { statisticheEffettive } from './statistiche'
 
 /**
  * Vendere in giro.

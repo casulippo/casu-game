@@ -1,5 +1,13 @@
 import type { Fame, GameState, Giocatore, Sonno } from './state'
 import { FAME_PER_ORA } from './state'
+import {
+  CIBI,
+  ciboPerId,
+  conBonusDelPasto,
+  prendiDalFrigo,
+  quantoNeResta,
+  type TipoCibo,
+} from './cibo'
 import { raffredda } from './polizia'
 import { avanza } from './time'
 
@@ -17,9 +25,6 @@ export const FABBISOGNO_SONNO = 7
 
 /** Quanto dura un pasto, in ore di gioco: il conto è quello del brief. */
 export const ORE_PASTO = 1
-
-/** Di quanto un pasto sazia. */
-const SAZIETA_PASTO = 45
 
 /**
  * Dormire.
@@ -51,11 +56,29 @@ export function dormi(stato: GameState, ore: number): GameState {
   )
 }
 
-/** Mangiare: sazia, costa un'ora, e non toglie il sonno arretrato. */
-export function mangia(stato: GameState): GameState {
+/**
+ * Mangiare: sazia, costa un'ora, e non toglie il sonno arretrato.
+ *
+ * Senza dire cosa si prende quello che capita, cioè il primo cibo che c'è in
+ * frigo. Col frigo vuoto non succede niente: è il frigo a dire che bisogna
+ * passare dal negozio.
+ */
+export function mangia(stato: GameState, cibo?: TipoCibo): GameState {
+  const scelto = cibo ?? CIBI.find((c) => quantoNeResta(stato, c.id) > 0)?.id
+  if (!scelto) return stato
+
+  const dopoIlFrigo = prendiDalFrigo(stato, scelto)
+  if (!dopoIlFrigo) return stato
+
+  const { sazieta } = ciboPerId(scelto)
+
   return {
-    ...stato,
-    fame: { livello: arrotonda(Math.max(0, stato.fame.livello - SAZIETA_PASTO)) },
+    ...dopoIlFrigo,
+    giocatore: {
+      ...dopoIlFrigo.giocatore,
+      statistiche: conBonusDelPasto(dopoIlFrigo.giocatore.statistiche, scelto),
+    },
+    fame: { livello: arrotonda(Math.max(0, stato.fame.livello - sazieta)) },
     tempo: avanza(stato.tempo, ORE_PASTO),
   }
 }

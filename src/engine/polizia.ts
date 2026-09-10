@@ -3,7 +3,7 @@ import type { GameState } from './state'
 import { avanza, iniziaScontro, type Comandi, type Evento, type EsitoScontro, type Scontro, type SpecNemico } from './combattimento'
 import { colpisciPassante } from './spaccio'
 import { perdiTutto } from './nascondigli'
-import { statisticheEffettive } from './strumenti'
+import { statisticheEffettive } from './statistiche'
 import { avanza as avanzaTempo } from './time'
 
 /**
