@@ -278,4 +278,15 @@ Ogni tappa nasce in `src/engine/` con i suoi test, prima di essere disegnata.
 | 9 | Spaccini | `spaccini.ts` |
 | 10 | Storia e SMS | `storia.ts` |
 
-Alla fine della tappa 2 il gioco ha già un ciclo giocabile: comprare, vendere, nascondere.
+### A che punto siamo
+
+Tutte e undici le tappe esistono in `src/engine/`, ognuna con i suoi test.
+
+Quello che manca è il collegamento con quello che si vede: la scena Phaser e la UI React
+sanno ancora solo camminare, entrare in casa, dormire, mangiare e nascondere il contante.
+Vendere per strada, servirsi alle botteghe, combattere, ritirare dagli spaccini e prendersi
+un raid sono regole scritte e verificate che nessun pulsante chiama ancora.
+
+È il prossimo blocco di lavoro, e va fatto strato per strato: comandi di mira e fuoco nella
+scena, disegno di nemici e proiettili, pannelli di acquisto sulle soglie delle botteghe,
+prompt di vendita per strada.
