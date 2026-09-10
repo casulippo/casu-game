@@ -45,6 +45,11 @@ function suAcqua(x: number, y: number): boolean {
   return x < darsena && y < 26
 }
 
+/** Si è dentro un parco? Serve anche fuori: i parchetti sono piazze di spaccio. */
+export function nelParco(x: number, y: number): boolean {
+  return dentroParco(Math.floor(x), Math.floor(y))
+}
+
 function dentroParco(x: number, y: number): boolean {
   return PARCHI.some(
     (p) => x >= p.x && x < p.x + p.larghezza && y >= p.y && y < p.y + p.altezza,

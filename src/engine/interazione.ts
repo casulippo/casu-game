@@ -1,5 +1,7 @@
 import type { Griglia } from './iso'
 import { LUOGHI, luogoAllaPortata, type Luogo } from './luoghi'
+import { npcAllaPortata, type Npc } from './npc'
+import type { Spaccino } from './spaccini'
 import { mobileAllaPortata, sullUscita, type Interno, type Mobile } from './interni'
 
 /**
@@ -13,6 +15,8 @@ export type Interazione =
   | { tipo: 'entra'; luogo: Luogo }
   | { tipo: 'bottega'; luogo: Luogo }
   | { tipo: 'bloccato'; luogo: Luogo }
+  | { tipo: 'parla'; npc: Npc }
+  | { tipo: 'spaccino'; spaccino: Spaccino }
   | { tipo: 'esci' }
   | { tipo: 'mobile'; mobile: Mobile }
   | null
@@ -23,10 +27,15 @@ export function interazioneInCitta(
   luoghi: Luogo[] = LUOGHI,
 ): Interazione {
   const luogo = luogoAllaPortata(posizione, luoghi)
-  if (!luogo) return null
+  if (luogo) {
+    if (!luogo.accessibile) return { tipo: 'bloccato', luogo }
+    return luogo.bottega ? { tipo: 'bottega', luogo } : { tipo: 'entra', luogo }
+  }
 
-  if (!luogo.accessibile) return { tipo: 'bloccato', luogo }
-  return luogo.bottega ? { tipo: 'bottega', luogo } : { tipo: 'entra', luogo }
+  // Le porte hanno la precedenza: chi sta davanti a una soglia vuole entrare,
+  // anche se il tipo del bazar gli sta a due passi.
+  const npc = npcAllaPortata(posizione)
+  return npc ? { tipo: 'parla', npc } : null
 }
 
 /**
@@ -57,6 +66,15 @@ export function stessaInterazione(a: Interazione, b: Interazione): boolean {
   if (a.tipo !== b.tipo) return false
 
   if (a.tipo === 'esci') return true
+  if (a.tipo === 'parla') return a.npc.id === (b as { npc: Npc }).npc.id
+  if (a.tipo === 'spaccino') {
+    const altro = b as { spaccino: Spaccino }
+    return (
+      a.spaccino.id === altro.spaccino.id &&
+      // Cambia l'etichetta quando ha qualcosa da darti: va ridisegnata.
+      a.spaccino.cassa === altro.spaccino.cassa
+    )
+  }
   if (a.tipo === 'mobile') {
     const altro = b as { mobile: Mobile }
     return (

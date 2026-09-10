@@ -62,6 +62,30 @@ export const NPC: Npc[] = [
   },
 ]
 
+/** Distanza entro cui si riesce a scambiare due parole, in celle. */
+export const RAGGIO_PAROLA = 1.4
+
+/** La persona con cui si può parlare da dove si è, se c'è. */
+export function npcAllaPortata(
+  posizione: Griglia,
+  gente: Npc[] = NPC,
+): Npc | null {
+  let piuVicino: Npc | null = null
+  let distanzaMinima = Infinity
+
+  for (const npc of gente) {
+    // +0.5 perché la posizione del giocatore è al centro della cella.
+    const distanza = Math.hypot(npc.x + 0.5 - posizione.x, npc.y + 0.5 - posizione.y)
+
+    if (distanza <= RAGGIO_PAROLA && distanza < distanzaMinima) {
+      distanzaMinima = distanza
+      piuVicino = npc
+    }
+  }
+
+  return piuVicino
+}
+
 /**
  * Chi parla con chi, e quanto ci si fida.
  *

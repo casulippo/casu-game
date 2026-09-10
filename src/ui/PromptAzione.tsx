@@ -1,7 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useGame } from '../store'
 import { contanteAddosso, FABBISOGNO_SONNO } from '../engine/azioniCasa'
+import { armaPerId } from '../engine/armi'
+import { DROGHE, drogheAlBazar, grammiDi, grammiTotali } from '../engine/droga'
 import type { Mobile } from '../engine/interni'
+import { tettoBazar } from '../engine/livello'
+import type { Luogo } from '../engine/luoghi'
+import { armiInVendita, prezzoArmeria, strumentiInVendita } from '../engine/negozi'
+import type { Npc } from '../engine/npc'
+import { haDaVersare, type Spaccino } from '../engine/spaccini'
+import { OFFERTA_BAZAR } from '../engine/storia'
 
 /**
  * Il pulsante di interazione.
@@ -31,6 +39,15 @@ export function PromptAzione() {
         />
       )
 
+    case 'bottega':
+      return <Bottega luogo={interazione.luogo} />
+
+    case 'parla':
+      return <Parla npc={interazione.npc} />
+
+    case 'spaccino':
+      return <DalloSpaccino spaccino={interazione.spaccino} />
+
     case 'bloccato':
       return (
         <Avviso
@@ -43,6 +60,186 @@ export function PromptAzione() {
     case 'mobile':
       return <AzioneMobile mobile={interazione.mobile} />
   }
+}
+
+/** Due parole con chi si incontra. Per ora è un saluto, e conta come primo passo. */
+function Parla({ npc }: { npc: Npc }) {
+  const parlaCon = useGame((s) => s.parlaCon)
+  const gia = useGame((s) => s.primiPassi.parlatoCon.includes(npc.id))
+
+  return (
+    <Pulsante
+      etichetta={`${gia ? 'Saluta' : 'Parla con'} ${npc.nome}`}
+      azione={() => parlaCon(npc.id)}
+    />
+  )
+}
+
+/**
+ * Passare dal proprio spaccino.
+ *
+ * Se ha soldi da dare li dà subito — passarci sopra è il gesto — altrimenti si
+ * apre il pannello per lasciargli altra roba.
+ */
+function DalloSpaccino({ spaccino }: { spaccino: Spaccino }) {
+  const [aperto, setAperto] = useState(false)
+  const ritiraDa = useGame((s) => s.ritiraDa)
+  const affidaMeta = useGame((s) => s.affidaMeta)
+  const roba = useGame((s) => s.giocatore.roba)
+
+  if (haDaVersare(spaccino)) {
+    return (
+      <Pulsante
+        etichetta={`Ritira ${Math.round(spaccino.cassa)} € da ${spaccino.nome}`}
+        azione={() => ritiraDa(spaccino.id)}
+      />
+    )
+  }
+
+  if (!aperto) {
+    return (
+      <Pulsante
+        etichetta={`${spaccino.nome} — ${grammiTotali(spaccino.roba)} g`}
+        azione={() => setAperto(true)}
+      />
+    )
+  }
+
+  const inTasca = DROGHE.filter((d) => grammiDi(roba, d.id) >= 2)
+
+  return (
+    <Pannello
+      titolo={
+        inTasca.length > 0 ? 'Quanto gliene lasci? Metà' : 'Non hai roba da lasciargli'
+      }
+      chiudi={() => setAperto(false)}
+    >
+      {inTasca.map((droga) => (
+        <Scelta
+          key={droga.id}
+          etichetta={`${droga.nome} — ${Math.floor(grammiDi(roba, droga.id) / 2)} g`}
+          azione={() => {
+            affidaMeta(spaccino.id, droga.id)
+            setAperto(false)
+          }}
+        />
+      ))}
+    </Pannello>
+  )
+}
+
+/**
+ * I banconi.
+ *
+ * Non si entra: si apre un pannello sulla soglia e si compra. Ogni bottega
+ * vende la sua roba e nient'altro.
+ */
+function Bottega({ luogo }: { luogo: Luogo }) {
+  const [aperto, setAperto] = useState(false)
+
+  if (!aperto) {
+    return <Pulsante etichetta={luogo.nome} azione={() => setAperto(true)} />
+  }
+
+  const chiudi = () => setAperto(false)
+
+  if (luogo.tipo === 'bazar') return <BanconeDelBazar chiudi={chiudi} />
+  if (luogo.tipo === 'armeria') return <BanconeDellArmeria chiudi={chiudi} />
+  return <BanconeDelMercatoNero chiudi={chiudi} />
+}
+
+/** Il bazar del Tridente: la roba, col tetto della giornata. */
+function BanconeDelBazar({ chiudi }: { chiudi: () => void }) {
+  const stato = useGame()
+  const compraRoba = useGame((s) => s.compraRoba)
+  const compraLOfferta = useGame((s) => s.compraLOfferta)
+
+  const listino = drogheAlBazar(stato.giocatore.incassoTotale)
+  const residuo = tettoBazar(stato.giocatore.livello) - stato.mercato.grammiPresiOggi
+  const offerta = stato.storia.passo === 'rifornimento'
+
+  return (
+    <Pannello
+      titolo={
+        offerta
+          ? `Prezzi speciali — hai ${Math.round(stato.giocatore.contante)} €`
+          : `Oggi puoi prendere ancora ${Math.max(0, residuo)} g`
+      }
+      chiudi={chiudi}
+    >
+      {offerta && (
+        <Scelta
+          etichetta={`${OFFERTA_BAZAR.grammi} g a 100 €`}
+          azione={() => {
+            compraLOfferta()
+            chiudi()
+          }}
+        />
+      )}
+
+      {listino.map((droga) =>
+        [10, 40].map((grammi) => (
+          <Scelta
+            key={`${droga.id}-${grammi}`}
+            etichetta={`${droga.nome} ${grammi} g — ${grammi * droga.prezzoAcquisto} €`}
+            azione={() => compraRoba(droga.id, grammi)}
+          />
+        )),
+      )}
+    </Pannello>
+  )
+}
+
+/** L'armeria del vecchietto: prezzi scontati a chi gli tiene tranquilla la zona. */
+function BanconeDellArmeria({ chiudi }: { chiudi: () => void }) {
+  const stato = useGame()
+  const compra = useGame((s) => s.compraArma)
+  const impugna = useGame((s) => s.impugna)
+  const visitaArmeria = useGame((s) => s.visitaArmeria)
+
+  useEffect(() => visitaArmeria(), [visitaArmeria])
+
+  const inVendita = armiInVendita(stato)
+
+  return (
+    <Pannello titolo={`Hai ${Math.round(stato.giocatore.contante)} €`} chiudi={chiudi}>
+      {inVendita.map((arma) => (
+        <Scelta
+          key={arma.id}
+          etichetta={`${arma.nome} — ${prezzoArmeria(stato, arma.id)} €`}
+          azione={() => compra(arma.id)}
+        />
+      ))}
+
+      {stato.giocatore.armi
+        .filter((id) => id !== stato.giocatore.arma)
+        .map((id) => (
+          <Scelta
+            key={id}
+            etichetta={`Impugna ${armaPerId(id).nome}`}
+            azione={() => impugna(id)}
+          />
+        ))}
+    </Pannello>
+  )
+}
+
+/** Il mercato nero della mafia: gli strumenti. */
+function BanconeDelMercatoNero({ chiudi }: { chiudi: () => void }) {
+  const stato = useGame()
+  const compra = useGame((s) => s.compraStrumento)
+
+  return (
+    <Pannello titolo={`Hai ${Math.round(stato.giocatore.contante)} €`} chiudi={chiudi}>
+      {strumentiInVendita(stato).map((strumento) => (
+        <Scelta
+          key={strumento.id}
+          etichetta={`${strumento.nome} — ${strumento.prezzo} €`}
+          azione={() => compra(strumento.id)}
+        />
+      ))}
+    </Pannello>
+  )
 }
 
 /**

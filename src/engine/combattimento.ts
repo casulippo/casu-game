@@ -73,6 +73,13 @@ export interface Scontro {
 export interface Comandi {
   /** Dove si sta andando, come vettore non normalizzato. Zero se fermi. */
   direzione: Griglia
+  /**
+   * Dove sta il giocatore adesso, se lo sa qualcun altro.
+   *
+   * Fuori dai test è la scena a muoverlo, perché è lei ad avere la mappa sotto
+   * i piedi: senza questa, lo scontro lo farebbe camminare dentro i muri.
+   */
+  posizione?: Griglia
   /** Dove si punta. Se manca, si spara verso l'ultima direzione presa. */
   mira: Griglia | null
   spara: boolean
@@ -195,6 +202,11 @@ export function avanza(scontro: Scontro, dt: number, comandi: Comandi): PassoSco
 }
 
 function muoviGiocatore(s: Scontro, dt: number, comandi: Comandi) {
+  if (comandi.posizione) {
+    s.giocatore.pos = { ...comandi.posizione }
+    return
+  }
+
   const dir = normalizza(comandi.direzione)
   s.giocatore.pos = {
     x: s.giocatore.pos.x + dir.x * VELOCITA_GIOCATORE * dt,

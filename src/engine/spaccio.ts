@@ -1,6 +1,6 @@
 import type { Droga, GameState, Quartiere } from './state'
 import { conRoba, drogaPerId, grammiDi } from './droga'
-import { livelloPer } from './livello'
+import { conLivelloAggiornato } from './primiPassi'
 import { quartierePerId } from './quartieri'
 import { statisticheEffettive } from './statistiche'
 
@@ -143,15 +143,14 @@ export function incassa(stato: GameState, importo: number): GameState {
 
   const incassoTotale = arrotonda(stato.giocatore.incassoTotale + preso)
 
-  return {
+  return conLivelloAggiornato({
     ...stato,
     giocatore: {
       ...stato.giocatore,
       contante: arrotonda(stato.giocatore.contante + preso),
       incassoTotale,
-      livello: livelloPer(incassoTotale),
     },
-  }
+  })
 }
 
 /**

@@ -5,6 +5,7 @@ import type { TipoCibo } from './cibo'
 import type { Ricordo } from './memoria'
 import type { Spaccino } from './spaccini'
 import type { Storia } from './storia'
+import type { PrimiPassi } from './primiPassi'
 
 /**
  * Il modello dati del gioco.
@@ -169,6 +170,8 @@ export interface GameState {
   spaccini: Spaccino[]
   /** A che punto è il primo atto, e i messaggi arrivati finora. */
   storia: Storia
+  /** Le quattro cose che insegnano il gioco, e che portano al livello 3. */
+  primiPassi: PrimiPassi
   /** Cosa c'è in frigo, per tipo di cibo. */
   frigo: Partial<Record<TipoCibo, number>>
   quartiereCorrente: Quartiere
@@ -209,6 +212,13 @@ export function statoIniziale(nome = 'Casu'): GameState {
     ricordi: [],
     spaccini: [],
     storia: { passo: 'parchetto', messaggi: [] },
+    primiPassi: {
+      mangiato: false,
+      dormito: false,
+      parlatoCon: [],
+      // Il quartiere in cui si apre gli occhi conta come primo visto.
+      quartieriVisti: ['palazzoni'],
+    },
     frigo: { panino: 2 },
     quartiereCorrente: 'palazzoni',
     scontro: null,

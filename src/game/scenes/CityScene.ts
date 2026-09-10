@@ -24,6 +24,8 @@ import { NPC, type Npc } from '../../engine/npc'
 import { aggiornaNpc, statoInizialeNpc, type StatoNpc } from '../../engine/npcMovimento'
 import { LUOGHI, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
+import { nelParco } from '../../engine/city'
+import { spaccinoAllaPortata } from '../../engine/spaccini'
 import { illuminazione } from '../../engine/illuminazione'
 import { oreDaTempoReale } from '../../engine/time'
 import { gameStore } from '../../store'
@@ -131,6 +133,13 @@ export class CityScene extends Phaser.Scene {
   private protagonista: Personaggio | null = null
   private ombraGiocatore!: Phaser.GameObjects.Ellipse
   private npcVivi: NpcVivo[] = []
+  /** Il disegno dello scontro: nemici e proiettili, ridipinti a ogni frame. */
+  private scontroGrafica!: Phaser.GameObjects.Graphics
+  /** Minuti di gioco accumulati: ogni minuto la polizia tira il suo dado. */
+  private minutiMaturati = 0
+  private tastoFuoco!: Phaser.Input.Keyboard.Key
+  private miraSchermo: Griglia | null = null
+  private grilletto = false
   private ultimaDirezione: Griglia = { x: 1, y: 1 }
   private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -174,6 +183,10 @@ export class CityScene extends Phaser.Scene {
     this.tasti = this.input.keyboard!.createCursorKeys()
     this.wasd = this.input.keyboard!.addKeys('W,A,S,D') as typeof this.wasd
     this.tastoAzione = this.input.keyboard!.addKey('E')
+    this.tastoFuoco = this.input.keyboard!.addKey('SPACE')
+    this.scontroGrafica = this.add.graphics()
+    this.scontroGrafica.setDepth(99_000)
+    this.preparaFuoco()
 
     this.impostaCamera()
     this.aggiornaGiocatore()
@@ -186,9 +199,13 @@ export class CityScene extends Phaser.Scene {
     this.aggiornaGiocatore()
     this.aggiornaNpcVivi(deltaSec)
     this.aggiornaInterazione()
+    this.aggiornaZona()
     this.controllaIngresso()
 
-    gameStore.getState().avanzaTempo(oreDaTempoReale(deltaMs))
+    const ore = oreDaTempoReale(deltaMs)
+    gameStore.getState().avanzaTempo(ore)
+    this.aggiornaScontro(deltaSec)
+    this.contaIMinuti(ore)
     this.aggiornaLuce()
   }
 
@@ -232,7 +249,123 @@ export class CityScene extends Phaser.Scene {
   // -------------------------------------------------------------- interazione
 
   private aggiornaInterazione() {
-    gameStore.getState().segnalaInterazione(interazioneInCitta(this.pos))
+    const stato = gameStore.getState()
+
+    // Passare da uno dei propri spaccini vale più di qualunque altra cosa ci
+    // sia lì attorno: è l'unico modo di farsi dare i soldi.
+    const spaccino = spaccinoAllaPortata(stato, this.pos)
+    stato.segnalaInterazione(
+      spaccino ? { tipo: 'spaccino', spaccino } : interazioneInCitta(this.pos),
+    )
+  }
+
+  /**
+   * Dove siamo, detto allo store.
+   *
+   * Il quartiere serve ai prezzi e al rischio, la cella agli spaccini, il parco
+   * a sapere se si sta vendendo ai ragazzini. Lo store scarta da sé i valori
+   * che non sono cambiati, così non si ridisegna la UI a ogni frame.
+   */
+  private aggiornaZona() {
+    const stato = gameStore.getState()
+    const cella = { x: Math.floor(this.pos.x), y: Math.floor(this.pos.y) }
+    const quartiere = quartiereIn(cella.x, cella.y).id
+
+    if (quartiere !== stato.quartiereCorrente) stato.vaiA(quartiere)
+    stato.segnalaCella(cella)
+    stato.segnalaParchetto(nelParco(cella.x, cella.y))
+  }
+
+  // ------------------------------------------------------------------ scontro
+
+  /**
+   * Il grilletto.
+   *
+   * Si spara puntando: col mouse dove sta il puntatore, col dito dove si tocca,
+   * con la barra spaziatrice dritto davanti a sé. Tenere premuto continua a
+   * sparare — è la cadenza dell'arma a dire quanti colpi partono davvero.
+   */
+  private preparaFuoco() {
+    const punta = (p: Phaser.Input.Pointer) => {
+      const { sx, sy } = grigliaASchermo(this.pos)
+      this.miraSchermo = direzioneDaVettoreSchermo(p.worldX - sx, p.worldY - sy)
+    }
+
+    this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      punta(p)
+      this.grilletto = true
+    })
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (p.isDown) punta(p)
+    })
+    this.input.on('pointerup', () => {
+      this.grilletto = false
+    })
+  }
+
+  /**
+   * Un passo di scontro, e il suo disegno.
+   *
+   * Il giocatore continua a muoverlo la scena, che è l'unica ad avere le
+   * collisioni: allo scontro si passa solo dove è finito.
+   */
+  private aggiornaScontro(deltaSec: number) {
+    const stato = gameStore.getState()
+
+    if (!stato.scontro) {
+      this.scontroGrafica.clear()
+      return
+    }
+
+    stato.combatti(deltaSec, {
+      direzione: this.ultimaDirezione,
+      posizione: this.pos,
+      mira: this.miraSchermo,
+      spara: this.grilletto || this.tastoFuoco.isDown,
+    })
+
+    this.disegnaScontro()
+  }
+
+  private disegnaScontro() {
+    const scontro = gameStore.getState().scontro
+    const g = this.scontroGrafica
+    g.clear()
+    if (!scontro) return
+
+    for (const nemico of scontro.nemici) {
+      const { sx, sy } = grigliaASchermo(nemico.pos)
+      const colore = nemico.tipo === 'poliziotto' ? 0x3f6fd8 : 0xb8432f
+
+      g.fillStyle(0x000000, 0.35)
+      g.fillEllipse(sx, sy + 6, TILE_W * 0.42, TILE_H * 0.2)
+      g.fillStyle(colore, 1)
+      g.fillCircle(sx, sy - 10, TILE_W * 0.2)
+
+      // La barra della vita solo a chi è già stato preso: piena non dice niente.
+      if (nemico.vita < nemico.vitaMax) {
+        const larghezza = TILE_W * 0.44
+        g.fillStyle(0x000000, 0.5)
+        g.fillRect(sx - larghezza / 2, sy - 28, larghezza, 4)
+        g.fillStyle(0x6fd86f, 1)
+        g.fillRect(sx - larghezza / 2, sy - 28, (larghezza * nemico.vita) / nemico.vitaMax, 4)
+      }
+    }
+
+    g.fillStyle(0xffe08a, 1)
+    for (const proiettile of scontro.proiettili) {
+      const { sx, sy } = grigliaASchermo(proiettile.pos)
+      g.fillCircle(sx, sy - 10, 3)
+    }
+  }
+
+  /** Ogni minuto di gioco la polizia decide se venirti a prendere. */
+  private contaIMinuti(ore: number) {
+    this.minutiMaturati += ore * 60
+    if (this.minutiMaturati < 1) return
+
+    this.minutiMaturati = 0
+    gameStore.getState().unMinuto(this.pos)
   }
 
   private controllaIngresso() {
@@ -246,8 +379,10 @@ export class CityScene extends Phaser.Scene {
 
     if (!Phaser.Input.Keyboard.JustDown(this.tastoAzione)) return
 
-    const azione = interazioneInCitta(this.pos)
+    const azione = stato.interazione
     if (azione?.tipo === 'entra') stato.entraIn(azione.luogo.id)
+    if (azione?.tipo === 'parla') stato.parlaCon(azione.npc.id)
+    if (azione?.tipo === 'spaccino') stato.ritiraDa(azione.spaccino.id)
   }
 
   // ---------------------------------------------------------------- movimento

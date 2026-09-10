@@ -9,6 +9,7 @@ import {
   type TipoCibo,
 } from './cibo'
 import { laNotteChePassa } from './gossip'
+import { haDormito, haMangiato } from './primiPassi'
 import { raffredda } from './polizia'
 import { avanzaSpaccini } from './spaccini'
 import { avanza } from './time'
@@ -56,7 +57,7 @@ export function dormi(stato: GameState, ore: number): GameState {
 
   // Mentre dormi il mondo va avanti: gli spaccini vendono, la voce gira, i
   // ricordi sbiadiscono e la polizia si dimentica un po' di te.
-  return raffredda(laNotteChePassa(avanzaSpaccini(domani, dormite)), dormite)
+  return haDormito(raffredda(laNotteChePassa(avanzaSpaccini(domani, dormite)), dormite))
 }
 
 /**
@@ -75,7 +76,7 @@ export function mangia(stato: GameState, cibo?: TipoCibo): GameState {
 
   const { sazieta } = ciboPerId(scelto)
 
-  return {
+  return haMangiato({
     ...dopoIlFrigo,
     giocatore: {
       ...dopoIlFrigo.giocatore,
@@ -83,7 +84,7 @@ export function mangia(stato: GameState, cibo?: TipoCibo): GameState {
     },
     fame: { livello: arrotonda(Math.max(0, stato.fame.livello - sazieta)) },
     tempo: avanza(stato.tempo, ORE_PASTO),
-  }
+  })
 }
 
 /**
