@@ -1,3 +1,5 @@
+import type { TipoArma } from './armi'
+
 /**
  * Il modello dati del gioco.
  *
@@ -60,6 +62,10 @@ export interface Giocatore {
   /** Quanto la polizia ti sta addosso, 0-4. È questo a far partire i raid. */
   livelloRicerca: 0 | 1 | 2 | 3 | 4
   roba: Inventario
+  /** Quella che si ha in mano. */
+  arma: TipoArma
+  /** Quelle che si possiedono: si comincia col solo coltello. */
+  armi: TipoArma[]
 }
 
 /** Il tempo di gioco. Un giorno di vita del personaggio = 60 minuti reali. */
@@ -146,6 +152,8 @@ export function statoIniziale(nome = 'Casu'): GameState {
       statistiche: { mira: 30, vita: 100, socialita: 40, bellezza: 40 },
       livelloRicerca: 0,
       roba: {},
+      arma: 'coltello',
+      armi: ['coltello'],
     },
     tempo: { giorno: 1, ora: 8, minuto: 0 },
     sonno: { debito: 0 },
