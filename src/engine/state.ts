@@ -44,8 +44,8 @@ export interface Giocatore {
   /**
    * Il contante messo via in casa.
    *
-   * Provvisorio: quando arriveranno i nascondigli in giro per la città sarà
-   * quello il posto sicuro, e la casa tornerà a essere perquisibile come il resto.
+   * Comodo, non sicuro: una perquisizione lo trova, e un arresto se lo porta
+   * via come quello in tasca. Al sicuro sta solo quello nascosto in giro.
    */
   soldiNascosti: number
   /**
@@ -109,6 +109,12 @@ export interface Mercato {
   grammiPresiOggi: number
 }
 
+/** Quello che si è lasciato in un nascondiglio. */
+export interface Deposito {
+  soldi: number
+  roba: Inventario
+}
+
 /** Lo stato completo della partita. È questo che viene salvato. */
 export interface GameState {
   giocatore: Giocatore
@@ -117,6 +123,13 @@ export interface GameState {
   fame: Fame
   mercato: Mercato
   quartiereCorrente: Quartiere
+  /**
+   * Cosa c'è in ogni nascondiglio, per id.
+   *
+   * Ci sono solo quelli che contengono qualcosa: un posto svuotato sparisce
+   * dalla mappa, e torna a contare come libero.
+   */
+  nascondigli: Record<string, Deposito>
 }
 
 /** Di quanto cresce la fame per ogni ora di gioco. */
@@ -139,5 +152,6 @@ export function statoIniziale(nome = 'Casu'): GameState {
     fame: { livello: 20 },
     mercato: { quotaClienti: 1, grammiPresiOggi: 0 },
     quartiereCorrente: 'palazzoni',
+    nascondigli: {},
   }
 }
