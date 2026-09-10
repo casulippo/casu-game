@@ -34,6 +34,15 @@ export interface StatoNpc {
   destinazione: Griglia | null
   /** Secondi che restano prima di scegliere la prossima mossa, da fermo. */
   attesa: number
+  /**
+   * La cella lasciata l'ultima volta che si è mosso.
+   *
+   * Serve a non scegliere subito quella come prossima destinazione: senza,
+   * in un vicolo stretto — avanti o indietro, nessun'altra via — la scelta
+   * casuale al 50% lo fa tornare sui propri passi quasi a ogni giro, e sembra
+   * cammini all'indietro invece di andare in giro.
+   */
+  provenienza: Griglia | null
 }
 
 export function statoInizialeNpc(npc: Npc, rng: () => number = Math.random): StatoNpc {
@@ -42,6 +51,7 @@ export function statoInizialeNpc(npc: Npc, rng: () => number = Math.random): Sta
     destinazione: null,
     // Sfalsato: altrimenti tutti gli NPC partirebbero nello stesso istante.
     attesa: attesaCasuale(rng),
+    provenienza: null,
   }
 }
 
@@ -61,7 +71,11 @@ export function aggiornaNpc(
   const prossima = prossimaCella(npc, stato, mappa, rng)
   if (!prossima) return { ...stato, attesa: attesaCasuale(rng) }
 
-  return { ...stato, destinazione: { x: prossima.x + 0.5, y: prossima.y + 0.5 } }
+  return {
+    ...stato,
+    destinazione: { x: prossima.x + 0.5, y: prossima.y + 0.5 },
+    provenienza: { x: Math.floor(stato.pos.x), y: Math.floor(stato.pos.y) },
+  }
 }
 
 function camminaVerso(stato: StatoNpc, deltaSec: number, rng: () => number): StatoNpc {
@@ -72,7 +86,7 @@ function camminaVerso(stato: StatoNpc, deltaSec: number, rng: () => number): Sta
   const passo = VELOCITA_VAGABONDAGGIO * deltaSec
 
   if (distanza <= passo) {
-    return { pos: dest, destinazione: null, attesa: attesaCasuale(rng) }
+    return { ...stato, pos: dest, destinazione: null, attesa: attesaCasuale(rng) }
   }
 
   return {
@@ -88,7 +102,13 @@ const VICINI: Griglia[] = [
   { x: 0, y: -1 },
 ]
 
-/** Una cella calpestabile e adiacente, entro il raggio di giro — o nessuna. */
+/**
+ * Una cella calpestabile e adiacente, entro il raggio di giro — o nessuna.
+ *
+ * Esclude la provenienza quando c'è un'alternativa: è quello che trasforma un
+ * tremolio avanti-indietro a ogni passo in un giro che percorre un tratto
+ * intero prima di tornare indietro, e solo perché non ha altra strada.
+ */
 function prossimaCella(
   npc: Npc,
   stato: StatoNpc,
@@ -106,7 +126,14 @@ function prossimaCella(
   )
 
   if (candidate.length === 0) return null
-  return candidate[Math.floor(rng() * candidate.length)]
+
+  const provenienza = stato.provenienza
+  const senzaRitorno = provenienza
+    ? candidate.filter((c) => c.x !== provenienza.x || c.y !== provenienza.y)
+    : candidate
+  const scelta = senzaRitorno.length > 0 ? senzaRitorno : candidate
+
+  return scelta[Math.floor(rng() * scelta.length)]
 }
 
 /** Tra un giro e l'altro, una sosta breve: non sono in marcia perenne. */

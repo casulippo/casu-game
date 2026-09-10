@@ -47,7 +47,7 @@ describe('aggiornaNpc — fase di attesa', () => {
   it('scandisce l attesa senza muoversi', () => {
     const mappa = mappaDi(10)
     const npc = npcDi(5, 5)
-    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 2 }
+    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 2, provenienza: null }
 
     const dopo = aggiornaNpc(npc, stato, mappa, 0.5, rngFisso(0))
     expect(dopo.attesa).toBeCloseTo(1.5)
@@ -58,7 +58,7 @@ describe('aggiornaNpc — fase di attesa', () => {
   it('scelta la destinazione quando l attesa scade', () => {
     const mappa = mappaDi(10)
     const npc = npcDi(5, 5)
-    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0.1 }
+    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0.1, provenienza: null }
 
     const dopo = aggiornaNpc(npc, stato, mappa, 0.5, rngFisso(0))
     expect(dopo.destinazione).not.toBeNull()
@@ -68,7 +68,7 @@ describe('aggiornaNpc — fase di attesa', () => {
     // Tre lati murati: l unica via è a destra.
     const mappa = mappaDi(10, ['4,5', '5,4', '5,6'])
     const npc = npcDi(5, 5)
-    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0 }
+    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0, provenienza: null }
 
     for (const valore of [0, 0.3, 0.6, 0.99]) {
       const dopo = aggiornaNpc(npc, stato, mappa, 0.001, rngFisso(valore))
@@ -79,7 +79,7 @@ describe('aggiornaNpc — fase di attesa', () => {
   it('resta fermo se non c e nessuna cella calpestabile vicino', () => {
     const mappa = mappaDi(10, ['4,5', '6,5', '5,4', '5,6'])
     const npc = npcDi(5, 5)
-    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0 }
+    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0, provenienza: null }
 
     const dopo = aggiornaNpc(npc, stato, mappa, 0.001, rngFisso(0))
     expect(dopo.destinazione).toBeNull()
@@ -91,7 +91,7 @@ describe('aggiornaNpc — fase di attesa', () => {
     // sono tutte — ma nessuna oltre.
     const mappa = mappaDi(10)
     const npc = npcDi(5, 5, 1)
-    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0 }
+    const stato: StatoNpc = { pos: { x: 5.5, y: 5.5 }, destinazione: null, attesa: 0, provenienza: null }
 
     for (const valore of [0, 0.25, 0.5, 0.75, 0.99]) {
       const dopo = aggiornaNpc(npc, stato, mappa, 0.001, rngFisso(valore))
@@ -109,6 +109,7 @@ describe('aggiornaNpc — fase di cammino', () => {
       pos: { x: 5.5, y: 5.5 },
       destinazione: { x: 8.5, y: 5.5 },
       attesa: 0,
+      provenienza: null,
     }
 
     const dopo = aggiornaNpc(npc, stato, mappa, 1, rngFisso(0))
@@ -124,6 +125,7 @@ describe('aggiornaNpc — fase di cammino', () => {
       pos: { x: 5.5, y: 5.5 },
       destinazione: { x: 5.6, y: 5.5 },
       attesa: 0,
+      provenienza: null,
     }
 
     // Un passo di un secondo intero è più lungo della distanza residua.
@@ -139,11 +141,88 @@ describe('aggiornaNpc — fase di cammino', () => {
       pos: { x: 5.5, y: 5.5 },
       destinazione: { x: 5.5, y: 5.5 },
       attesa: 0,
+      provenienza: null,
     }
 
     const dopo = aggiornaNpc(npc, stato, mappa, 0.1, rngFisso(0))
     expect(dopo.destinazione).toBeNull()
     expect(dopo.attesa).toBeGreaterThan(0)
+  })
+})
+
+/**
+ * Il difetto che l'ha fatto notare: su un marciapiede stretto, dove l'unica
+ * scelta reale è avanti o indietro, una scelta equiprobabile tra le due fa
+ * tornare l'NPC sui propri passi quasi a ogni giro — sembra cammini
+ * all'indietro invece di andare in giro.
+ */
+describe('non torna subito sui propri passi', () => {
+  it('non ripropone mai la provenienza se c è un altra cella libera', () => {
+    const mappa = mappaDi(10)
+    const npc = npcDi(5, 5)
+    // È appena arrivato da sinistra: la provenienza è (4,5).
+    const stato: StatoNpc = {
+      pos: { x: 5.5, y: 5.5 },
+      destinazione: null,
+      attesa: 0,
+      provenienza: { x: 4, y: 5 },
+    }
+
+    for (const valore of [0, 0.2, 0.4, 0.6, 0.8, 0.99]) {
+      const dopo = aggiornaNpc(npc, stato, mappa, 0.001, rngFisso(valore))
+      expect(dopo.destinazione).not.toEqual({ x: 4.5, y: 5.5 })
+    }
+  })
+
+  it('in un corridoio stretto prosegue dritto invece di ballare avanti e indietro', () => {
+    // Un corridoio largo una cella: solo destra e sinistra sono libere.
+    const mappa = mappaDi(10, ['5,4', '5,6', '6,4', '6,6', '4,4', '4,6'])
+    const npc = npcDi(5, 5)
+    const stato: StatoNpc = {
+      pos: { x: 5.5, y: 5.5 },
+      destinazione: null,
+      attesa: 0,
+      provenienza: { x: 4, y: 5 },
+    }
+
+    // Arrivato da sinistra, con destra libera: prosegue a destra qualunque
+    // sia l'estrazione, invece di tornare a sinistra al 50% dei casi.
+    for (const valore of [0, 0.3, 0.7, 0.99]) {
+      const dopo = aggiornaNpc(npc, stato, mappa, 0.001, rngFisso(valore))
+      expect(dopo.destinazione).toEqual({ x: 6.5, y: 5.5 })
+    }
+  })
+
+  it('torna indietro quando è l unica via, invece di restare bloccato', () => {
+    // Vicolo cieco: solo la provenienza è calpestabile.
+    const mappa = mappaDi(10, ['6,5', '5,4', '5,6'])
+    const npc = npcDi(5, 5)
+    const stato: StatoNpc = {
+      pos: { x: 5.5, y: 5.5 },
+      destinazione: null,
+      attesa: 0,
+      provenienza: { x: 4, y: 5 },
+    }
+
+    const dopo = aggiornaNpc(npc, stato, mappa, 0.001, rngFisso(0))
+    expect(dopo.destinazione).toEqual({ x: 4.5, y: 5.5 })
+  })
+
+  it('la provenienza si aggiorna: dopo la svolta evita l ultima cella, non la prima', () => {
+    const mappa = mappaDi(10)
+    const npc = npcDi(5, 5)
+    // Fermo in (5,5), è arrivato da (5,4): la prossima mossa non deve tornare
+    // lassù, ma da lì in poi la provenienza deve seguirlo.
+    const primo: StatoNpc = {
+      pos: { x: 5.5, y: 5.5 },
+      destinazione: null,
+      attesa: 0,
+      provenienza: { x: 5, y: 4 },
+    }
+
+    const scelta = aggiornaNpc(npc, primo, mappa, 0.001, rngFisso(0))
+    expect(scelta.provenienza).toEqual({ x: 5, y: 5 })
+    expect(scelta.destinazione).not.toEqual({ x: 5.5, y: 4.5 })
   })
 })
 
