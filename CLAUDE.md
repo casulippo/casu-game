@@ -16,8 +16,12 @@ capire senza contesto.
 
 ## Progetto
 
-Life simulator sandbox in vista isometrica. Design in `CasuGame_Brief.md`,
-architettura e comandi in `README.md`.
+**Spaccio City**: arcade di spaccio in vista dall'alto, combattimento in tempo
+reale. Design in `SpaccioCity.md`, architettura e comandi in `README.md`.
+`CasuGame_Brief.md` è archivio: dove contraddice il design nuovo, non vale.
 
 Regola non negoziabile: la logica di gioco sta in `src/engine/`, senza DOM né
 canvas, e nasce con i suoi test.
+
+La vista è piatta dall'alto su griglia ortogonale. Niente prospettiva obliqua o
+isometrica, nemmeno negli asset.

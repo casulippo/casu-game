@@ -47,6 +47,11 @@ describe('dormi', () => {
     expect(dopo.fame.livello).toBeGreaterThan(prima.fame.livello)
     expect(dopo.tempo).not.toEqual(prima.tempo)
   })
+
+  it('riapre il credito al bazar: il tetto si azzera solo dormendo', () => {
+    const aFineGiornata = stato({ mercato: { quotaClienti: 1, grammiPresiOggi: 40 } })
+    expect(dormi(aFineGiornata, FABBISOGNO_SONNO).mercato.grammiPresiOggi).toBe(0)
+  })
 })
 
 describe('mangia', () => {
@@ -72,31 +77,19 @@ describe('mangia', () => {
 })
 
 describe('nascondiSoldi', () => {
-  it('mette via prima lo sporco: è quello che scotta', () => {
+  it('toglie dalla tasca quello che mette via', () => {
     const ricco = stato({
-      giocatore: { ...statoIniziale().giocatore, soldiPuliti: 100, soldiSporchi: 60 },
+      giocatore: { ...statoIniziale().giocatore, contante: 160 },
     })
 
     const dopo = nascondiSoldi(ricco, 60)
-    expect(dopo.giocatore.soldiSporchi).toBe(0)
-    expect(dopo.giocatore.soldiPuliti).toBe(100)
+    expect(dopo.giocatore.contante).toBe(100)
     expect(dopo.giocatore.soldiNascosti).toBe(60)
-  })
-
-  it('attinge ai puliti solo quando lo sporco è finito', () => {
-    const ricco = stato({
-      giocatore: { ...statoIniziale().giocatore, soldiPuliti: 100, soldiSporchi: 20 },
-    })
-
-    const dopo = nascondiSoldi(ricco, 50)
-    expect(dopo.giocatore.soldiSporchi).toBe(0)
-    expect(dopo.giocatore.soldiPuliti).toBe(70)
-    expect(dopo.giocatore.soldiNascosti).toBe(50)
   })
 
   it('non inventa soldi che non ci sono', () => {
     const povero = stato({
-      giocatore: { ...statoIniziale().giocatore, soldiPuliti: 10, soldiSporchi: 0 },
+      giocatore: { ...statoIniziale().giocatore, contante: 10 },
     })
 
     const dopo = nascondiSoldi(povero, 999)
@@ -106,7 +99,7 @@ describe('nascondiSoldi', () => {
 
   it('lascia lo stato com era se non c è niente da nascondere', () => {
     const spiantato = stato({
-      giocatore: { ...statoIniziale().giocatore, soldiPuliti: 0, soldiSporchi: 0 },
+      giocatore: { ...statoIniziale().giocatore, contante: 0 },
     })
 
     expect(nascondiSoldi(spiantato, 50)).toBe(spiantato)
@@ -114,7 +107,7 @@ describe('nascondiSoldi', () => {
 
   it('conserva il totale: nascondere non è né guadagnare né perdere', () => {
     const prima = stato({
-      giocatore: { ...statoIniziale().giocatore, soldiPuliti: 100, soldiSporchi: 60 },
+      giocatore: { ...statoIniziale().giocatore, contante: 160 },
     })
     const dopo = nascondiSoldi(prima, 90)
 
@@ -123,28 +116,28 @@ describe('nascondiSoldi', () => {
 })
 
 describe('riprendiSoldi', () => {
-  it('riporta il contante in tasca, come pulito', () => {
+  it('riporta il contante in tasca', () => {
     const conGruzzolo = stato({
-      giocatore: { ...statoIniziale().giocatore, soldiPuliti: 0, soldiNascosti: 80 },
+      giocatore: { ...statoIniziale().giocatore, contante: 0, soldiNascosti: 80 },
     })
 
     const dopo = riprendiSoldi(conGruzzolo, 30)
     expect(dopo.giocatore.soldiNascosti).toBe(50)
-    expect(dopo.giocatore.soldiPuliti).toBe(30)
+    expect(dopo.giocatore.contante).toBe(30)
   })
 
   it('non tira fuori più di quanto ce n è', () => {
     const conGruzzolo = stato({
-      giocatore: { ...statoIniziale().giocatore, soldiPuliti: 0, soldiNascosti: 40 },
+      giocatore: { ...statoIniziale().giocatore, contante: 0, soldiNascosti: 40 },
     })
 
     const dopo = riprendiSoldi(conGruzzolo, 999)
     expect(dopo.giocatore.soldiNascosti).toBe(0)
-    expect(dopo.giocatore.soldiPuliti).toBe(40)
+    expect(dopo.giocatore.contante).toBe(40)
   })
 })
 
 function totale(stato: GameState): number {
   const g = stato.giocatore
-  return g.soldiPuliti + g.soldiSporchi + g.soldiNascosti
+  return g.contante + g.soldiNascosti
 }

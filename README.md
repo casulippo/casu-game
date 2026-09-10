@@ -1,9 +1,11 @@
-# Casu Game
+# Casu Game — Spaccio City
 
-Life simulator sandbox in visuale top-down. Il giocatore arriva in città a 16 anni e vive
-fino a 99, costruendo la propria esistenza attraverso scelte morali, relazioni e ambizioni.
+Arcade in visuale dall'alto: si spaccia per fare più soldi possibile, si combatte in tempo
+reale contro poliziotti e bande. La città è divisa fra il Tridente, la mafia e le bandelle
+di quartiere.
 
-Il design completo è in [`CasuGame_Brief.md`](./CasuGame_Brief.md).
+Il design completo è in [`SpaccioCity.md`](./SpaccioCity.md).
+[`CasuGame_Brief.md`](./CasuGame_Brief.md) è il materiale di partenza, tenuto per archivio.
 
 ## Comandi
 

@@ -27,6 +27,9 @@ const SAZIETA_PASTO = 45
  * meno: è cumulativo, quindi tre notti da quattro ore pesano come una notte in
  * bianco. Nel frattempo il tempo passa e la fame cresce — ci si sveglia
  * affamati, che è il punto.
+ *
+ * È anche il momento in cui il bazar riapre il credito: il tetto giornaliero
+ * si azzera solo tornando a casa a dormire, mai stando in giro.
  */
 export function dormi(stato: GameState, ore: number): GameState {
   const dormite = Math.max(0, ore)
@@ -40,6 +43,7 @@ export function dormi(stato: GameState, ore: number): GameState {
     sonno,
     fame: cresceLaFame(stato.fame, dormite),
     tempo: avanza(stato.tempo, dormite),
+    mercato: { ...stato.mercato, grammiPresiOggi: 0 },
   }
 }
 
@@ -55,28 +59,27 @@ export function mangia(stato: GameState): GameState {
 /**
  * Mettere via il contante in casa.
  *
- * Si nasconde prima lo sporco: è quello che scotta. Quel che resta da
- * nascondere lo si prende dai soldi puliti.
+ * Quello che si nasconde non si ha più addosso: è l'unica cosa che un arresto
+ * non porta via, almeno finché non arriveranno i nascondigli in giro per la
+ * città e la casa smetterà di essere sicura.
  */
 export function nascondiSoldi(stato: GameState, importo: number): GameState {
-  const richiesto = Math.max(0, Math.floor(importo))
-  const daSporchi = Math.min(richiesto, stato.giocatore.soldiSporchi)
-  const daPuliti = Math.min(richiesto - daSporchi, stato.giocatore.soldiPuliti)
-  const nascosti = daSporchi + daPuliti
-
+  const nascosti = Math.min(
+    Math.max(0, Math.floor(importo)),
+    Math.floor(stato.giocatore.contante),
+  )
   if (nascosti === 0) return stato
 
   const giocatore: Giocatore = {
     ...stato.giocatore,
-    soldiSporchi: stato.giocatore.soldiSporchi - daSporchi,
-    soldiPuliti: stato.giocatore.soldiPuliti - daPuliti,
+    contante: stato.giocatore.contante - nascosti,
     soldiNascosti: stato.giocatore.soldiNascosti + nascosti,
   }
 
   return { ...stato, giocatore }
 }
 
-/** Riprendere il contante dal nascondiglio: torna tra i soldi puliti. */
+/** Riprendere il contante dal nascondiglio: torna in tasca, e in tasca si perde. */
 export function riprendiSoldi(stato: GameState, importo: number): GameState {
   const preso = Math.min(
     Math.max(0, Math.floor(importo)),
@@ -89,14 +92,14 @@ export function riprendiSoldi(stato: GameState, importo: number): GameState {
     giocatore: {
       ...stato.giocatore,
       soldiNascosti: stato.giocatore.soldiNascosti - preso,
-      soldiPuliti: stato.giocatore.soldiPuliti + preso,
+      contante: stato.giocatore.contante + preso,
     },
   }
 }
 
 /** Quanto contante si ha addosso, ed è quindi nascondibile. */
 export function contanteAddosso(stato: GameState): number {
-  return stato.giocatore.soldiPuliti + stato.giocatore.soldiSporchi
+  return stato.giocatore.contante
 }
 
 export function cresceLaFame(fame: Fame, ore: number): Fame {

@@ -9,9 +9,15 @@ import type { Quartiere } from './state'
  *
  * Ogni zona ha materiali, palette e misura d'isolato propri — è quello che la
  * rende riconoscibile a colpo d'occhio, prima ancora degli edifici.
+ *
+ * Oltre all'aspetto, ogni zona dichiara quanto è ricca la clientela e quanta
+ * polizia gira: è da questa coppia che nascono i prezzi di strada e il rischio.
  */
 
 export type Pavimentazione = 'asfalto' | 'sterrato' | 'ciottolato' | 'lastricato'
+
+/** Chi comanda in zona. Dove non comanda nessuno la piazza è libera. */
+export type Controllo = 'tridente' | 'mafia' | 'bandelle' | 'nessuno'
 
 export interface DatiQuartiere {
   id: Quartiere
@@ -37,14 +43,19 @@ export interface DatiQuartiere {
   isolato: [number, number]
   /** Le insegne al neon accendono la zona di notte. */
   neon: boolean
+  /** Quanto è ricca la clientela, da 0 a 1: alza prezzo e taglio della vendita. */
+  ricchezza: number
+  /** Quanta polizia gira, da 0 a 1: è il rischio di ogni vendita. */
+  sorveglianza: number
+  controllo: Controllo
 }
 
 export const LATO_CITTA = 96
 
 export const QUARTIERI: DatiQuartiere[] = [
   {
-    id: 'porto',
-    nome: 'Porto industriale',
+    id: 'bandelle',
+    nome: 'Bandelle nord-ovest',
     origine: { x: 0, y: 0 },
     larghezza: 32,
     altezza: 48,
@@ -56,6 +67,10 @@ export const QUARTIERI: DatiQuartiere[] = [
     // Piazzali e capannoni: pochi tagli, isolati enormi.
     isolato: [22, 30],
     neon: false,
+    // Qui non ha niente nessuno: si vende poco e la polizia non ci passa.
+    ricchezza: 0.15,
+    sorveglianza: 0.15,
+    controllo: 'bandelle',
   },
   {
     id: 'centro',
@@ -71,35 +86,46 @@ export const QUARTIERI: DatiQuartiere[] = [
     // Tessuto fitto e minuto, come nelle città cresciute a piedi.
     isolato: [10, 15],
     neon: false,
+    ricchezza: 0.7,
+    sorveglianza: 0.85,
+    controllo: 'nessuno',
   },
   {
-    id: 'ricca',
-    nome: 'Zona ricca',
+    id: 'palazzoni',
+    nome: 'I palazzoni',
     origine: { x: 64, y: 0 },
     larghezza: 32,
     altezza: 48,
-    pavimentazione: 'lastricato',
-    suolo: 0x5f6b6e,
-    strada: 0x3b4248,
-    marciapiede: 0x8a949a,
-    densita: 0.6,
-    isolato: [17, 24],
+    pavimentazione: 'asfalto',
+    suolo: 0x6a6f66,
+    strada: 0x3a3e42,
+    marciapiede: 0x878c85,
+    densita: 0.75,
+    // Case a schiera e stecche lunghe: isolati regolari, tutti uguali.
+    isolato: [12, 18],
     neon: false,
+    // Casa propria: nessuno compra da chi conosce, ma nessuno ti guarda male.
+    ricchezza: 0.25,
+    sorveglianza: 0.25,
+    controllo: 'tridente',
   },
   {
-    id: 'periferia',
-    nome: 'Periferia povera',
+    id: 'residenziale',
+    nome: 'Le case dei ricchi',
     origine: { x: 0, y: 48 },
     larghezza: 32,
     altezza: 48,
-    pavimentazione: 'sterrato',
-    suolo: 0x6b5c44,
-    strada: 0x6f6049,
-    marciapiede: 0x74654c,
-    densita: 0.72,
-    // Cresciuta senza piano: isolati storti, alcuni minuscoli.
-    isolato: [8, 18],
+    pavimentazione: 'asfalto',
+    suolo: 0x4a7a52,
+    strada: 0x33383f,
+    marciapiede: 0x7d848c,
+    densita: 0.45,
+    isolato: [15, 20],
     neon: false,
+    // Il posto dove si vende a trenta euro alla volta, e dove ti arrestano.
+    ricchezza: 0.85,
+    sorveglianza: 0.7,
+    controllo: 'nessuno',
   },
   {
     id: 'notturna',
@@ -114,20 +140,27 @@ export const QUARTIERI: DatiQuartiere[] = [
     densita: 0.85,
     isolato: [12, 18],
     neon: true,
+    ricchezza: 0.55,
+    sorveglianza: 0.45,
+    controllo: 'nessuno',
   },
   {
-    id: 'residenziale',
-    nome: 'Quartiere residenziale',
+    id: 'mafia',
+    nome: 'Quartiere della mafia',
     origine: { x: 64, y: 48 },
     larghezza: 32,
     altezza: 48,
-    pavimentazione: 'asfalto',
-    suolo: 0x4a7a52,
-    strada: 0x33383f,
-    marciapiede: 0x7d848c,
-    densita: 0.45,
-    isolato: [15, 20],
+    pavimentazione: 'lastricato',
+    suolo: 0x5f6b6e,
+    strada: 0x3b4248,
+    marciapiede: 0x8a949a,
+    densita: 0.6,
+    isolato: [17, 24],
     neon: false,
+    // Piazza loro: la polizia si tiene alla larga, i clienti sono i loro.
+    ricchezza: 0.4,
+    sorveglianza: 0.3,
+    controllo: 'mafia',
   },
 ]
 

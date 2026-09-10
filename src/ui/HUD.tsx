@@ -1,6 +1,8 @@
 import { useGame } from '../store'
 import { faseGiorno, formattaOra } from '../engine/time'
 import { luogoPerId } from '../engine/luoghi'
+import { grammiTotali } from '../engine/droga'
+import { quartierePerId } from '../engine/quartieri'
 
 const ETICHETTE_FASE: Record<string, string> = {
   notte: 'Notte',
@@ -50,7 +52,9 @@ export function HUD() {
   const luogoCorrente = useGame((s) => s.luogoCorrente)
   const avanzaTempo = useGame((s) => s.avanzaTempo)
 
-  const dove = luogoCorrente ? nomeLuogo(luogoCorrente) : quartiere
+  const dove = luogoCorrente
+    ? nomeLuogo(luogoCorrente)
+    : quartierePerId(quartiere).nome
 
   return (
     <div className="flex flex-wrap items-stretch gap-1.5 sm:gap-2">
@@ -73,8 +77,11 @@ export function HUD() {
       <Riquadro label="Dove" value={dove} />
       <Riquadro label="Fame" value={`${Math.round(fame.livello)}%`} />
       <Riquadro label="Sonno" value={debitoLeggibile(sonno.debito)} soloDesktop />
-      <Riquadro label="Puliti" value={`${giocatore.soldiPuliti} €`} soloDesktop />
-      <Riquadro label="Sporchi" value={`${giocatore.soldiSporchi} €`} soloDesktop />
+      <Riquadro label="Contante" value={`${Math.round(giocatore.contante)} €`} />
+      <Riquadro label="Livello" value={String(giocatore.livello)} soloDesktop />
+      {grammiTotali(giocatore.roba) > 0 && (
+        <Riquadro label="Roba" value={`${grammiTotali(giocatore.roba)} g`} />
+      )}
       {giocatore.soldiNascosti > 0 && (
         <Riquadro label="Nascosti" value={`${giocatore.soldiNascosti} €`} soloDesktop />
       )}

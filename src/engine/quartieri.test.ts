@@ -44,10 +44,34 @@ describe('disposizione dei quartieri', () => {
 })
 
 describe('misura degli isolati', () => {
-  it('il centro storico ha isolati più minuti dei piazzali del porto', () => {
+  it('il centro storico ha isolati più minuti dei piazzali a nord-ovest', () => {
     expect(quartierePerId('centro').isolato[1]).toBeLessThan(
-      quartierePerId('porto').isolato[0],
+      quartierePerId('bandelle').isolato[0],
     )
+  })
+})
+
+describe('carattere delle zone', () => {
+  it('nelle case dei ricchi si vende meglio che dalle bandelle', () => {
+    expect(quartierePerId('residenziale').ricchezza).toBeGreaterThan(
+      quartierePerId('bandelle').ricchezza,
+    )
+  })
+
+  it('dove i soldi girano gira anche la polizia', () => {
+    expect(quartierePerId('centro').sorveglianza).toBeGreaterThan(
+      quartierePerId('palazzoni').sorveglianza,
+    )
+  })
+
+  it('le due organizzazioni tengono un quartiere ciascuna', () => {
+    const controllo = QUARTIERI.map((q) => q.controllo)
+    expect(controllo.filter((c) => c === 'tridente')).toHaveLength(1)
+    expect(controllo.filter((c) => c === 'mafia')).toHaveLength(1)
+  })
+
+  it('metà città è piazza libera: nessuno la rivendica', () => {
+    expect(QUARTIERI.filter((q) => q.controllo === 'nessuno')).toHaveLength(3)
   })
 })
 
