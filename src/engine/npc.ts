@@ -19,6 +19,8 @@ export interface Npc extends Griglia {
   /** Il foglio di sprite da usare, in `public/personaggi/`. */
   sprite: 'armiere' | 'venditore' | 'mafia' | 'capo'
   verso: Verso
+  /** Quanto si allontana girovagando dal punto qui sopra, in celle. */
+  raggio?: number
 }
 
 export const NPC: Npc[] = [

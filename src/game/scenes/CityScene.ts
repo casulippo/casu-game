@@ -20,7 +20,8 @@ import {
 } from '../../engine/city'
 import { quartiereIn } from '../../engine/quartieri'
 import { ARREDO, type Arredo } from '../../engine/arredo'
-import { NPC } from '../../engine/npc'
+import { NPC, type Npc } from '../../engine/npc'
+import { aggiornaNpc, statoInizialeNpc, type StatoNpc } from '../../engine/npcMovimento'
 import { LUOGHI, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
 import { illuminazione } from '../../engine/illuminazione'
@@ -99,6 +100,17 @@ const COLORE_INSEGNA: Record<string, number> = {
   casa: 0xd8a24a,
 }
 
+/** Un NPC con tutto ciò che gli serve per girovagare ed essere disegnato. */
+interface NpcVivo {
+  dati: Npc
+  stato: StatoNpc
+  personaggio: Personaggio
+  ombra: Phaser.GameObjects.Ellipse
+}
+
+/** Distanza sotto la quale il giocatore urta un NPC invece di attraversarlo. */
+const RAGGIO_URTO_NPC = 0.55
+
 /**
  * La città vista dall'alto.
  *
@@ -115,6 +127,7 @@ export class CityScene extends Phaser.Scene {
   }
   private protagonista: Personaggio | null = null
   private ombraGiocatore!: Phaser.GameObjects.Ellipse
+  private npcVivi: NpcVivo[] = []
   private ultimaDirezione: Griglia = { x: 1, y: 1 }
   private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -165,8 +178,10 @@ export class CityScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number) {
-    this.muovi(deltaMs / 1000)
+    const deltaSec = deltaMs / 1000
+    this.muovi(deltaSec)
     this.aggiornaGiocatore()
+    this.aggiornaNpcVivi(deltaSec)
     this.aggiornaInterazione()
     this.controllaIngresso()
 
@@ -245,10 +260,25 @@ export class CityScene extends Phaser.Scene {
 
     // Un asse per volta: così sfiorando un muro si scivola invece di incastrarsi.
     const nuovaX = this.pos.x + dir.x * passo
-    if (calpestabile(this.mappa, nuovaX, this.pos.y)) this.pos.x = nuovaX
+    if (calpestabile(this.mappa, nuovaX, this.pos.y) && !this.bloccatoDaNpc(nuovaX, this.pos.y)) {
+      this.pos.x = nuovaX
+    }
 
     const nuovaY = this.pos.y + dir.y * passo
-    if (calpestabile(this.mappa, this.pos.x, nuovaY)) this.pos.y = nuovaY
+    if (calpestabile(this.mappa, this.pos.x, nuovaY) && !this.bloccatoDaNpc(this.pos.x, nuovaY)) {
+      this.pos.y = nuovaY
+    }
+  }
+
+  /**
+   * Gli NPC girovagano, quindi non possono essere bloccati sulla mappa
+   * statica come l'arredo fisso: si controlla la loro posizione vera a ogni
+   * passo, non quella con cui sono stati piazzati all'avvio.
+   */
+  private bloccatoDaNpc(x: number, y: number): boolean {
+    return this.npcVivi.some(
+      (vivo) => Math.hypot(vivo.stato.pos.x - x, vivo.stato.pos.y - y) < RAGGIO_URTO_NPC,
+    )
   }
 
   private direzioneRichiesta(): { dir: Griglia; intensita: number } {
@@ -342,28 +372,54 @@ export class CityScene extends Phaser.Scene {
   }
 
   /**
-   * Le persone ferme in città.
+   * Le persone in città: gli sprite e l'ombra, pronti per essere mossi.
    *
-   * Non camminano ancora, quindi basta il primo fotogramma della direzione in
-   * cui guardano: creare l'animazione e non farla partire lascerebbe lo sprite
-   * sul fotogramma zero, che è sempre quello di fronte.
+   * Il giro di ciascuno lo decide `engine/npcMovimento.ts`; qui si crea solo
+   * quello che serve a disegnarlo — la posizione la aggiorna `aggiornaNpc()`
+   * a ogni frame, come per il giocatore.
    */
   private disegnaNpc() {
-    for (const npc of NPC) {
-      const personaggio = creaPersonaggio(this, npc.sprite, 0, 0)
+    for (const dati of NPC) {
+      const personaggio = creaPersonaggio(this, dati.sprite, 0, 0)
       if (!personaggio) continue
 
-      const { sx, sy } = grigliaASchermo(npc)
-      const piedi = sy + TILE_H / 2
-
       const ombra = disegnaOmbra(this, TILE_W * 0.4, 6)
-      ombra.setPosition(sx + DIREZIONE_OMBRA.x * 6, piedi + DIREZIONE_OMBRA.y * 6)
-      ombra.setDepth(profondita(npc) - 0.1)
+      personaggio.sprite.setFrame(fotogrammaFermo(dati.verso))
 
-      personaggio.sprite.setPosition(sx, piedi)
-      personaggio.sprite.setFrame(fotogrammaFermo(npc.verso))
-      personaggio.sprite.setDepth(profondita(npc))
+      this.npcVivi.push({ dati, stato: statoInizialeNpc(dati), personaggio, ombra })
     }
+
+    for (const vivo of this.npcVivi) this.posizionaNpc(vivo)
+  }
+
+  /** Fa avanzare il giro di ogni NPC e li ridisegna nella nuova posizione. */
+  private aggiornaNpcVivi(deltaSec: number) {
+    for (const vivo of this.npcVivi) {
+      const stessa = vivo.stato
+      vivo.stato = aggiornaNpc(vivo.dati, vivo.stato, this.mappa, deltaSec)
+
+      if (vivo.stato.destinazione) {
+        const dx = vivo.stato.destinazione.x - stessa.pos.x
+        const dy = vivo.stato.destinazione.y - stessa.pos.y
+        vivo.personaggio.aggiorna({ x: dx, y: dy }, true)
+      } else if (stessa.destinazione) {
+        // È appena arrivato: ferma l'animazione sull'ultima posa di marcia.
+        vivo.personaggio.aggiorna({ x: 0, y: 0 }, false)
+      }
+
+      this.posizionaNpc(vivo)
+    }
+  }
+
+  private posizionaNpc(vivo: NpcVivo) {
+    const { sx, sy } = grigliaASchermo(vivo.stato.pos)
+    const piedi = sy
+
+    vivo.personaggio.sprite.setPosition(sx, piedi)
+    vivo.personaggio.sprite.setDepth(profondita(vivo.stato.pos))
+
+    vivo.ombra.setPosition(sx + DIREZIONE_OMBRA.x * 6, piedi + DIREZIONE_OMBRA.y * 6)
+    vivo.ombra.setDepth(profondita(vivo.stato.pos) - 0.1)
   }
 
   /**

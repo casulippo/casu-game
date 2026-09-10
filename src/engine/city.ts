@@ -1,7 +1,6 @@
 import type { Griglia } from './iso'
 import { ARREDO, bloccaIlPasso } from './arredo'
 import { LUOGHI, celleOccupate, type Luogo } from './luoghi'
-import { NPC } from './npc'
 import { LATO_CITTA, quartiereIn } from './quartieri'
 import { pianoStradale, type Rango, type Segmento } from './strade'
 
@@ -202,12 +201,6 @@ export function generaCitta(
     if (bloccaIlPasso(arredo.tipo) && dentro(mappa, arredo.x, arredo.y)) {
       mappa[arredo.y][arredo.x] = 'ostacolo'
     }
-  }
-
-  // Chi sta in piedi occupa il suo posto: attraversarlo sarebbe peggio che
-  // sbatterci contro.
-  for (const npc of NPC) {
-    if (dentro(mappa, npc.x, npc.y)) mappa[npc.y][npc.x] = 'ostacolo'
   }
 
   for (const luogo of luoghi) {
