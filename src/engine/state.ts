@@ -1,5 +1,6 @@
 import type { TipoArma } from './armi'
 import type { Scontro } from './combattimento'
+import type { TipoStrumento } from './strumenti'
 
 /**
  * Il modello dati del gioco.
@@ -65,6 +66,18 @@ export interface Giocatore {
   arma: TipoArma
   /** Quelle che si possiedono: si comincia col solo coltello. */
   armi: TipoArma[]
+  /** Gli strumenti comprati al mercato nero. Restano addosso. */
+  strumenti: TipoStrumento[]
+}
+
+/**
+ * Il rapporto con l'armiere.
+ *
+ * Ogni favore fatto — cioè ogni pezzo di quartiere reso tranquillo — abbassa i
+ * suoi prezzi e gli fa tirare fuori roba migliore.
+ */
+export interface Armeria {
+  favori: number
 }
 
 /** Il tempo di gioco. Un giorno di vita del personaggio = 60 minuti reali. */
@@ -139,6 +152,7 @@ export interface GameState {
   fame: Fame
   mercato: Mercato
   polizia: Polizia
+  armeria: Armeria
   quartiereCorrente: Quartiere
   /** Lo scontro in corso, se ce n'è uno. */
   scontro: Scontro | null
@@ -166,12 +180,14 @@ export function statoIniziale(nome = 'Casu'): GameState {
       roba: {},
       arma: 'coltello',
       armi: ['coltello'],
+      strumenti: [],
     },
     tempo: { giorno: 1, ora: 8, minuto: 0 },
     sonno: { debito: 0 },
     fame: { livello: 20 },
     mercato: { quotaClienti: 1, grammiPresiOggi: 0 },
     polizia: { calore: 0 },
+    armeria: { favori: 0 },
     quartiereCorrente: 'palazzoni',
     scontro: null,
     nascondigli: {},

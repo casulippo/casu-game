@@ -3,6 +3,7 @@ import type { GameState } from './state'
 import { avanza, iniziaScontro, type Comandi, type Evento, type EsitoScontro, type Scontro, type SpecNemico } from './combattimento'
 import { colpisciPassante } from './spaccio'
 import { perdiTutto } from './nascondigli'
+import { statisticheEffettive } from './strumenti'
 import { avanza as avanzaTempo } from './time'
 
 /**
@@ -125,13 +126,16 @@ export function conRaid(
     })
   }
 
+  // Il giubbotto antiproiettile conta come vita vera, non come voce a parte.
+  const statistiche = statisticheEffettive(stato)
+
   return {
     ...stato,
     scontro: iniziaScontro({
       posGiocatore: posizione,
       arma: stato.giocatore.arma,
-      vita: stato.giocatore.statistiche.vita,
-      mira: stato.giocatore.statistiche.mira,
+      vita: statistiche.vita,
+      mira: statistiche.mira,
       nemici,
       evitabile,
       seme: stato.tempo.giorno * 1_000 + stato.tempo.ora * 60 + stato.tempo.minuto,

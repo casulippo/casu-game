@@ -2,6 +2,7 @@ import type { Droga, GameState, Quartiere } from './state'
 import { conRoba, drogaPerId, grammiDi } from './droga'
 import { livelloPer } from './livello'
 import { quartierePerId } from './quartieri'
+import { statisticheEffettive } from './strumenti'
 
 /**
  * Vendere in giro.
@@ -52,7 +53,7 @@ export function probabilitaVendita(
   quartiere: Quartiere,
 ): number {
   const { ricchezza } = quartierePerId(quartiere)
-  const carisma = stato.giocatore.statistiche.socialita / 500
+  const carisma = statisticheEffettive(stato).socialita / 500
 
   const p =
     PROBABILITA_BASE * stato.mercato.quotaClienti * (0.7 + ricchezza * 0.6) +
