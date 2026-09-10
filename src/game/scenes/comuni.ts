@@ -1,7 +1,43 @@
 import Phaser from 'phaser'
-import { TILE_H, TILE_W } from '../../engine/iso'
+import { TILE_W } from '../../engine/iso'
 
 /** Elementi condivisi tra la scena esterna e gli interni. */
+
+/**
+ * Da che parte viene il sole.
+ *
+ * Un'unica direzione condivisa da alberi, personaggi e in futuro edifici: è
+ * quello che fa sembrare una scena illuminata da una fonte sola invece che
+ * ogni oggetto con la sua ombra per conto suo. Viene da alto-sinistra, le
+ * ombre cadono in basso-destra — coerente in tutta la mappa esterna.
+ */
+export const DIREZIONE_OMBRA = { x: 0.42, y: 0.34 }
+
+/** L'angolo della direzione dell'ombra, per allungare le ellissi lungo l'asse giusto. */
+const ANGOLO_OMBRA = Math.atan2(DIREZIONE_OMBRA.y, DIREZIONE_OMBRA.x)
+
+/**
+ * Un'ombra a terra, spostata e allungata secondo `DIREZIONE_OMBRA`.
+ *
+ * `scarto` è quanto l'ombra si allontana dalla base dell'oggetto, in pixel:
+ * un oggetto più alto proietta un'ombra più lunga.
+ */
+export function disegnaOmbra(
+  scena: Phaser.Scene,
+  larghezza: number,
+  scarto: number,
+): Phaser.GameObjects.Ellipse {
+  const ombra = scena.add.ellipse(
+    DIREZIONE_OMBRA.x * scarto,
+    DIREZIONE_OMBRA.y * scarto,
+    larghezza,
+    larghezza * 0.42,
+    0x000000,
+    0.3,
+  )
+  ombra.setRotation(ANGOLO_OMBRA)
+  return ombra
+}
 
 /**
  * Il personaggio: ombra, corpo, testa.
@@ -11,7 +47,7 @@ import { TILE_H, TILE_W } from '../../engine/iso'
  * giocatore fatto di tre forme geometriche.
  */
 export function creaGiocatore(scena: Phaser.Scene): Phaser.GameObjects.Container {
-  const ombra = scena.add.ellipse(0, 0, TILE_W * 0.4, TILE_H * 0.4, 0x000000, 0.35)
+  const ombra = disegnaOmbra(scena, TILE_W * 0.4, 6)
   const corpo = scena.add.rectangle(0, -16, 12, 22, 0xd88c3f)
   corpo.setStrokeStyle(1, 0x2b2b2b)
   const testa = scena.add.circle(0, -32, 6, 0xf0c9a0)

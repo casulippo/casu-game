@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { TILE_H, TILE_W } from '../engine/iso'
+import { DIREZIONE_OMBRA } from './scenes/comuni'
 
 /**
  * Genera texture per gli elementi statici della scena.
@@ -142,10 +143,17 @@ export function texturaAlbero(scena: Phaser.Scene): string {
   const cx = TILE_W / 2
   const base = alta - MARGINE - TILE_H / 2
 
-  ctx.fillStyle = 'rgba(0,0,0,0.28)'
+  // L'ombra cade dallo stesso sole di personaggi e edifici: da alto-sinistra,
+  // allungata verso basso-destra. Un'ombra centrata sotto la chioma
+  // tradirebbe subito che ogni oggetto ha la sua luce per conto suo.
+  ctx.fillStyle = 'rgba(0,0,0,0.26)'
+  ctx.save()
+  ctx.translate(cx + DIREZIONE_OMBRA.x * 14, base + 2 + DIREZIONE_OMBRA.y * 14)
+  ctx.rotate(Math.atan2(DIREZIONE_OMBRA.y, DIREZIONE_OMBRA.x))
   ctx.beginPath()
-  ctx.ellipse(cx, base + 2, TILE_W * 0.17, TILE_H * 0.17, 0, 0, Math.PI * 2)
+  ctx.ellipse(0, 0, TILE_W * 0.24, TILE_H * 0.13, 0, 0, Math.PI * 2)
   ctx.fill()
+  ctx.restore()
 
   ctx.fillStyle = css(0x53422f)
   ctx.fillRect(cx - 3, base - 28, 6, 28)

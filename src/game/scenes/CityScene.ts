@@ -27,7 +27,13 @@ import { illuminazione } from '../../engine/illuminazione'
 import { oreDaTempoReale } from '../../engine/time'
 import { gameStore } from '../../store'
 import { leggiSpinta } from '../input'
-import { Luminosi, creaGiocatore, puntiDaVertici } from './comuni'
+import {
+  DIREZIONE_OMBRA,
+  Luminosi,
+  creaGiocatore,
+  disegnaOmbra,
+  puntiDaVertici,
+} from './comuni'
 import {
   costruisciSuolo,
   materialeMarciapiede,
@@ -106,6 +112,7 @@ export class CityScene extends Phaser.Scene {
     setDepth(v: number): unknown
   }
   private protagonista: Personaggio | null = null
+  private ombraGiocatore!: Phaser.GameObjects.Ellipse
   private ultimaDirezione: Griglia = { x: 1, y: 1 }
   private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -138,6 +145,11 @@ export class CityScene extends Phaser.Scene {
     this.disegnaNpc()
     this.protagonista = creaPersonaggio(this, 'kai', 0, 0)
     this.giocatore = this.protagonista?.sprite ?? creaGiocatore(this)
+    // Solo se il protagonista ha uno sprite disegnato: il fallback si porta
+    // già dietro la sua ombra dentro il container, un'altra sarebbe doppia.
+    this.ombraGiocatore = this.protagonista
+      ? disegnaOmbra(this, TILE_W * 0.4, 6)
+      : this.add.ellipse(0, 0, 0, 0, 0, 0)
     this.velo = this.creaVelo()
 
     this.tasti = this.input.keyboard!.createCursorKeys()
@@ -262,6 +274,14 @@ export class CityScene extends Phaser.Scene {
     this.giocatore.setPosition(sx, sy - rialzo)
     this.giocatore.setDepth(profondita(this.pos) + 0.5)
     this.protagonista?.aggiorna(this.ultimaDirezione, this.inMovimento)
+
+    if (this.protagonista) {
+      this.ombraGiocatore.setPosition(
+        sx + DIREZIONE_OMBRA.x * 6,
+        sy - rialzo + DIREZIONE_OMBRA.y * 6,
+      )
+      this.ombraGiocatore.setDepth(profondita(this.pos) + 0.4)
+    }
   }
 
   /** Camminando sul marciapiede si sta un gradino più in alto. */
@@ -331,7 +351,13 @@ export class CityScene extends Phaser.Scene {
       if (!personaggio) continue
 
       const { sx, sy } = grigliaASchermo(npc)
-      personaggio.sprite.setPosition(sx, sy + TILE_H / 2)
+      const piedi = sy + TILE_H / 2
+
+      const ombra = disegnaOmbra(this, TILE_W * 0.4, 6)
+      ombra.setPosition(sx + DIREZIONE_OMBRA.x * 6, piedi + DIREZIONE_OMBRA.y * 6)
+      ombra.setDepth(profondita(npc) - 0.1)
+
+      personaggio.sprite.setPosition(sx, piedi)
       personaggio.sprite.setFrame(fotogrammaFermo(npc.verso))
       personaggio.sprite.setDepth(profondita(npc))
     }
