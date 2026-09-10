@@ -8,6 +8,7 @@ import {
   quantoNeResta,
   type TipoCibo,
 } from './cibo'
+import { laNotteChePassa } from './gossip'
 import { raffredda } from './polizia'
 import { avanza } from './time'
 
@@ -45,13 +46,13 @@ export function dormi(stato: GameState, ore: number): GameState {
   }
 
   return raffredda(
-    {
+    laNotteChePassa({
       ...stato,
       sonno,
       fame: cresceLaFame(stato.fame, dormite),
       tempo: avanza(stato.tempo, dormite),
       mercato: { ...stato.mercato, grammiPresiOggi: 0 },
-    },
+    }),
     dormite,
   )
 }

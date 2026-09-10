@@ -2,6 +2,7 @@ import type { TipoArma } from './armi'
 import type { Scontro } from './combattimento'
 import type { TipoStrumento } from './strumenti'
 import type { TipoCibo } from './cibo'
+import type { Ricordo } from './memoria'
 
 /**
  * Il modello dati del gioco.
@@ -154,6 +155,8 @@ export interface GameState {
   mercato: Mercato
   polizia: Polizia
   armeria: Armeria
+  /** Quello che la città si ricorda di te. */
+  ricordi: Ricordo[]
   /** Cosa c'è in frigo, per tipo di cibo. */
   frigo: Partial<Record<TipoCibo, number>>
   quartiereCorrente: Quartiere
@@ -191,6 +194,7 @@ export function statoIniziale(nome = 'Casu'): GameState {
     mercato: { quotaClienti: 1, grammiPresiOggi: 0 },
     polizia: { calore: 0 },
     armeria: { favori: 0 },
+    ricordi: [],
     frigo: { panino: 2 },
     quartiereCorrente: 'palazzoni',
     scontro: null,

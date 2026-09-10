@@ -28,36 +28,58 @@ export const NPC: Npc[] = [
     id: 'venditore',
     nome: 'Venditore',
     sprite: 'venditore',
-    // Sul marciapiede davanti a casa: è il primo volto che si incontra.
-    x: 70,
-    y: 66,
+    // Davanti al bazar del Tridente: è il primo volto che si incontra.
+    x: 74,
+    y: 27,
     verso: 'fronte',
   },
   {
     id: 'capo',
     nome: 'Capo della banda',
     sprite: 'capo',
-    // Nel parco della zona notturna: la banda tiene il parchetto, appunto.
-    x: 43,
-    y: 65,
+    // Nel parchetto a nord-ovest: la banda lo tiene, ed è lì che si comincia.
+    x: 15,
+    y: 33,
     verso: 'sinistra',
   },
   {
     id: 'armiere',
     nome: 'Armiere',
     sprite: 'armiere',
-    // Sul marciapiede dei piazzali del porto, lontano dal centro.
+    // Sulla soglia dell'armeria, fra le bandelle.
     x: 18,
-    y: 29,
+    y: 22,
     verso: 'fronte',
   },
   {
     id: 'mafia',
     nome: 'Uomo in grigio',
     sprite: 'mafia',
-    // Sul viale del centro storico, dove sta chi non ha fretta.
-    x: 46,
-    y: 30,
+    // Davanti al mercato nero, nel quartiere della mafia.
+    x: 78,
+    y: 56,
     verso: 'destra',
   },
+]
+
+/**
+ * Chi parla con chi, e quanto ci si fida.
+ *
+ * La rete è diretta: l'armiere racconta al venditore quello che ha visto, non
+ * viceversa. È poca roba, ma basta a far girare una voce da un quartiere
+ * all'altro.
+ */
+export interface Relazione {
+  a: string
+  b: string
+  /** Da 0 a 1: sotto un terzo non ci si racconta niente. */
+  forza: number
+}
+
+export const RELAZIONI: Relazione[] = [
+  { a: 'venditore', b: 'capo', forza: 0.5 },
+  { a: 'capo', b: 'venditore', forza: 0.5 },
+  { a: 'armiere', b: 'venditore', forza: 0.35 },
+  { a: 'venditore', b: 'mafia', forza: 0.4 },
+  { a: 'mafia', b: 'capo', forza: 0.3 },
 ]

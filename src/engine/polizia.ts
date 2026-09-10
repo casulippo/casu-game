@@ -1,6 +1,7 @@
 import type { Griglia } from './iso'
 import type { GameState } from './state'
 import { avanza, iniziaScontro, type Comandi, type Evento, type EsitoScontro, type Scontro, type SpecNemico } from './combattimento'
+import { hannoVisto } from './memoria'
 import { colpisciPassante } from './spaccio'
 import { perdiTutto } from './nascondigli'
 import { statisticheEffettive } from './statistiche'
@@ -163,7 +164,10 @@ export function combatti(stato: GameState, dt: number, comandi: Comandi): GameSt
 function applica(stato: GameState, evento: Evento): GameState {
   switch (evento.tipo) {
     case 'passante-colpito':
-      return conCalore(colpisciPassante(stato), CALORE.passanteColpito)
+      return hannoVisto(
+        conCalore(colpisciPassante(stato), CALORE.passanteColpito),
+        'sparato',
+      )
 
     case 'nemico-abbattuto':
       return evento.nemico === 'poliziotto'
