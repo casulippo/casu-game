@@ -137,6 +137,8 @@ export function acquistaAlBazar(
   droga: Droga,
   grammi: number,
   prezzoAlGrammo = drogaPerId(droga).prezzoAcquisto,
+  /** Le forniture della storia stanno fuori dal conto della giornata. */
+  ignoraTetto = false,
 ): EsitoAcquisto {
   const g = stato.giocatore
   const invenduto = { stato, grammi: 0, spesa: 0 } as const
@@ -145,7 +147,9 @@ export function acquistaAlBazar(
     return { ...invenduto, motivo: 'non-disponibile' }
   }
 
-  const residuo = tettoBazar(g.livello) - stato.mercato.grammiPresiOggi
+  const residuo = ignoraTetto
+    ? Number.POSITIVE_INFINITY
+    : tettoBazar(g.livello) - stato.mercato.grammiPresiOggi
   if (residuo <= 0) return { ...invenduto, motivo: 'tetto-raggiunto' }
 
   const perIlTetto = Math.min(Math.max(0, Math.floor(grammi)), residuo)
@@ -166,7 +170,9 @@ export function acquistaAlBazar(
       },
       mercato: {
         ...stato.mercato,
-        grammiPresiOggi: stato.mercato.grammiPresiOggi + perLaTasca,
+        grammiPresiOggi: ignoraTetto
+          ? stato.mercato.grammiPresiOggi
+          : stato.mercato.grammiPresiOggi + perLaTasca,
       },
     },
     grammi: perLaTasca,

@@ -4,6 +4,7 @@ import type { TipoStrumento } from './strumenti'
 import type { TipoCibo } from './cibo'
 import type { Ricordo } from './memoria'
 import type { Spaccino } from './spaccini'
+import type { Storia } from './storia'
 
 /**
  * Il modello dati del gioco.
@@ -166,6 +167,8 @@ export interface GameState {
   ricordi: Ricordo[]
   /** Chi vende per te, e cosa ti deve. */
   spaccini: Spaccino[]
+  /** A che punto è il primo atto, e i messaggi arrivati finora. */
+  storia: Storia
   /** Cosa c'è in frigo, per tipo di cibo. */
   frigo: Partial<Record<TipoCibo, number>>
   quartiereCorrente: Quartiere
@@ -205,6 +208,7 @@ export function statoIniziale(nome = 'Casu'): GameState {
     armeria: { favori: 0 },
     ricordi: [],
     spaccini: [],
+    storia: { passo: 'parchetto', messaggi: [] },
     frigo: { panino: 2 },
     quartiereCorrente: 'palazzoni',
     scontro: null,

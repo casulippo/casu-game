@@ -1,5 +1,6 @@
 import { PhaserCanvas } from './game/PhaserCanvas'
 import { HUD } from './ui/HUD'
+import { Nokia } from './ui/Nokia'
 import { PromptAzione } from './ui/PromptAzione'
 import { TouchControls } from './ui/TouchControls'
 
@@ -19,6 +20,7 @@ export default function App() {
         <HUD />
       </div>
 
+      <Nokia />
       <TouchControls />
       <PromptAzione />
     </main>
