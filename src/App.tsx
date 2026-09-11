@@ -18,6 +18,13 @@ export default function App() {
     <main className="relative h-dvh w-screen overflow-hidden bg-slate-950 text-slate-200">
       <PhaserCanvas />
 
+      {/*
+        Il joystick sta subito sopra al canvas e sotto a tutto il resto: è una
+        zona invisibile grande mezzo schermo, e se stesse sopra si mangerebbe i
+        tocchi dei pulsanti che ci finiscono dentro.
+      */}
+      <TouchControls />
+
       <div className="pointer-events-none absolute inset-x-0 top-0 p-2 sm:p-4">
         <HUD />
       </div>
@@ -25,7 +32,6 @@ export default function App() {
       <Scontro />
       <Strada />
       <Nokia />
-      <TouchControls />
       <PromptAzione />
     </main>
   )

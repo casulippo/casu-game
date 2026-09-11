@@ -39,6 +39,32 @@ const ASPETTO: Record<string, Aspetto> = {
     infissi: 0x2f4f42,
     falde: false,
   },
+  // Le tre botteghe hanno il tetto piano: sono banconi in mezzo alle case,
+  // non case a loro volta, e il colore basta a distinguerle da lontano.
+  bazar: {
+    tetto: 0x8c6f3f,
+    tettoOmbra: 0x74592f,
+    facciata: 0xd8c38f,
+    zoccolo: 0x8a7247,
+    infissi: 0x3b2f22,
+    falde: false,
+  },
+  armeria: {
+    tetto: 0x4f5a55,
+    tettoOmbra: 0x3f4a46,
+    facciata: 0x9aa39c,
+    zoccolo: 0x6a736c,
+    infissi: 0x2b3330,
+    falde: false,
+  },
+  'mercato-nero': {
+    tetto: 0x4a3f5c,
+    tettoOmbra: 0x3b3149,
+    facciata: 0x9b93a8,
+    zoccolo: 0x6b6377,
+    infissi: 0x241f2e,
+    falde: false,
+  },
 }
 
 /** Quanto è alta la fascia di facciata, secondo i piani. */

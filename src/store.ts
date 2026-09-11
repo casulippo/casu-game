@@ -6,6 +6,7 @@ import {
   type GameState,
   type Quartiere,
 } from './engine/state'
+import type { IdParco } from './engine/city'
 import { avanza } from './engine/time'
 import { stessaInterazione, type Interazione } from './engine/interazione'
 import {
@@ -65,12 +66,13 @@ interface GameStore extends GameState {
    */
   interazione: Interazione
   /**
-   * Si è fermi in un parchetto?
+   * In che parchetto si è, se si è in un parchetto.
    *
-   * Lo sa solo la scena, che ha la mappa sotto i piedi, e serve alla UI per
-   * sapere se una vendita è fatta ai ragazzini.
+   * Lo sa solo la scena, che ha la mappa sotto i piedi. Serve a due cose: le
+   * vendite ai ragazzini valgono in qualunque parchetto, il primo scontro
+   * della storia solo in quello delle bandelle.
    */
-  nelParchetto: boolean
+  parcoCorrente: IdParco | null
   /** La cella su cui sta il giocatore, aggiornata solo quando cambia davvero. */
   cella: Griglia
 
@@ -79,7 +81,7 @@ interface GameStore extends GameState {
   entraIn: (luogoId: string) => void
   esci: () => void
   segnalaInterazione: (interazione: Interazione) => void
-  segnalaParchetto: (nelParchetto: boolean) => void
+  segnalaParco: (parco: IdParco | null) => void
   segnalaCella: (cella: Griglia) => void
 
   /** Le azioni di casa: le regole stanno in `engine/azioniCasa.ts`. */
@@ -117,7 +119,7 @@ export const useGame = create<GameStore>()((set) => ({
   ambiente: 'citta',
   luogoCorrente: null,
   interazione: null,
-  nelParchetto: false,
+  parcoCorrente: null,
   cella: { x: 0, y: 0 },
 
   avanzaTempo: (oreGioco) =>
@@ -143,8 +145,8 @@ export const useGame = create<GameStore>()((set) => ({
       stessaInterazione(s.interazione, interazione) ? s : { interazione },
     ),
 
-  segnalaParchetto: (nelParchetto) =>
-    set((s) => (s.nelParchetto === nelParchetto ? s : { nelParchetto })),
+  segnalaParco: (parcoCorrente) =>
+    set((s) => (s.parcoCorrente === parcoCorrente ? s : { parcoCorrente })),
 
   segnalaCella: (cella) =>
     set((s) =>
@@ -226,3 +228,13 @@ export const useGame = create<GameStore>()((set) => ({
 
 /** Accesso allo stato fuori da React, per Phaser. */
 export const gameStore = useGame
+
+/**
+ * In sviluppo lo store finisce anche su `window.gioco`.
+ *
+ * Serve a guardare lo stato dalla console del browser — e a farlo guardare a
+ * chi sta debuggando da fuori — senza aggiungere pulsanti finti alla UI.
+ */
+if (import.meta.env.DEV) {
+  ;(window as unknown as { gioco: typeof useGame }).gioco = useGame
+}

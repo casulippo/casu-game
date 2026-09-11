@@ -23,9 +23,9 @@ export function Strada() {
   if (stato.ambiente !== 'citta' || stato.scontro) return null
 
   const conRoba = DROGHE.filter((d) => grammiDi(stato.giocatore.roba, d.id) > 0)
-  const daRipulire = stato.nelParchetto && stato.storia.passo === 'parchetto'
+  const daRipulire = stato.parcoCorrente === 'bandelle' && stato.storia.passo === 'parchetto'
   const daAssumere =
-    stato.nelParchetto &&
+    stato.parcoCorrente !== null &&
     cePropostaDiSpaccino(stato) &&
     !spaccinoAllaPortata(stato, { x: stato.cella.x + 0.5, y: stato.cella.y + 0.5 })
 
@@ -65,7 +65,7 @@ export function Strada() {
         <button
           key={droga.id}
           type="button"
-          onClick={() => vendi(droga.id, stato.nelParchetto)}
+          onClick={() => vendi(droga.id, stato.parcoCorrente !== null)}
           className="pointer-events-auto touch-none rounded-full bg-emerald-600 px-4 py-2 text-left text-xs font-semibold text-slate-950 shadow-lg transition active:scale-95 active:bg-emerald-500 sm:text-sm"
         >
           Vendi {droga.nome}

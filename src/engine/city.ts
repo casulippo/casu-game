@@ -24,10 +24,14 @@ export { LATO_CITTA }
  * regolare. Il verde grande si vede da lontano ed è quello che dice "sono
  * dall'altra parte della città" meglio di qualsiasi cambio di palette.
  */
-const PARCHI = [
-  { x: 70, y: 12, larghezza: 17, altezza: 15 },
+export type IdParco = 'palazzoni' | 'bandelle'
+
+const PARCHI: { id: IdParco; x: number; y: number; larghezza: number; altezza: number }[] = [
+  // Sta a nord del bazar: un parco addosso alle case ne coprirebbe le porte
+  // di alberi, e gli edifici finirebbero dentro il verde.
+  { id: 'palazzoni', x: 74, y: 7, larghezza: 14, altezza: 13 },
   // Il parchetto delle bandelle: è qui che si combatte il primo scontro.
-  { x: 10, y: 28, larghezza: 12, altezza: 11 },
+  { id: 'bandelle', x: 10, y: 28, larghezza: 12, altezza: 11 },
 ]
 
 /**
@@ -45,15 +49,24 @@ function suAcqua(x: number, y: number): boolean {
   return x < darsena && y < 26
 }
 
-/** Si è dentro un parco? Serve anche fuori: i parchetti sono piazze di spaccio. */
-export function nelParco(x: number, y: number): boolean {
-  return dentroParco(Math.floor(x), Math.floor(y))
+/**
+ * In che parco si sta, se si sta in un parco.
+ *
+ * Non basta sapere che c'è del verde sotto i piedi: il primo scontro della
+ * storia è nel parchetto delle bandelle, non in un parco qualunque.
+ */
+export function parcoIn(x: number, y: number): IdParco | null {
+  const cx = Math.floor(x)
+  const cy = Math.floor(y)
+  return (
+    PARCHI.find(
+      (p) => cx >= p.x && cx < p.x + p.larghezza && cy >= p.y && cy < p.y + p.altezza,
+    )?.id ?? null
+  )
 }
 
 function dentroParco(x: number, y: number): boolean {
-  return PARCHI.some(
-    (p) => x >= p.x && x < p.x + p.larghezza && y >= p.y && y < p.y + p.altezza,
-  )
+  return parcoIn(x, y) !== null
 }
 
 /** La fascia di carreggiata che passa per una cella. */
@@ -218,6 +231,17 @@ export function generaCitta(
     // La porta resta sempre praticabile, altrimenti il luogo è irraggiungibile.
     if (dentro(mappa, luogo.porta.x, luogo.porta.y)) {
       mappa[luogo.porta.y][luogo.porta.x] = 'marciapiede'
+    }
+
+    // E davanti alla porta non cresce niente: un albero o un cassonetto
+    // piantato sulla soglia rende il posto irraggiungibile senza dirlo.
+    for (let dx = -1; dx <= 1; dx++) {
+      const x = luogo.porta.x + dx
+      const y = luogo.porta.y
+      if (!dentro(mappa, x, y)) continue
+      if (mappa[y][x] === 'albero' || mappa[y][x] === 'ostacolo') {
+        mappa[y][x] = terrenoSotto(x, y)
+      }
     }
   }
 

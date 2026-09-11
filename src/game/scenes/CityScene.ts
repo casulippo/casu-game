@@ -13,6 +13,7 @@ import {
   calpestabile,
   generaCitta,
   mezzeriaIn,
+  parcoIn,
   puntoDiPartenza,
   strisceIn,
   terrenoSotto,
@@ -24,7 +25,6 @@ import { NPC, type Npc } from '../../engine/npc'
 import { aggiornaNpc, statoInizialeNpc, type StatoNpc } from '../../engine/npcMovimento'
 import { LUOGHI, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
-import { nelParco } from '../../engine/city'
 import { spaccinoAllaPortata } from '../../engine/spaccini'
 import { illuminazione } from '../../engine/illuminazione'
 import { oreDaTempoReale } from '../../engine/time'
@@ -273,7 +273,7 @@ export class CityScene extends Phaser.Scene {
 
     if (quartiere !== stato.quartiereCorrente) stato.vaiA(quartiere)
     stato.segnalaCella(cella)
-    stato.segnalaParchetto(nelParco(cella.x, cella.y))
+    stato.segnalaParco(parcoIn(cella.x, cella.y))
   }
 
   // ------------------------------------------------------------------ scontro
