@@ -28,6 +28,13 @@ export interface Nemico extends Corpo {
   arma: TipoArma
   /** Secondi che mancano al prossimo colpo. */
   ricarica: number
+  /**
+   * Dove sta andando, per chi non ti sta cercando.
+   *
+   * I passanti hanno una loro strada da fare: senza un verso resterebbero
+   * piantati sul marciapiede come birilli.
+   */
+  verso?: Griglia
 }
 
 export interface Proiettile {
@@ -52,6 +59,14 @@ export interface Combattente extends Corpo {
 export type EsitoScontro = 'in-corso' | 'vinto' | 'perso' | 'scampato'
 
 export interface Scontro {
+  /**
+   * Che cosa è.
+   *
+   * `strada` è la città di tutti i giorni: gente che passa, e il grilletto che
+   * funziona lo stesso. Non finisce mai da sola, perché non è uno scontro — è
+   * solo il posto in cui i colpi possono partire.
+   */
+  tipo: 'raid' | 'strada'
   /**
    * I raid della storia si affrontano e basta; quelli che nascono dallo spaccio
    * rientrano da soli se ci si sa nascondere abbastanza a lungo.
@@ -117,6 +132,9 @@ const ARMA_DI: Record<TipoNemico, TipoArma> = {
   passante: 'coltello',
 }
 
+/** Sotto questa distanza un passante ti scansa, in celle. */
+const DISTANZA_FUGA_PASSANTE = 3
+
 /** Quanto si tiene lontano chi spara, in celle: addosso non ci viene. */
 const DISTANZA_DI_TIRO = 6
 
@@ -136,10 +154,12 @@ export function iniziaScontro(opzioni: {
   nemici: SpecNemico[]
   evitabile?: boolean
   seme?: number
+  tipo?: 'raid' | 'strada'
 }): Scontro {
   let prossimoId = 1
 
   return {
+    tipo: opzioni.tipo ?? 'raid',
     evitabile: opzioni.evitabile ?? true,
     giocatore: {
       id: 0,
@@ -274,12 +294,15 @@ function muoviNemici(s: Scontro, dt: number) {
     const dir = normalizza(versoIlGiocatore)
 
     if (nemico.tipo === 'passante') {
-      // I passanti non attaccano: scappano dalla parte opposta.
-      if (distanza < DISTANZA_VISTA) {
-        nemico.pos = {
-          x: nemico.pos.x - dir.x * VELOCITA.passante * dt,
-          y: nemico.pos.y - dir.y * VELOCITA.passante * dt,
-        }
+      // I passanti non attaccano: se sei addosso scappano, altrimenti tirano
+      // dritto per la loro strada.
+      const scappa = distanza < DISTANZA_FUGA_PASSANTE
+      const andatura = scappa ? { x: -dir.x, y: -dir.y } : (nemico.verso ?? { x: 0, y: 0 })
+      const passo = VELOCITA.passante * (scappa ? 1.6 : 1) * dt
+
+      nemico.pos = {
+        x: nemico.pos.x + andatura.x * passo,
+        y: nemico.pos.y + andatura.y * passo,
       }
       continue
     }
@@ -370,6 +393,8 @@ function concludi(s: Scontro, eventi: Evento[]) {
   if (s.giocatore.vita <= 0) {
     s.giocatore.vita = 0
     s.esito = 'perso'
+  } else if (s.tipo === 'strada') {
+    // La strada non si vince: si continua a camminarci.
   } else if (!s.nemici.some((n) => n.tipo !== 'passante')) {
     s.esito = 'vinto'
   } else if (s.evitabile && s.tempoNascosto >= TEMPO_FUGA) {

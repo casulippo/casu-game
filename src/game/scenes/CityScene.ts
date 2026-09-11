@@ -113,6 +113,13 @@ interface NpcVivo {
   ombra: Phaser.GameObjects.Ellipse
 }
 
+/** Di che colore si vede chi sta nello scontro. */
+const COLORE_NEMICO: Record<string, number> = {
+  poliziotto: 0x3f6fd8,
+  banda: 0xb8432f,
+  passante: 0x8d8f9a,
+}
+
 /** Distanza sotto la quale il giocatore urta un NPC invece di attraversarlo. */
 const RAGGIO_URTO_NPC = 0.55
 
@@ -140,6 +147,14 @@ export class CityScene extends Phaser.Scene {
   private tastoFuoco!: Phaser.Input.Keyboard.Key
   private miraSchermo: Griglia | null = null
   private grilletto = false
+  /**
+   * Un colpo preso al volo.
+   *
+   * Un tocco secco comincia e finisce dentro lo stesso fotogramma: senza
+   * tenerlo da parte, il grilletto risulterebbe già rilasciato quando la scena
+   * va a guardarlo, e sparare a clic singolo non funzionerebbe mai.
+   */
+  private colpoInCoda = false
   private ultimaDirezione: Griglia = { x: 1, y: 1 }
   private inMovimento = false
   private tasti!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -294,6 +309,7 @@ export class CityScene extends Phaser.Scene {
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       punta(p)
       this.grilletto = true
+      this.colpoInCoda = true
     })
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (p.isDown) punta(p)
@@ -312,18 +328,24 @@ export class CityScene extends Phaser.Scene {
   private aggiornaScontro(deltaSec: number) {
     const stato = gameStore.getState()
 
-    if (!stato.scontro) {
+    if (stato.ambiente !== 'citta') {
       this.scontroGrafica.clear()
       return
     }
+
+    // La città è sempre "in corso": si può sparare anche quando non c'è
+    // nessun raid, e la gente continua a passare.
+    stato.apriLaStrada(this.pos)
+    stato.ricambiaLaFolla(deltaSec, this.pos, (x, y) => calpestabile(this.mappa, x, y))
 
     stato.combatti(deltaSec, {
       direzione: this.ultimaDirezione,
       posizione: this.pos,
       mira: this.miraSchermo,
-      spara: this.grilletto || this.tastoFuoco.isDown,
+      spara: this.grilletto || this.colpoInCoda || this.tastoFuoco.isDown,
     })
 
+    this.colpoInCoda = false
     this.disegnaScontro()
   }
 
@@ -335,20 +357,28 @@ export class CityScene extends Phaser.Scene {
 
     for (const nemico of scontro.nemici) {
       const { sx, sy } = grigliaASchermo(nemico.pos)
-      const colore = nemico.tipo === 'poliziotto' ? 0x3f6fd8 : 0xb8432f
+      const colore = COLORE_NEMICO[nemico.tipo]
 
+      // Una figuretta, non un pallino: corpo, testa e ombra bastano a far
+      // leggere da lontano che quello è qualcuno e non un sasso.
       g.fillStyle(0x000000, 0.35)
-      g.fillEllipse(sx, sy + 6, TILE_W * 0.42, TILE_H * 0.2)
+      g.fillEllipse(sx, sy + 4, 22, 9)
+      g.fillStyle(0x1b1b1f, 1)
+      g.fillRoundedRect(sx - 9, sy - 26, 18, 26, 5)
       g.fillStyle(colore, 1)
-      g.fillCircle(sx, sy - 10, TILE_W * 0.2)
+      g.fillRoundedRect(sx - 7, sy - 24, 14, 22, 4)
+      g.fillStyle(0xd9b28c, 1)
+      g.fillCircle(sx, sy - 28, 6)
+      g.fillStyle(0x2c2418, 1)
+      g.fillCircle(sx, sy - 30, 5)
 
       // La barra della vita solo a chi è già stato preso: piena non dice niente.
       if (nemico.vita < nemico.vitaMax) {
         const larghezza = TILE_W * 0.44
         g.fillStyle(0x000000, 0.5)
-        g.fillRect(sx - larghezza / 2, sy - 28, larghezza, 4)
+        g.fillRect(sx - larghezza / 2, sy - 42, larghezza, 4)
         g.fillStyle(0x6fd86f, 1)
-        g.fillRect(sx - larghezza / 2, sy - 28, (larghezza * nemico.vita) / nemico.vitaMax, 4)
+        g.fillRect(sx - larghezza / 2, sy - 42, (larghezza * nemico.vita) / nemico.vitaMax, 4)
       }
     }
 

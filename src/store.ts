@@ -21,7 +21,14 @@ import { compraArma, compraStrumento, impugna } from './engine/negozi'
 import { compraCibo, type TipoCibo } from './engine/cibo'
 import type { TipoArma } from './engine/armi'
 import type { TipoStrumento } from './engine/strumenti'
-import { combatti, forseUnRaid, raffredda, vistiVendere } from './engine/polizia'
+import {
+  apriLaStrada,
+  combatti,
+  forseUnRaid,
+  raffredda,
+  vistiVendere,
+} from './engine/polizia'
+import { aggiornaFolla } from './engine/folla'
 import { vendi } from './engine/spaccio'
 import {
   affidaMetaDella,
@@ -106,6 +113,14 @@ interface GameStore extends GameState {
 
   /** Quello che chiama la scena a ogni frame. */
   combatti: (dt: number, comandi: Comandi) => void
+  /** Apre la città: il campo in cui camminano i passanti e volano i colpi. */
+  apriLaStrada: (posizione: Griglia) => void
+  /** Fa nascere e sparire la gente attorno al giocatore. */
+  ricambiaLaFolla: (
+    dt: number,
+    posizione: Griglia,
+    calpestabile: (x: number, y: number) => boolean,
+  ) => void
   /** Un minuto di gioco passato: è il momento in cui può partire un raid. */
   unMinuto: (posizione: Griglia) => void
   ripulisciIlParchetto: (posizione: Griglia) => void
@@ -209,6 +224,23 @@ export const useGame = create<GameStore>()((set) => ({
         ? parchettoRipulito(dopo)
         : dopo
     }),
+
+  apriLaStrada: (posizione) => set((s) => apriLaStrada(s, posizione)),
+
+  ricambiaLaFolla: (dt, posizione, calpestabile) =>
+    set((s) =>
+      s.scontro
+        ? {
+            scontro: aggiornaFolla(s.scontro, {
+              dt,
+              quartiere: s.quartiereCorrente,
+              posGiocatore: posizione,
+              calpestabile,
+              caso: Math.random,
+            }),
+          }
+        : s,
+    ),
 
   unMinuto: (posizione) =>
     set((s) => forsePrimoRaid(forseUnRaid(s, posizione, Math.random()), posizione)),

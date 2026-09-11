@@ -95,10 +95,14 @@ export function scontroDelParchetto(stato: GameState, posizione: Griglia): GameS
   })
 
   const conScontro = conRaid(stato, posizione, 0, false)
+  const scontro = conScontro.scontro!
 
   return {
     ...conScontro,
-    scontro: { ...conScontro.scontro!, nemici: banda.map(nemicoDellaBanda) },
+    scontro: {
+      ...scontro,
+      nemici: [...scontro.nemici, ...banda.map(nemicoDellaBanda)],
+    },
   }
 }
 

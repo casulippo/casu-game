@@ -102,8 +102,36 @@ export function forseUnRaid(
   posizione: Griglia,
   tiro: number,
 ): GameState {
-  if (stato.scontro || tiro >= probabilitaDiRaid(stato)) return stato
+  // Un raid alla volta: la strada invece non è uno scontro, e non impedisce
+  // niente.
+  if (stato.scontro?.tipo === 'raid' || tiro >= probabilitaDiRaid(stato)) return stato
   return conRaid(stato, posizione, agentiDelRaid(stato))
+}
+
+/**
+ * La città di tutti i giorni.
+ *
+ * Esiste sempre, appena si mette piede fuori: è il campo in cui camminano i
+ * passanti e in cui vola quello che spari. Non ha nemici, non si vince e non
+ * si perde — a meno di farsi ammazzare, il che può succedere anche qui.
+ */
+export function apriLaStrada(stato: GameState, posizione: Griglia): GameState {
+  if (stato.scontro) return stato
+
+  const statistiche = statisticheEffettive(stato)
+
+  return {
+    ...stato,
+    scontro: iniziaScontro({
+      tipo: 'strada',
+      posGiocatore: posizione,
+      arma: stato.giocatore.arma,
+      vita: statistiche.vita,
+      mira: statistiche.mira,
+      nemici: [],
+      seme: stato.tempo.giorno * 7_919 + stato.tempo.ora * 60 + stato.tempo.minuto,
+    }),
+  }
 }
 
 /** Il raid vero e proprio: quello della storia si dichiara non evitabile. */
@@ -130,17 +158,37 @@ export function conRaid(
   // Il giubbotto antiproiettile conta come vita vera, non come voce a parte.
   const statistiche = statisticheEffettive(stato)
 
+  const appena = iniziaScontro({
+    posGiocatore: posizione,
+    arma: stato.giocatore.arma,
+    vita: statistiche.vita,
+    mira: statistiche.mira,
+    nemici,
+    evitabile,
+    seme: stato.tempo.giorno * 1_000 + stato.tempo.ora * 60 + stato.tempo.minuto,
+  })
+
+  // Se si era per strada, la gente che c'era resta dov'era: un raid non
+  // svuota il marciapiede, lo attraversa.
+  const strada = stato.scontro?.tipo === 'strada' ? stato.scontro : null
+  if (!strada) return { ...stato, scontro: appena }
+
   return {
     ...stato,
-    scontro: iniziaScontro({
-      posGiocatore: posizione,
-      arma: stato.giocatore.arma,
-      vita: statistiche.vita,
-      mira: statistiche.mira,
-      nemici,
+    scontro: {
+      ...strada,
+      tipo: 'raid',
       evitabile,
-      seme: stato.tempo.giorno * 1_000 + stato.tempo.ora * 60 + stato.tempo.minuto,
-    }),
+      esito: 'in-corso',
+      tempo: 0,
+      tempoNascosto: 0,
+      giocatore: { ...strada.giocatore, arma: stato.giocatore.arma },
+      nemici: [
+        ...strada.nemici,
+        ...appena.nemici.map((n, i) => ({ ...n, id: strada.prossimoId + i })),
+      ],
+      prossimoId: strada.prossimoId + appena.nemici.length,
+    },
   }
 }
 
