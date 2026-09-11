@@ -116,6 +116,26 @@ export function conRoba(
   return aggiornato
 }
 
+/**
+ * Quanti grammi si riesce davvero a portare via adesso.
+ *
+ * Tiene insieme le tre cose che tagliano un ordine: la roba sbloccata, il
+ * tetto della giornata e il contante in tasca. Serve al bancone per proporre
+ * quantità che il giocatore può pagare, invece di prezzi che mentono.
+ */
+export function grammiComprabili(
+  stato: GameState,
+  droga: Droga,
+  prezzoAlGrammo = drogaPerId(droga).prezzoAcquisto,
+): number {
+  if (!drogheAlBazar(stato.giocatore.incassoTotale).some((d) => d.id === droga)) return 0
+
+  const residuo = tettoBazar(stato.giocatore.livello) - stato.mercato.grammiPresiOggi
+  const perLaTasca = Math.floor(stato.giocatore.contante / prezzoAlGrammo)
+
+  return Math.max(0, Math.min(residuo, perLaTasca))
+}
+
 export interface EsitoAcquisto {
   stato: GameState
   /** Quanti grammi sono stati davvero venduti: il tetto e i soldi possono tagliarli. */

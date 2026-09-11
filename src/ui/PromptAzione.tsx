@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import { useGame } from '../store'
 import { contanteAddosso, FABBISOGNO_SONNO } from '../engine/azioniCasa'
 import { armaPerId } from '../engine/armi'
-import { DROGHE, drogheAlBazar, grammiDi, grammiTotali } from '../engine/droga'
+import {
+  DROGHE,
+  drogheAlBazar,
+  grammiComprabili,
+  grammiDi,
+  grammiTotali,
+} from '../engine/droga'
 import type { Mobile } from '../engine/interni'
 import { tettoBazar } from '../engine/livello'
 import type { Luogo } from '../engine/luoghi'
@@ -155,15 +161,18 @@ function BanconeDelBazar({ chiudi }: { chiudi: () => void }) {
   const compraLOfferta = useGame((s) => s.compraLOfferta)
 
   const listino = drogheAlBazar(stato.giocatore.incassoTotale)
-  const residuo = tettoBazar(stato.giocatore.livello) - stato.mercato.grammiPresiOggi
+  const residuo = Math.max(0, tettoBazar(stato.giocatore.livello) - stato.mercato.grammiPresiOggi)
   const offerta = stato.storia.passo === 'rifornimento'
+  const contante = Math.round(stato.giocatore.contante)
 
   return (
     <Pannello
       titolo={
         offerta
-          ? `Prezzi speciali — hai ${Math.round(stato.giocatore.contante)} €`
-          : `Oggi puoi prendere ancora ${Math.max(0, residuo)} g`
+          ? `Prezzi speciali — hai ${contante} €`
+          : residuo === 0
+            ? 'Per oggi non ti vendono più niente'
+            : `Ancora ${residuo} g, e hai ${contante} €`
       }
       chiudi={chiudi}
     >
@@ -178,7 +187,9 @@ function BanconeDelBazar({ chiudi }: { chiudi: () => void }) {
       )}
 
       {listino.map((droga) =>
-        [10, 40].map((grammi) => (
+        // I tagli proposti sono solo quelli pagabili davvero: un prezzo scritto
+        // che poi non si può onorare è peggio di un taglio in meno.
+        tagli(grammiComprabili(stato, droga.id)).map((grammi) => (
           <Scelta
             key={`${droga.id}-${grammi}`}
             etichetta={`${droga.nome} ${grammi} g — ${grammi * droga.prezzoAcquisto} €`}
@@ -188,6 +199,12 @@ function BanconeDelBazar({ chiudi }: { chiudi: () => void }) {
       )}
     </Pannello>
   )
+}
+
+/** I tagli da mostrare quando si può arrivare fino a `massimo` grammi. */
+function tagli(massimo: number): number[] {
+  const proposti = [10, 40].filter((g) => g < massimo)
+  return massimo > 0 ? [...proposti, massimo] : []
 }
 
 /** L'armeria del vecchietto: prezzi scontati a chi gli tiene tranquilla la zona. */

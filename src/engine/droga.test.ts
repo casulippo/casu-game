@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   acquistaAlBazar,
+  grammiComprabili,
   conRoba,
   drogheAlBazar,
   grammiDi,
@@ -102,5 +103,36 @@ describe('acquistaAlBazar', () => {
     expect(esito.grammi).toBe(200)
     expect(esito.spesa).toBe(100)
     expect(esito.stato.giocatore.contante).toBe(0)
+  })
+})
+
+describe('grammiComprabili', () => {
+  it('con venti euro in tasca sono cinque grammi, non dieci', () => {
+    expect(grammiComprabili(stato({ contante: 20 }), 'marijuana')).toBe(5)
+  })
+
+  it('il tetto della giornata taglia prima del contante', () => {
+    const ricco = stato({ contante: 100_000 })
+    expect(grammiComprabili(ricco, 'marijuana')).toBe(tettoBazar(1))
+  })
+
+  it('tiene conto di quello che si è già preso oggi', () => {
+    const dopoUnGiro = acquistaAlBazar(stato({ contante: 10_000 }), 'marijuana', 30).stato
+    expect(grammiComprabili(dopoUnGiro, 'marijuana')).toBe(tettoBazar(1) - 30)
+  })
+
+  it('quello che non è sbloccato non si compra affatto', () => {
+    expect(grammiComprabili(stato({ contante: 10_000 }), 'md')).toBe(0)
+  })
+
+  it('a tasche vuote è zero, non un numero negativo', () => {
+    expect(grammiComprabili(stato({ contante: 0 }), 'marijuana')).toBe(0)
+  })
+
+  it('promette solo quello che l acquisto poi mantiene', () => {
+    const povero = stato({ contante: 37 })
+    const promessi = grammiComprabili(povero, 'marijuana')
+
+    expect(acquistaAlBazar(povero, 'marijuana', 999).grammi).toBe(promessi)
   })
 })
