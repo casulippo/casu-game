@@ -94,6 +94,8 @@ interface GameStore extends GameState {
   parcoCorrente: IdParco | null
   /** La cella su cui sta il giocatore, aggiornata solo quando cambia davvero. */
   cella: Griglia
+  /** La pianta della città è aperta? */
+  mappaAperta: boolean
 
   avanzaTempo: (oreGioco: number) => void
   vaiA: (quartiere: Quartiere) => void
@@ -102,6 +104,7 @@ interface GameStore extends GameState {
   segnalaInterazione: (interazione: Interazione) => void
   segnalaParco: (parco: IdParco | null) => void
   segnalaCella: (cella: Griglia) => void
+  alternaMappa: () => void
 
   /** Le azioni di casa: le regole stanno in `engine/azioniCasa.ts`. */
   dormi: (ore: number) => void
@@ -155,6 +158,7 @@ export const useGame = create<GameStore>()((set) => ({
   interazione: null,
   parcoCorrente: null,
   cella: { x: 0, y: 0 },
+  mappaAperta: false,
 
   avanzaTempo: (oreGioco) =>
     set((s) =>
@@ -186,6 +190,8 @@ export const useGame = create<GameStore>()((set) => ({
     set((s) =>
       s.cella.x === cella.x && s.cella.y === cella.y ? s : { cella },
     ),
+
+  alternaMappa: () => set((s) => ({ mappaAperta: !s.mappaAperta })),
 
   dormi: (ore) => set((s) => dormi(s, ore)),
   mangia: (cibo) => set((s) => mangia(s, cibo)),

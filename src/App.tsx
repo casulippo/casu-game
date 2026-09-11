@@ -1,5 +1,6 @@
 import { PhaserCanvas } from './game/PhaserCanvas'
 import { HUD } from './ui/HUD'
+import { Mappa } from './ui/Mappa'
 import { Nokia } from './ui/Nokia'
 import { PromptAzione } from './ui/PromptAzione'
 import { Scontro } from './ui/Scontro'
@@ -32,6 +33,7 @@ export default function App() {
       <Scontro />
       <Strada />
       <Nokia />
+      <Mappa />
       <PromptAzione />
     </main>
   )

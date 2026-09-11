@@ -37,6 +37,30 @@ function Riquadro({
   )
 }
 
+/** Un riquadro su cui si può premere: stessa forma, mestiere diverso. */
+function Bottone({
+  label,
+  value,
+  azione,
+}: {
+  label: string
+  value: string
+  azione: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={azione}
+      className="pointer-events-auto rounded-md bg-slate-900/75 px-2 py-1 text-left ring-1 ring-slate-700/80 backdrop-blur-sm transition active:scale-95 sm:px-3 sm:py-2"
+    >
+      <div className="text-[9px] uppercase tracking-wider text-slate-400 sm:text-[10px]">
+        {label}
+      </div>
+      <div className="font-mono text-sm text-slate-100 tabular-nums sm:text-lg">{value}</div>
+    </button>
+  )
+}
+
 /**
  * La HUD legge dallo store e si aggiorna da sola.
  *
@@ -51,6 +75,7 @@ export function HUD() {
   const quartiere = useGame((s) => s.quartiereCorrente)
   const luogoCorrente = useGame((s) => s.luogoCorrente)
   const avanzaTempo = useGame((s) => s.avanzaTempo)
+  const alternaMappa = useGame((s) => s.alternaMappa)
 
   const dove = luogoCorrente
     ? nomeLuogo(luogoCorrente)
@@ -74,6 +99,7 @@ export function HUD() {
         </div>
       </button>
       <Riquadro label="Fase" value={ETICHETTE_FASE[faseGiorno(tempo)]} />
+      <Bottone label="Mappa" value="M" azione={alternaMappa} />
       <Riquadro label="Dove" value={dove} />
       <Riquadro label="Fame" value={`${Math.round(fame.livello)}%`} />
       <Riquadro label="Sonno" value={debitoLeggibile(sonno.debito)} soloDesktop />
