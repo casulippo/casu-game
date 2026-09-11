@@ -29,7 +29,7 @@ import { spaccinoAllaPortata } from '../../engine/spaccini'
 import { attivo, deposito, nascondigli } from '../../engine/nascondigli'
 import { illuminazione } from '../../engine/illuminazione'
 import { oreDaTempoReale } from '../../engine/time'
-import { gameStore } from '../../store'
+import { gameStore, inPausa } from '../../store'
 import { leggiSpinta } from '../input'
 import {
   DIREZIONE_OMBRA,
@@ -231,6 +231,9 @@ export class CityScene extends Phaser.Scene {
   }
 
   update(_time: number, deltaMs: number) {
+    // Col pannello aperto la città si ferma: né passi, né ore, né proiettili.
+    if (inPausa(gameStore.getState())) return
+
     const deltaSec = deltaMs / 1000
     this.muovi(deltaSec)
     this.aggiornaGiocatore()

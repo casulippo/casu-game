@@ -42,16 +42,20 @@ function Bottone({
   label,
   value,
   azione,
+  soloDesktop = false,
 }: {
   label: string
   value: string
   azione: () => void
+  soloDesktop?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={azione}
-      className="pointer-events-auto rounded-md bg-slate-900/75 px-2 py-1 text-left ring-1 ring-slate-700/80 backdrop-blur-sm transition active:scale-95 sm:px-3 sm:py-2"
+      className={`pointer-events-auto rounded-md bg-slate-900/75 px-2 py-1 text-left ring-1 ring-slate-700/80 backdrop-blur-sm transition active:scale-95 sm:px-3 sm:py-2 ${
+        soloDesktop ? 'hidden sm:block' : ''
+      }`}
     >
       <div className="text-[9px] uppercase tracking-wider text-slate-400 sm:text-[10px]">
         {label}
@@ -76,6 +80,7 @@ export function HUD() {
   const luogoCorrente = useGame((s) => s.luogoCorrente)
   const avanzaTempo = useGame((s) => s.avanzaTempo)
   const alternaMappa = useGame((s) => s.alternaMappa)
+  const apriIntro = useGame((s) => s.apriIntro)
 
   const dove = luogoCorrente
     ? nomeLuogo(luogoCorrente)
@@ -100,6 +105,7 @@ export function HUD() {
       </button>
       <Riquadro label="Fase" value={ETICHETTE_FASE[faseGiorno(tempo)]} />
       <Bottone label="Mappa" value="M" azione={alternaMappa} />
+      <Bottone label="Aiuto" value="?" azione={apriIntro} soloDesktop />
       <Riquadro label="Dove" value={dove} />
       <Riquadro label="Fame" value={`${Math.round(fame.livello)}%`} />
       <Riquadro label="Sonno" value={debitoLeggibile(sonno.debito)} soloDesktop />

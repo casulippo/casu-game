@@ -60,6 +60,30 @@ import {
 } from './engine/storia'
 import type { Comandi } from './engine/combattimento'
 
+/** La chiave con cui il browser si ricorda che le istruzioni sono già state lette. */
+const CHIAVE_INTRO = 'spaccio-city:intro-vista'
+
+/**
+ * Il browser può negare l'accesso alla memoria locale — finestra anonima,
+ * impostazioni severe — e in quel caso le istruzioni si rivedono. È il male
+ * minore: molto meglio di una pagina che non si apre.
+ */
+function giaVista(): boolean {
+  try {
+    return localStorage.getItem(CHIAVE_INTRO) === 'si'
+  } catch {
+    return false
+  }
+}
+
+function ricordaCheLHaVista() {
+  try {
+    localStorage.setItem(CHIAVE_INTRO, 'si')
+  } catch {
+    // Pazienza: le rivedrà la prossima volta.
+  }
+}
+
 /** Dove si trova il giocatore: per strada, o dentro un luogo. */
 export type Ambiente = 'citta' | 'interno'
 
@@ -96,6 +120,13 @@ interface GameStore extends GameState {
   cella: Griglia
   /** La pianta della città è aperta? */
   mappaAperta: boolean
+  /**
+   * Le istruzioni sono a schermo?
+   *
+   * Si aprono da sole la prima volta e mai più: chi ha già giocato non deve
+   * saltarle a ogni partita. La memoria sta nel browser, non nel salvataggio.
+   */
+  introAperta: boolean
 
   avanzaTempo: (oreGioco: number) => void
   vaiA: (quartiere: Quartiere) => void
@@ -105,6 +136,8 @@ interface GameStore extends GameState {
   segnalaParco: (parco: IdParco | null) => void
   segnalaCella: (cella: Griglia) => void
   alternaMappa: () => void
+  chiudiIntro: () => void
+  apriIntro: () => void
 
   /** Le azioni di casa: le regole stanno in `engine/azioniCasa.ts`. */
   dormi: (ore: number) => void
@@ -159,6 +192,7 @@ export const useGame = create<GameStore>()((set) => ({
   parcoCorrente: null,
   cella: { x: 0, y: 0 },
   mappaAperta: false,
+  introAperta: !giaVista(),
 
   avanzaTempo: (oreGioco) =>
     set((s) =>
@@ -192,6 +226,12 @@ export const useGame = create<GameStore>()((set) => ({
     ),
 
   alternaMappa: () => set((s) => ({ mappaAperta: !s.mappaAperta })),
+
+  chiudiIntro: () => {
+    ricordaCheLHaVista()
+    set({ introAperta: false })
+  },
+  apriIntro: () => set({ introAperta: true }),
 
   dormi: (ore) => set((s) => dormi(s, ore)),
   mangia: (cibo) => set((s) => mangia(s, cibo)),
@@ -305,6 +345,16 @@ export const useGame = create<GameStore>()((set) => ({
 
 /** Accesso allo stato fuori da React, per Phaser. */
 export const gameStore = useGame
+
+/**
+ * Il gioco è fermo?
+ *
+ * Leggere le istruzioni o studiare la mappa non deve costare ore di gioco né
+ * lasciarti addosso un raid che non hai visto arrivare.
+ */
+export function inPausa(stato: GameStore): boolean {
+  return stato.introAperta || stato.mappaAperta
+}
 
 /**
  * In sviluppo lo store finisce anche su `window.gioco`.
