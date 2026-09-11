@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   colpisciPassante,
   grammiRichiesti,
+  quantoSiFida,
   incassa,
   prezzoAlGrammo,
   probabilitaVendita,
@@ -142,5 +143,49 @@ describe('incassa', () => {
   it('l incasso totale somma tutto quello che è passato per le mani', () => {
     const dopo = incassa(incassa(statoIniziale(), 30), 45)
     expect(dopo.giocatore.incassoTotale).toBe(75)
+  })
+})
+
+describe('quanto gli si mette in mano', () => {
+  it('il taglio che si aspetta è la misura: né bonus né malus', () => {
+    expect(quantoSiFida('residenziale', grammiRichiesti('residenziale'))).toBe(1)
+  })
+
+  it('meno del dovuto lo prende più volentieri', () => {
+    expect(quantoSiFida('residenziale', 1)).toBeGreaterThan(1)
+  })
+
+  it('più del dovuto lo insospettisce, e a tre volte tanto se ne va', () => {
+    const doppio = quantoSiFida('residenziale', 6)
+    const triplo = quantoSiFida('residenziale', 9)
+
+    expect(doppio).toBeLessThan(1)
+    expect(triplo).toBeLessThan(doppio)
+    expect(triplo).toBeLessThan(0.4)
+  })
+
+  it('offrire tanto abbassa davvero le probabilità della vendita', () => {
+    const conRoba = conRobaInTasca(50)
+
+    expect(probabilitaVendita(conRoba, 'residenziale', 12)).toBeLessThan(
+      probabilitaVendita(conRoba, 'residenziale'),
+    )
+  })
+
+  it('si vende quanto si è offerto, non il taglio della zona', () => {
+    const esito = vendi(conRobaInTasca(50), 'residenziale', 'marijuana', VENDE, 8)
+
+    expect(esito.grammi).toBe(8)
+    expect(esito.incasso).toBe(8 * prezzoAlGrammo('marijuana', 'residenziale'))
+  })
+
+  it('non si offre più di quello che si ha', () => {
+    const esito = vendi(conRobaInTasca(3), 'residenziale', 'marijuana', VENDE, 20)
+    expect(esito.grammi).toBe(3)
+  })
+
+  it('un grammo è il minimo: non si regala aria', () => {
+    const esito = vendi(conRobaInTasca(10), 'residenziale', 'marijuana', VENDE, 0)
+    expect(esito.grammi).toBe(1)
   })
 })

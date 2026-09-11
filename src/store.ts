@@ -146,7 +146,14 @@ interface GameStore extends GameState {
   riprendi: (importo: number) => void
 
   /** Il giro: vendere per strada e rifornirsi ai banconi. */
-  vendi: (droga: Droga, aiRagazzini?: boolean) => void
+  vendi: (droga: Droga, grammi?: number, aiRagazzini?: boolean) => void
+  /**
+   * Com'è andato l'ultimo tentativo di vendita.
+   *
+   * Senza, il gioco resta muto: premi e non sai se il cliente ha comprato, se
+   * ha tirato dritto o se ti sei giocato l'ultimo grammo.
+   */
+  ultimaVendita: { venduto: boolean; grammi: number; incasso: number; quando: number } | null
   compraRoba: (droga: Droga, grammi: number) => void
   compraLOfferta: () => void
   compraArma: (arma: TipoArma) => void
@@ -192,6 +199,7 @@ export const useGame = create<GameStore>()((set) => ({
   parcoCorrente: null,
   cella: { x: 0, y: 0 },
   mappaAperta: false,
+  ultimaVendita: null,
   introAperta: !giaVista(),
 
   avanzaTempo: (oreGioco) =>
@@ -244,13 +252,22 @@ export const useGame = create<GameStore>()((set) => ({
    * Il tiro di dado nasce qui e non dentro l'engine: le regole restano pure e
    * verificabili, il caso sta nello strato che le usa.
    */
-  vendi: (droga, aiRagazzini = false) =>
+  vendi: (droga, grammi, aiRagazzini = false) =>
     set((s) => {
-      const esito = vendi(s, s.quartiereCorrente, droga, Math.random())
-      if (!esito.venduto) return s
+      const esito = vendi(s, s.quartiereCorrente, droga, Math.random(), grammi)
+      const riscontro = {
+        venduto: esito.venduto,
+        grammi: esito.grammi,
+        incasso: esito.incasso,
+        quando: Date.now(),
+      }
+
+      if (!esito.venduto) return { ...s, ultimaVendita: riscontro }
 
       const visto = vistiVendere(esito.stato, esito.rischio, Math.random())
-      return controlla(aiRagazzini ? venditaAiRagazzini(visto) : visto)
+      const dopo = controlla(aiRagazzini ? venditaAiRagazzini(visto) : visto)
+
+      return { ...dopo, ultimaVendita: riscontro }
     }),
 
   compraRoba: (droga, grammi) => set((s) => acquistaAlBazar(s, droga, grammi).stato),

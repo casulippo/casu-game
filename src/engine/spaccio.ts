@@ -45,12 +45,15 @@ export function grammiRichiesti(quartiere: Quartiere): number {
 /**
  * Quanto è probabile che il prossimo passante compri.
  *
- * Pesano tre cose: la ricchezza della zona, la socialità del protagonista e
- * quanta clientela si è già bruciata sparando in giro.
+ * Pesano quattro cose: la ricchezza della zona, la socialità del protagonista,
+ * quanta clientela si è già bruciata sparando in giro, e quanto gli si sta
+ * mettendo in mano. Chi voleva tre grammi ne prende volentieri due, ma davanti
+ * a dieci ci pensa su.
  */
 export function probabilitaVendita(
   stato: GameState,
   quartiere: Quartiere,
+  grammiOfferti = grammiRichiesti(quartiere),
 ): number {
   const { ricchezza } = quartierePerId(quartiere)
   const carisma = statisticheEffettive(stato).socialita / 500
@@ -59,7 +62,21 @@ export function probabilitaVendita(
     PROBABILITA_BASE * stato.mercato.quotaClienti * (0.7 + ricchezza * 0.6) +
     carisma
 
-  return Math.min(0.95, Math.max(0, arrotonda(p)))
+  return Math.min(0.95, Math.max(0, arrotonda(p * quantoSiFida(quartiere, grammiOfferti))))
+}
+
+/**
+ * Quanto pesa l'offerta sulla decisione del cliente.
+ *
+ * Sotto il taglio che si aspettava è quasi un favore: prende e ringrazia.
+ * Sopra comincia a diffidare, e a tre volte tanto se ne va quasi sempre.
+ */
+export function quantoSiFida(quartiere: Quartiere, grammiOfferti: number): number {
+  const chiesti = grammiRichiesti(quartiere)
+  const rapporto = Math.max(0, grammiOfferti) / chiesti
+
+  if (rapporto <= 1) return 1 + (1 - rapporto) * 0.15
+  return 1 / (1 + (rapporto - 1) * 0.9)
 }
 
 /**
@@ -97,15 +114,18 @@ export function vendi(
   quartiere: Quartiere,
   droga: Droga,
   tiro: number,
+  /** Quanto gli si mette in mano. Senza dirlo, il taglio che la zona si aspetta. */
+  grammiOfferti = grammiRichiesti(quartiere),
 ): EsitoVendita {
   const rischio = rischioVendita(droga, quartiere)
   const inTasca = grammiDi(stato.giocatore.roba, droga)
+  const offerti = Math.min(Math.max(1, Math.floor(grammiOfferti)), inTasca)
 
   if (inTasca <= 0) {
     return { stato, venduto: false, grammi: 0, incasso: 0, rischio, motivo: 'senza-roba' }
   }
 
-  if (tiro >= probabilitaVendita(stato, quartiere)) {
+  if (tiro >= probabilitaVendita(stato, quartiere, offerti)) {
     return {
       stato,
       venduto: false,
@@ -116,7 +136,7 @@ export function vendi(
     }
   }
 
-  const grammi = Math.min(grammiRichiesti(quartiere), inTasca)
+  const grammi = offerti
   const incasso = arrotonda(grammi * prezzoAlGrammo(droga, quartiere))
 
   const conMenoRoba: GameState = {
