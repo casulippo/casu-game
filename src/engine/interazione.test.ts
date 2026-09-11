@@ -75,3 +75,19 @@ describe('uscita e luoghi non si confondono', () => {
     }
   })
 })
+
+describe('parlare con chi si muove', () => {
+  const armiere = { id: 'armiere', nome: 'Armiere', sprite: 'armiere' as const, verso: 'fronte' as const, x: 18, y: 22 }
+
+  it('risponde dove la persona si trova adesso', () => {
+    const passeggiato = [{ ...armiere, x: 30, y: 40 }]
+    const azione = interazioneInCitta({ x: 30.5, y: 40.5 }, [], passeggiato)
+
+    expect(azione).toEqual({ tipo: 'parla', npc: passeggiato[0] })
+  })
+
+  it('non risponde dal punto in cui la persona è nata', () => {
+    const passeggiato = [{ ...armiere, x: 30, y: 40 }]
+    expect(interazioneInCitta({ x: 18.5, y: 22.5 }, [], passeggiato)).toBeNull()
+  })
+})

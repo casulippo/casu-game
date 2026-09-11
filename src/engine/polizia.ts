@@ -201,7 +201,17 @@ export function conRaid(
 export function combatti(stato: GameState, dt: number, comandi: Comandi): GameState {
   if (!stato.scontro) return stato
 
-  const passo = avanza(stato.scontro, dt, comandi)
+  // L'arma è quella che si ha in mano adesso: la strada dura ore, e cambiarla
+  // all'armeria deve valere subito, non al prossimo scontro.
+  const scontro =
+    stato.scontro.giocatore.arma === stato.giocatore.arma
+      ? stato.scontro
+      : {
+          ...stato.scontro,
+          giocatore: { ...stato.scontro.giocatore, arma: stato.giocatore.arma },
+        }
+
+  const passo = avanza(scontro, dt, comandi)
   let dopo: GameState = { ...stato, scontro: passo.scontro }
 
   for (const evento of passo.eventi) dopo = applica(dopo, evento)
@@ -276,4 +286,26 @@ export function scontroInCorso(stato: GameState): Scontro | null {
 
 function arrotonda(valore: number): number {
   return Math.round(valore * 100) / 100
+}
+
+/**
+ * Rimettersi in sesto.
+ *
+ * Le ferite prese per strada restavano addosso per sempre: lo scontro di strada
+ * non finisce mai, e con lui la barra della vita. Mangiare e dormire curano —
+ * è l'unico modo che il protagonista ha di guarire.
+ */
+export function curati(stato: GameState): GameState {
+  if (!stato.scontro || stato.scontro.tipo !== 'strada') return stato
+
+  const pieno = statisticheEffettive(stato).vita
+  if (stato.scontro.giocatore.vita >= pieno) return stato
+
+  return {
+    ...stato,
+    scontro: {
+      ...stato.scontro,
+      giocatore: { ...stato.scontro.giocatore, vita: pieno, vitaMax: pieno },
+    },
+  }
 }

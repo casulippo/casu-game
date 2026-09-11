@@ -20,7 +20,9 @@ export function Strada() {
   const assumiSpaccino = useGame((s) => s.assumiSpaccino)
   const ripulisciIlParchetto = useGame((s) => s.ripulisciIlParchetto)
 
-  if (stato.ambiente !== 'citta' || stato.scontro) return null
+  // Per strada c'è sempre uno scontro aperto — è il campo in cui volano i
+  // colpi — ma lavorare si lavora lo stesso. A sparire è solo durante un raid.
+  if (stato.ambiente !== 'citta' || stato.scontro?.tipo === 'raid') return null
 
   const conRoba = DROGHE.filter((d) => grammiDi(stato.giocatore.roba, d.id) > 0)
   const daRipulire = stato.parcoCorrente === 'bandelle' && stato.storia.passo === 'parchetto'

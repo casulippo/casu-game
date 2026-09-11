@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   CALORE,
+  apriLaStrada,
+  curati,
   CALORE_MASSIMO,
   agentiDelRaid,
   arresto,
@@ -200,5 +202,47 @@ describe('combatti', () => {
 
     expect(dopo.mercato.quotaClienti).toBe(0.7)
     expect(dopo.polizia.calore).toBe(CALORE.passanteColpito)
+  })
+})
+
+describe('la strada che dura', () => {
+  const FERMO = { direzione: { x: 0, y: 0 }, mira: null, spara: false }
+
+  function ferito(vita = 20): GameState {
+    const aperta = apriLaStrada(stato(0), CASA)
+    return {
+      ...aperta,
+      scontro: {
+        ...aperta.scontro!,
+        giocatore: { ...aperta.scontro!.giocatore, vita },
+      },
+    }
+  }
+
+  it('l arma cambiata si ha subito in mano, non al prossimo scontro', () => {
+    const aperta = apriLaStrada(stato(0), CASA)
+    expect(aperta.scontro!.giocatore.arma).toBe('coltello')
+
+    const armato: GameState = {
+      ...aperta,
+      giocatore: { ...aperta.giocatore, arma: 'pistola', armi: ['coltello', 'pistola'] },
+    }
+
+    expect(combatti(armato, 1 / 60, FERMO).scontro!.giocatore.arma).toBe('pistola')
+  })
+
+  it('mangiare e dormire rimettono in sesto', () => {
+    const dopo = curati(ferito())
+    expect(dopo.scontro!.giocatore.vita).toBe(dopo.scontro!.giocatore.vitaMax)
+  })
+
+  it('chi sta bene non guadagna vita dal nulla', () => {
+    const sano = apriLaStrada(stato(0), CASA)
+    expect(curati(sano)).toBe(sano)
+  })
+
+  it('da un raid non si guarisce mangiando: quello va finito', () => {
+    const raid = conRaid(ferito(), CASA, 2)
+    expect(curati(raid)).toBe(raid)
   })
 })

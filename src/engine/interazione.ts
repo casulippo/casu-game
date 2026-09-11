@@ -1,6 +1,6 @@
 import type { Griglia } from './iso'
 import { LUOGHI, luogoAllaPortata, type Luogo } from './luoghi'
-import { npcAllaPortata, type Npc } from './npc'
+import { NPC, npcAllaPortata, type Npc } from './npc'
 import type { Spaccino } from './spaccini'
 import { nascondiglioAllaPortata, type Nascondiglio } from './nascondigli'
 import { mobileAllaPortata, sullUscita, type Interno, type Mobile } from './interni'
@@ -27,6 +27,13 @@ export type Interazione =
 export function interazioneInCitta(
   posizione: Griglia,
   luoghi: Luogo[] = LUOGHI,
+  /**
+   * La gente, dove si trova adesso.
+   *
+   * Gli NPC girovagano: usare le posizioni con cui sono stati piazzati
+   * vorrebbe dire parlare col posto in cui uno è nato invece che con lui.
+   */
+  gente: Npc[] = NPC,
 ): Interazione {
   const luogo = luogoAllaPortata(posizione, luoghi)
   if (luogo) {
@@ -41,7 +48,7 @@ export function interazioneInCitta(
   const nascondiglio = nascondiglioAllaPortata(posizione)
   if (nascondiglio) return { tipo: 'nascondiglio', nascondiglio }
 
-  const npc = npcAllaPortata(posizione)
+  const npc = npcAllaPortata(posizione, gente)
   return npc ? { tipo: 'parla', npc } : null
 }
 

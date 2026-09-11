@@ -94,7 +94,7 @@ export function creaPersonaggio(
     sprite,
     aggiorna(direzione, inMovimento) {
       if (inMovimento) {
-        direzioneCorrente = direzioneDa(direzione)
+        direzioneCorrente = direzioneDa(direzione, direzioneCorrente)
         const chiave = `${nome}-cammina-${direzioneCorrente}`
         if (sprite.anims.currentAnim?.key !== chiave) sprite.play(chiave, true)
       } else if (sprite.anims.isPlaying) {
@@ -118,8 +118,16 @@ export function fotogrammaFermo(direzione: Direzione): number {
  * guarda più o meno da quella parte, invece di inventare una quinta direzione
  * che nel foglio non c'è.
  */
-function direzioneDa(dir: Griglia): Direzione {
-  if (Math.abs(dir.x) > Math.abs(dir.y)) {
+function direzioneDa(dir: Griglia, corrente: Direzione): Direzione {
+  // Con un joystick analogico i due assi si scambiano di continuo appena il
+  // pollice sfiora la diagonale, e la testa gira a ogni fotogramma. Si cambia
+  // posa solo quando un asse stacca l'altro di un buon margine.
+  const orizzontale = Math.abs(dir.x)
+  const verticale = Math.abs(dir.y)
+  const guardaDiLato = corrente === 'sinistra' || corrente === 'destra'
+  const margine = 1.35
+
+  if (guardaDiLato ? orizzontale * margine >= verticale : orizzontale >= verticale * margine) {
     return dir.x > 0 ? 'destra' : 'sinistra'
   }
   return dir.y > 0 ? 'fronte' : 'schiena'

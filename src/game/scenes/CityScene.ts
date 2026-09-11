@@ -121,6 +121,15 @@ const COLORE_NEMICO: Record<string, number> = {
   passante: 0x8d8f9a,
 }
 
+/**
+ * Quanto si rimpiccioliscono gli alberi.
+ *
+ * I disegni sono larghi poco più di due celle, ma a fermare il passo è solo la
+ * cella del tronco: così si finiva a camminare dentro la chioma. Ridotti a una
+ * cella e mezza il disegno e la collisione dicono la stessa cosa.
+ */
+const SCALA_ALBERO = 0.66
+
 /** Da quanto lontano si notano i nascondigli, in celle. */
 const RAGGIO_SEGNI = 8
 
@@ -284,8 +293,25 @@ export class CityScene extends Phaser.Scene {
     // sia lì attorno: è l'unico modo di farsi dare i soldi.
     const spaccino = spaccinoAllaPortata(stato, this.pos)
     stato.segnalaInterazione(
-      spaccino ? { tipo: 'spaccino', spaccino } : interazioneInCitta(this.pos),
+      spaccino
+        ? { tipo: 'spaccino', spaccino }
+        : interazioneInCitta(this.pos, LUOGHI, this.genteDoveSta()),
     )
+  }
+
+  /**
+   * Gli NPC con la posizione di adesso.
+   *
+   * `NPC` dichiara dove sono stati piazzati; girovagando se ne allontanano, e
+   * parlare col punto di partenza invece che con la persona è la differenza fra
+   * un gioco e un elenco di coordinate.
+   */
+  private genteDoveSta(): Npc[] {
+    return this.npcVivi.map((vivo) => ({
+      ...vivo.dati,
+      x: vivo.stato.pos.x - 0.5,
+      y: vivo.stato.pos.y - 0.5,
+    }))
   }
 
   /**
@@ -448,7 +474,11 @@ export class CityScene extends Phaser.Scene {
     if (this.minutiMaturati < 1) return
 
     this.minutiMaturati = 0
-    gameStore.getState().unMinuto(this.pos)
+
+    // Dentro un luogo non si viene braccati: la polizia ti aspetta fuori,
+    // e trovarsi un raid già in corso all'uscita sarebbe una beffa.
+    const stato = gameStore.getState()
+    if (stato.ambiente === 'citta') stato.unMinuto(this.pos)
   }
 
   private controllaIngresso() {
@@ -659,6 +689,7 @@ export class CityScene extends Phaser.Scene {
         const { sx, sy } = grigliaASchermo({ x, y })
         const albero = this.add.image(sx, sy, chiaveAlbero(tipo))
         albero.setOrigin(ancora.x, ancora.y)
+        albero.setScale(SCALA_ALBERO)
         albero.setDepth(profondita({ x, y }))
       }
     }
