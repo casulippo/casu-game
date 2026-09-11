@@ -76,6 +76,17 @@ export interface Giocatore {
 }
 
 /**
+ * Il rapporto con la mafia.
+ *
+ * Le droghe pesanti non si comprano coi soldi: si comprano col fatto che
+ * qualcuno sia disposto a parlarti. Finché l'uomo in grigio non ti considera,
+ * al mercato nero trovi solo attrezzatura.
+ */
+export interface Mafia {
+  contatto: boolean
+}
+
+/**
  * Il rapporto con l'armiere.
  *
  * Ogni favore fatto — cioè ogni pezzo di quartiere reso tranquillo — abbassa i
@@ -164,6 +175,7 @@ export interface GameState {
   mercato: Mercato
   polizia: Polizia
   armeria: Armeria
+  mafia: Mafia
   /** Quello che la città si ricorda di te. */
   ricordi: Ricordo[]
   /** Chi vende per te, e cosa ti deve. */
@@ -209,6 +221,7 @@ export function statoIniziale(nome = 'Casu'): GameState {
     mercato: { quotaClienti: 1, grammiPresiOggi: 0, venditeAiRagazzini: 0 },
     polizia: { calore: 0 },
     armeria: { favori: 0 },
+    mafia: { contatto: false },
     ricordi: [],
     spaccini: [],
     storia: { passo: 'parchetto', messaggi: [] },

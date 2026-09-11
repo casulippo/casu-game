@@ -12,7 +12,14 @@ import {
 import type { Mobile } from '../engine/interni'
 import { tettoBazar } from '../engine/livello'
 import type { Luogo } from '../engine/luoghi'
-import { armiInVendita, prezzoArmeria, strumentiInVendita } from '../engine/negozi'
+import {
+  armiInVendita,
+  drogheDallaMafia,
+  grammiDallaMafia,
+  laMafiaTiConsidera,
+  prezzoArmeria,
+  strumentiInVendita,
+} from '../engine/negozi'
 import type { Npc } from '../engine/npc'
 import {
   attivo,
@@ -339,13 +346,39 @@ function BanconeDellArmeria({ chiudi }: { chiudi: () => void }) {
   )
 }
 
-/** Il mercato nero della mafia: gli strumenti. */
+/**
+ * Il mercato nero della mafia: strumenti, e la roba pesante per chi conta.
+ *
+ * Le droghe le tirano fuori solo dopo che l'uomo in grigio ti ha parlato: qui
+ * si vede il listino, ma il permesso si prende in strada.
+ */
 function BanconeDelMercatoNero({ chiudi }: { chiudi: () => void }) {
   const stato = useGame()
   const compra = useGame((s) => s.compraStrumento)
+  const compraDallaMafia = useGame((s) => s.compraDallaMafia)
+
+  const pesanti = drogheDallaMafia(stato)
+  const contante = Math.round(stato.giocatore.contante)
 
   return (
-    <Pannello titolo={`Hai ${Math.round(stato.giocatore.contante)} €`} chiudi={chiudi}>
+    <Pannello
+      titolo={
+        pesanti.length > 0 || !laMafiaTiConsidera(stato)
+          ? `Hai ${contante} €`
+          : 'Attrezzatura. Per il resto parla con l uomo in grigio'
+      }
+      chiudi={chiudi}
+    >
+      {pesanti.map((droga) =>
+        tagli(Math.min(grammiDallaMafia(stato, droga.id), 50)).map((grammi) => (
+          <Scelta
+            key={`${droga.id}-${grammi}`}
+            etichetta={`${droga.nome} ${grammi} g — ${grammi * droga.prezzoAcquisto} €`}
+            azione={() => compraDallaMafia(droga.id, grammi)}
+          />
+        )),
+      )}
+
       {strumentiInVendita(stato).map((strumento) => (
         <Scelta
           key={strumento.id}

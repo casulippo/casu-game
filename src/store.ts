@@ -17,7 +17,13 @@ import {
   riprendiSoldi,
 } from './engine/azioniCasa'
 import { acquistaAlBazar } from './engine/droga'
-import { compraArma, compraStrumento, impugna } from './engine/negozi'
+import {
+  acquistaDallaMafia,
+  compraArma,
+  compraStrumento,
+  impugna,
+  parlaConLaMafia,
+} from './engine/negozi'
 import { compraCibo, type TipoCibo } from './engine/cibo'
 import type { TipoArma } from './engine/armi'
 import type { TipoStrumento } from './engine/strumenti'
@@ -110,6 +116,8 @@ interface GameStore extends GameState {
   compraArma: (arma: TipoArma) => void
   impugna: (arma: TipoArma) => void
   compraStrumento: (id: TipoStrumento) => void
+  /** La roba pesante: si compra solo se l'uomo in grigio ti considera. */
+  compraDallaMafia: (droga: Droga, grammi: number) => void
   compraCibo: (cibo: TipoCibo, quantita: number) => void
   ritiraDa: (spaccinoId: string) => void
   assumiSpaccino: () => void
@@ -204,6 +212,7 @@ export const useGame = create<GameStore>()((set) => ({
   compraArma: (arma) => set((s) => compraArma(s, arma).stato),
   impugna: (arma) => set((s) => impugna(s, arma)),
   compraStrumento: (id) => set((s) => compraStrumento(s, id).stato),
+  compraDallaMafia: (droga, grammi) => set((s) => acquistaDallaMafia(s, droga, grammi).stato),
   compraCibo: (cibo, quantita) => set((s) => compraCibo(s, cibo, quantita).stato),
   ritiraDa: (spaccinoId) => set((s) => ritira(s, spaccinoId)),
 
@@ -219,7 +228,17 @@ export const useGame = create<GameStore>()((set) => ({
     ),
 
   affidaMeta: (spaccinoId, droga) => set((s) => affidaMetaDella(s, spaccinoId, droga)),
-  parlaCon: (npcId) => set((s) => haParlatoCon(s, npcId)),
+  /**
+   * Parlare con qualcuno.
+   *
+   * Con l'uomo in grigio non è solo un saluto: se hai girato abbastanza soldi,
+   * da lì in poi il mercato nero tira fuori anche la roba pesante.
+   */
+  parlaCon: (npcId) =>
+    set((s) => {
+      const dopo = haParlatoCon(s, npcId)
+      return npcId === 'mafia' ? parlaConLaMafia(dopo) : dopo
+    }),
 
   depositaContante: (nascondiglio, importo) =>
     set((s) => nascondiContante(s, nascondiglio, importo)),

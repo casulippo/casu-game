@@ -1,6 +1,8 @@
 import type { GameState } from './state'
 import { ARMI, armaPerId, type DatiArma, type TipoArma } from './armi'
 import { STRUMENTI, strumentoPerId, type DatiStrumento, type TipoStrumento } from './strumenti'
+import { DROGHE, conRoba, type DatiDroga } from './droga'
+import type { Droga } from './state'
 
 /**
  * I banconi della città.
@@ -139,4 +141,88 @@ export function compraStrumento(stato: GameState, id: TipoStrumento): Acquisto {
     esito: 'ok',
     spesa: prezzo,
   }
+}
+
+/**
+ * Quanto bisogna aver girato perché la mafia ti consideri.
+ *
+ * Non è una tassa d'ingresso: è il punto in cui uno che vende per strada
+ * smette di essere un ragazzino e comincia a essere un fornitore mancato.
+ */
+export const RISPETTO_PER_LA_MAFIA = 5_000
+
+export function laMafiaTiConsidera(stato: GameState): boolean {
+  return stato.giocatore.incassoTotale >= RISPETTO_PER_LA_MAFIA
+}
+
+/**
+ * Due parole con l'uomo in grigio.
+ *
+ * Se hai i numeri, da qui in poi il mercato nero tira fuori anche la roba
+ * pesante. Altrimenti ti ha guardato e basta.
+ */
+export function parlaConLaMafia(stato: GameState): GameState {
+  if (stato.mafia.contatto || !laMafiaTiConsidera(stato)) return stato
+  return { ...stato, mafia: { contatto: true } }
+}
+
+/** Quello che la mafia vende, se ti vende qualcosa. */
+export function drogheDallaMafia(stato: GameState): DatiDroga[] {
+  if (!stato.mafia.contatto) return []
+  return DROGHE.filter((d) => d.fornitore === 'mafia')
+}
+
+export interface AcquistoDiRoba {
+  stato: GameState
+  grammi: number
+  spesa: number
+  motivo: 'ok' | 'non-disponibile' | 'senza-soldi'
+}
+
+/**
+ * Comprare dalla mafia.
+ *
+ * Loro non hanno il tetto del bazar: non hanno paura che gli rubi la piazza,
+ * perché la piazza gliela stai comprando. L'unico limite è quanto hai in tasca.
+ */
+export function acquistaDallaMafia(
+  stato: GameState,
+  droga: Droga,
+  grammi: number,
+): AcquistoDiRoba {
+  const listino = drogheDallaMafia(stato).find((d) => d.id === droga)
+  if (!listino) return { stato, grammi: 0, spesa: 0, motivo: 'non-disponibile' }
+
+  const presi = Math.min(
+    Math.max(0, Math.floor(grammi)),
+    Math.floor(stato.giocatore.contante / listino.prezzoAcquisto),
+  )
+  if (presi === 0) return { stato, grammi: 0, spesa: 0, motivo: 'senza-soldi' }
+
+  const spesa = presi * listino.prezzoAcquisto
+
+  return {
+    stato: {
+      ...stato,
+      giocatore: {
+        ...stato.giocatore,
+        contante: arrotonda(stato.giocatore.contante - spesa),
+        roba: conRoba(stato.giocatore.roba, droga, presi),
+      },
+    },
+    grammi: presi,
+    spesa,
+    motivo: 'ok',
+  }
+}
+
+/** Quanti grammi di roba pesante il contante permette adesso. */
+export function grammiDallaMafia(stato: GameState, droga: Droga): number {
+  const listino = drogheDallaMafia(stato).find((d) => d.id === droga)
+  if (!listino) return 0
+  return Math.floor(stato.giocatore.contante / listino.prezzoAcquisto)
+}
+
+function arrotonda(valore: number): number {
+  return Math.round(valore * 100) / 100
 }

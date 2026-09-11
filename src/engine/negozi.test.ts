@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  RISPETTO_PER_LA_MAFIA,
+  acquistaDallaMafia,
   armiInVendita,
+  drogheDallaMafia,
+  grammiDallaMafia,
+  laMafiaTiConsidera,
+  parlaConLaMafia,
   compraArma,
   compraStrumento,
   impugna,
@@ -10,6 +16,7 @@ import {
   unFavoreAllArmiere,
 } from './negozi'
 import { armaPerId } from './armi'
+import { acquistaAlBazar } from './droga'
 import { strumentoPerId } from './strumenti'
 import { statisticheEffettive } from './statistiche'
 import { statoIniziale, type GameState } from './state'
@@ -132,5 +139,79 @@ describe('il mercato nero', () => {
   it('le statistiche base non vengono toccate: il bonus si somma a parte', () => {
     const protetto = compraStrumento(conSoldi(5_000), 'giubbotto').stato
     expect(protetto.giocatore.statistiche.vita).toBe(80)
+  })
+})
+
+describe('la mafia', () => {
+  /** Uno che ha già girato abbastanza soldi da essere preso sul serio. */
+  function rispettato(contante = 5_000): GameState {
+    const base = conSoldi(contante)
+    return {
+      ...base,
+      giocatore: { ...base.giocatore, incassoTotale: RISPETTO_PER_LA_MAFIA },
+    }
+  }
+
+  it('non ti considera finché non hai girato abbastanza', () => {
+    const ragazzino = conSoldi(100_000)
+
+    expect(laMafiaTiConsidera(ragazzino)).toBe(false)
+    expect(parlaConLaMafia(ragazzino)).toBe(ragazzino)
+    expect(drogheDallaMafia(ragazzino)).toEqual([])
+  })
+
+  it('i soldi in tasca non bastano: serve averli girati', () => {
+    const spiantato: GameState = {
+      ...conSoldi(0),
+      giocatore: { ...conSoldi(0).giocatore, incassoTotale: RISPETTO_PER_LA_MAFIA },
+    }
+    expect(laMafiaTiConsidera(spiantato)).toBe(true)
+  })
+
+  it('dopo due parole tira fuori la roba pesante', () => {
+    const contatto = parlaConLaMafia(rispettato())
+
+    expect(contatto.mafia.contatto).toBe(true)
+    expect(drogheDallaMafia(contatto).map((d) => d.id)).toEqual([
+      'cocaina',
+      'crack',
+      'eroina',
+    ])
+  })
+
+  it('la roba pesante non passa dal bazar nemmeno adesso', () => {
+    const contatto = parlaConLaMafia(rispettato())
+    expect(acquistaAlBazar(contatto, 'cocaina', 10).motivo).toBe('non-disponibile')
+  })
+
+  it('comprare scala il contante e consegna i grammi', () => {
+    const contatto = parlaConLaMafia(rispettato(1_000))
+    const acquisto = acquistaDallaMafia(contatto, 'cocaina', 10)
+
+    expect(acquisto.motivo).toBe('ok')
+    expect(acquisto.grammi).toBe(10)
+    expect(acquisto.spesa).toBe(450)
+    expect(acquisto.stato.giocatore.contante).toBe(550)
+    expect(acquisto.stato.giocatore.roba.cocaina).toBe(10)
+  })
+
+  it('senza contatto non si compra niente, per quanti soldi si abbia', () => {
+    expect(acquistaDallaMafia(rispettato(100_000), 'eroina', 5).motivo).toBe(
+      'non-disponibile',
+    )
+  })
+
+  it('loro non hanno tetto: il limite è solo la tasca', () => {
+    const contatto = parlaConLaMafia(rispettato(4_500))
+
+    expect(grammiDallaMafia(contatto, 'cocaina')).toBe(100)
+    expect(acquistaDallaMafia(contatto, 'cocaina', 999).grammi).toBe(100)
+  })
+
+  it('promette solo quello che l acquisto poi mantiene', () => {
+    const contatto = parlaConLaMafia(rispettato(137))
+    const promessi = grammiDallaMafia(contatto, 'crack')
+
+    expect(acquistaDallaMafia(contatto, 'crack', 999).grammi).toBe(promessi)
   })
 })
