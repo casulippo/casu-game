@@ -2,6 +2,7 @@ import type { Griglia } from './iso'
 import { LUOGHI, luogoAllaPortata, type Luogo } from './luoghi'
 import { npcAllaPortata, type Npc } from './npc'
 import type { Spaccino } from './spaccini'
+import { nascondiglioAllaPortata, type Nascondiglio } from './nascondigli'
 import { mobileAllaPortata, sullUscita, type Interno, type Mobile } from './interni'
 
 /**
@@ -17,6 +18,7 @@ export type Interazione =
   | { tipo: 'bloccato'; luogo: Luogo }
   | { tipo: 'parla'; npc: Npc }
   | { tipo: 'spaccino'; spaccino: Spaccino }
+  | { tipo: 'nascondiglio'; nascondiglio: Nascondiglio }
   | { tipo: 'esci' }
   | { tipo: 'mobile'; mobile: Mobile }
   | null
@@ -33,7 +35,12 @@ export function interazioneInCitta(
   }
 
   // Le porte hanno la precedenza: chi sta davanti a una soglia vuole entrare,
-  // anche se il tipo del bazar gli sta a due passi.
+  // anche se il tipo del bazar gli sta a due passi. Poi viene quello che si ha
+  // sotto i piedi, e per ultimo la gente: un nascondiglio si usa stando fermi
+  // lì sopra, e a una persona ci si può sempre girare.
+  const nascondiglio = nascondiglioAllaPortata(posizione)
+  if (nascondiglio) return { tipo: 'nascondiglio', nascondiglio }
+
   const npc = npcAllaPortata(posizione)
   return npc ? { tipo: 'parla', npc } : null
 }
@@ -67,6 +74,9 @@ export function stessaInterazione(a: Interazione, b: Interazione): boolean {
 
   if (a.tipo === 'esci') return true
   if (a.tipo === 'parla') return a.npc.id === (b as { npc: Npc }).npc.id
+  if (a.tipo === 'nascondiglio') {
+    return a.nascondiglio.id === (b as { nascondiglio: Nascondiglio }).nascondiglio.id
+  }
   if (a.tipo === 'spaccino') {
     const altro = b as { spaccino: Spaccino }
     return (

@@ -14,6 +14,13 @@ import { tettoBazar } from '../engine/livello'
 import type { Luogo } from '../engine/luoghi'
 import { armiInVendita, prezzoArmeria, strumentiInVendita } from '../engine/negozi'
 import type { Npc } from '../engine/npc'
+import {
+  attivo,
+  deposito,
+  nascondigliUsati,
+  puoUsare,
+  type Nascondiglio,
+} from '../engine/nascondigli'
 import { haDaVersare, type Spaccino } from '../engine/spaccini'
 import { OFFERTA_BAZAR } from '../engine/storia'
 
@@ -54,6 +61,9 @@ export function PromptAzione() {
     case 'spaccino':
       return <DalloSpaccino spaccino={interazione.spaccino} />
 
+    case 'nascondiglio':
+      return <AlNascondiglio nascondiglio={interazione.nascondiglio} />
+
     case 'bloccato':
       return (
         <Avviso
@@ -78,6 +88,94 @@ function Parla({ npc }: { npc: Npc }) {
       etichetta={`${gia ? 'Saluta' : 'Parla con'} ${npc.nome}`}
       azione={() => parlaCon(npc.id)}
     />
+  )
+}
+
+/**
+ * Il nascondiglio sotto i piedi.
+ *
+ * Quello che si lascia qui è l'unica cosa che un arresto non porta via. Il
+ * limite del livello è sul numero di posti riforniti, quindi un posto già
+ * usato si apre sempre, uno nuovo solo se ne restano.
+ */
+function AlNascondiglio({ nascondiglio }: { nascondiglio: Nascondiglio }) {
+  const [aperto, setAperto] = useState(false)
+  const stato = useGame()
+  const depositaContante = useGame((s) => s.depositaContante)
+  const ritiraContante = useGame((s) => s.ritiraContante)
+  const depositaRoba = useGame((s) => s.depositaRoba)
+  const ritiraRoba = useGame((s) => s.ritiraRoba)
+
+  const dentro = deposito(stato, nascondiglio.id)
+  const pieno = attivo(dentro)
+
+  if (!aperto) {
+    return (
+      <Pulsante
+        etichetta={pieno ? `${nascondiglio.nome} — c'è roba tua` : nascondiglio.nome}
+        azione={() => setAperto(true)}
+      />
+    )
+  }
+
+  const chiudi = () => setAperto(false)
+
+  if (!puoUsare(stato, nascondiglio.id)) {
+    return (
+      <Pannello
+        titolo={`Ne tieni già ${nascondigliUsati(stato)}: più di così non riesci a ricordarli`}
+        chiudi={chiudi}
+      >
+        {[]}
+      </Pannello>
+    )
+  }
+
+  const contante = Math.floor(stato.giocatore.contante)
+  const addosso = DROGHE.filter((d) => grammiDi(stato.giocatore.roba, d.id) > 0)
+  const messa = DROGHE.filter((d) => grammiDi(dentro.roba, d.id) > 0)
+
+  return (
+    <Pannello
+      titolo={
+        pieno
+          ? `Qui dentro: ${dentro.soldi} € e ${grammiTotali(dentro.roba)} g`
+          : 'Vuoto. Ci sta quello che non vuoi perdere'
+      }
+      chiudi={chiudi}
+    >
+      {contante > 0 && (
+        <Scelta
+          etichetta={`Metti via ${contante} €`}
+          azione={() => depositaContante(nascondiglio.id, contante)}
+        />
+      )}
+
+      {addosso.map((droga) => (
+        <Scelta
+          key={`giu-${droga.id}`}
+          etichetta={`Nascondi ${grammiDi(stato.giocatore.roba, droga.id)} g di ${droga.nome}`}
+          azione={() =>
+            depositaRoba(nascondiglio.id, droga.id, grammiDi(stato.giocatore.roba, droga.id))
+          }
+        />
+      ))}
+
+      {dentro.soldi > 0 && (
+        <Scelta
+          etichetta={`Riprendi ${dentro.soldi} €`}
+          azione={() => ritiraContante(nascondiglio.id, dentro.soldi)}
+        />
+      )}
+
+      {messa.map((droga) => (
+        <Scelta
+          key={`su-${droga.id}`}
+          etichetta={`Riprendi ${grammiDi(dentro.roba, droga.id)} g di ${droga.nome}`}
+          azione={() => ritiraRoba(nascondiglio.id, droga.id, grammiDi(dentro.roba, droga.id))}
+        />
+      ))}
+    </Pannello>
   )
 }
 

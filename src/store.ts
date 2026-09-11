@@ -39,6 +39,12 @@ import {
 } from './engine/spaccini'
 import { haParlatoCon, haVisto } from './engine/primiPassi'
 import {
+  nascondiContante,
+  nascondiRoba,
+  riprendiContante,
+  riprendiRoba,
+} from './engine/nascondigli'
+import {
   compraLOffertaDelBazar,
   controlla,
   forsePrimoRaid,
@@ -109,6 +115,11 @@ interface GameStore extends GameState {
   assumiSpaccino: () => void
   affidaMeta: (spaccinoId: string, droga: Droga) => void
   parlaCon: (npcId: string) => void
+  /** I nascondigli in giro: l'unica cosa che un arresto non porta via. */
+  depositaContante: (nascondiglio: string, importo: number) => void
+  ritiraContante: (nascondiglio: string, importo: number) => void
+  depositaRoba: (nascondiglio: string, droga: Droga, grammi: number) => void
+  ritiraRoba: (nascondiglio: string, droga: Droga, grammi: number) => void
   visitaArmeria: () => void
 
   /** Quello che chiama la scena a ogni frame. */
@@ -209,6 +220,15 @@ export const useGame = create<GameStore>()((set) => ({
 
   affidaMeta: (spaccinoId, droga) => set((s) => affidaMetaDella(s, spaccinoId, droga)),
   parlaCon: (npcId) => set((s) => haParlatoCon(s, npcId)),
+
+  depositaContante: (nascondiglio, importo) =>
+    set((s) => nascondiContante(s, nascondiglio, importo)),
+  ritiraContante: (nascondiglio, importo) =>
+    set((s) => riprendiContante(s, nascondiglio, importo)),
+  depositaRoba: (nascondiglio, droga, grammi) =>
+    set((s) => nascondiRoba(s, nascondiglio, droga, grammi)),
+  ritiraRoba: (nascondiglio, droga, grammi) =>
+    set((s) => riprendiRoba(s, nascondiglio, droga, grammi)),
   visitaArmeria: () => set((s) => visitaLArmeria(s)),
 
   /**

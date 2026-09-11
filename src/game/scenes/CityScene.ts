@@ -26,6 +26,7 @@ import { aggiornaNpc, statoInizialeNpc, type StatoNpc } from '../../engine/npcMo
 import { LUOGHI, type Luogo } from '../../engine/luoghi'
 import { interazioneInCitta } from '../../engine/interazione'
 import { spaccinoAllaPortata } from '../../engine/spaccini'
+import { attivo, deposito, nascondigli } from '../../engine/nascondigli'
 import { illuminazione } from '../../engine/illuminazione'
 import { oreDaTempoReale } from '../../engine/time'
 import { gameStore } from '../../store'
@@ -120,6 +121,9 @@ const COLORE_NEMICO: Record<string, number> = {
   passante: 0x8d8f9a,
 }
 
+/** Da quanto lontano si notano i nascondigli, in celle. */
+const RAGGIO_SEGNI = 8
+
 /** Distanza sotto la quale il giocatore urta un NPC invece di attraversarlo. */
 const RAGGIO_URTO_NPC = 0.55
 
@@ -142,6 +146,15 @@ export class CityScene extends Phaser.Scene {
   private npcVivi: NpcVivo[] = []
   /** Il disegno dello scontro: nemici e proiettili, ridipinti a ogni frame. */
   private scontroGrafica!: Phaser.GameObjects.Graphics
+  /**
+   * I segni dei nascondigli vicini.
+   *
+   * Uno per posto invece di un disegno solo: così ognuno prende la profondità
+   * della propria cella e finisce sotto il palazzo che gli sta davanti, come
+   * qualunque altra cosa appoggiata per terra.
+   */
+  private segniNascondigli: Phaser.GameObjects.Graphics[] = []
+  private ultimaCellaDeiSegni = ''
   /** Minuti di gioco accumulati: ogni minuto la polizia tira il suo dado. */
   private minutiMaturati = 0
   private tastoFuoco!: Phaser.Input.Keyboard.Key
@@ -220,6 +233,7 @@ export class CityScene extends Phaser.Scene {
     const ore = oreDaTempoReale(deltaMs)
     gameStore.getState().avanzaTempo(ore)
     this.aggiornaScontro(deltaSec)
+    this.aggiornaSegniNascondigli()
     this.contaIMinuti(ore)
     this.aggiornaLuce()
   }
@@ -386,6 +400,45 @@ export class CityScene extends Phaser.Scene {
     for (const proiettile of scontro.proiettili) {
       const { sx, sy } = grigliaASchermo(proiettile.pos)
       g.fillCircle(sx, sy - 10, 3)
+    }
+  }
+
+  /**
+   * I segni dei nascondigli.
+   *
+   * Cinquanta posti in città non si tengono a mente: quelli a portata di
+   * sguardo si segnano per terra, e chi contiene qualcosa si segna diverso. Si
+   * ridisegnano solo cambiando cella, non sessanta volte al secondo.
+   */
+  private aggiornaSegniNascondigli() {
+    const cella = `${Math.floor(this.pos.x)},${Math.floor(this.pos.y)}`
+    if (cella === this.ultimaCellaDeiSegni) return
+    this.ultimaCellaDeiSegni = cella
+
+    const stato = gameStore.getState()
+
+    for (const vecchio of this.segniNascondigli) vecchio.destroy()
+    this.segniNascondigli = []
+
+    for (const posto of nascondigli()) {
+      const distanza = Math.hypot(posto.cella.x - this.pos.x, posto.cella.y - this.pos.y)
+      if (distanza > RAGGIO_SEGNI) continue
+
+      const { sx, sy } = grigliaASchermo(posto.cella)
+      const pieno = attivo(deposito(stato, posto.id))
+      const cx = sx + TILE_W / 2
+      const cy = sy + TILE_H / 2
+
+      const g = this.add.graphics()
+      g.setDepth(profondita(posto.cella) - 0.4)
+      g.lineStyle(2, pieno ? 0x4fbf7a : 0xd8a24a, pieno ? 0.9 : 0.5)
+      g.strokeCircle(cx, cy, 9)
+      if (pieno) {
+        g.fillStyle(0x4fbf7a, 0.5)
+        g.fillCircle(cx, cy, 4)
+      }
+
+      this.segniNascondigli.push(g)
     }
   }
 
