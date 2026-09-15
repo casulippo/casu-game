@@ -109,15 +109,6 @@ const COLORE_NEMICO: Record<string, number> = {
   passante: 0x8d8f9a,
 }
 
-/**
- * Quanto si rimpiccioliscono gli alberi.
- *
- * I disegni sono larghi poco più di due celle, ma a fermare il passo è solo la
- * cella del tronco: così si finiva a camminare dentro la chioma. Ridotti a una
- * cella e mezza il disegno e la collisione dicono la stessa cosa.
- */
-const SCALA_ALBERO = 0.66
-
 /** Da quanto lontano si notano i nascondigli, in celle. */
 const RAGGIO_SEGNI = 8
 
@@ -677,7 +668,6 @@ export class CityScene extends Phaser.Scene {
         const { sx, sy } = grigliaASchermo({ x, y })
         const albero = this.add.image(sx, sy, chiaveAlbero(this, tipo))
         albero.setOrigin(ancora.x, ancora.y)
-        albero.setScale(SCALA_ALBERO)
         albero.setDepth(profondita({ x, y }))
       }
     }

@@ -67,9 +67,25 @@ const ASPETTO: Record<string, Aspetto> = {
   },
 }
 
-/** Quanto è alta la fascia di facciata, secondo i piani. */
+/**
+ * Quanto la facciata scende sotto la pianta, in pixel.
+ *
+ * È fissa: la fascia che sborda occupa i due terzi della cella della soglia,
+ * dove si ferma chi entra. Se crescesse con i piani, un palazzo alto
+ * finirebbe col coprire il marciapiede davanti a sé.
+ */
+const SPORGENZA_FACCIATA = 34
+
+/**
+ * Quanto è alto il muro di facciata, secondo i piani.
+ *
+ * Più alto di quanto sborda: la parte in eccesso sale sopra la pianta,
+ * mangiando la falda bassa del tetto. Serve perché la porta ci stia dentro
+ * tutta, e una porta deve essere alta almeno quanto chi ci passa — un
+ * personaggio è alto una cella scarsa.
+ */
 function altezzaFacciata(piani: number): number {
-  return Math.min(38, 12 + piani * 9)
+  return Math.min(60, 40 + piani * 7)
 }
 
 export interface EdificioDipinto {
@@ -87,7 +103,7 @@ export function disegnaLuogo(
   const larghezza = luogo.larghezza * TILE_W
   const profondita = luogo.profondita * TILE_H
   const facciata = altezzaFacciata(luogo.piani)
-  const alta = profondita + facciata
+  const alta = profondita + SPORGENZA_FACCIATA
 
   const chiave = `luogo-${luogo.id}`
   const ancora = { x: 0.5, y: profondita / alta }
@@ -101,9 +117,11 @@ export function disegnaLuogo(
   if (!ctx) return null
   ctx.imageSmoothingEnabled = false
 
-  disegnaFacciata(ctx, luogo, aspetto, larghezza, profondita, facciata)
+  // Il tetto per primo, su tutta la pianta: la facciata poi gli sale sopra
+  // fin dove arriva il muro, e la gronda chiude la giunzione.
   if (aspetto.falde) tettoAFalde(ctx, aspetto, larghezza, profondita)
   else tettoPiano(ctx, aspetto, larghezza, profondita)
+  disegnaFacciata(ctx, luogo, aspetto, larghezza, profondita, facciata)
 
   scena.textures.addCanvas(chiave, tela)
   return { chiave, ancora }
@@ -112,8 +130,8 @@ export function disegnaLuogo(
 /**
  * La facciata, con la porta dov'è davvero la soglia.
  *
- * Disegnata prima del tetto: così la gronda le sta sopra e l'edificio non
- * sembra un adesivo appiccicato al suolo.
+ * Il muro poggia sul filo inferiore della sporgenza e sale da lì: quando è
+ * più alto di quanto sborda, la differenza copre la parte bassa del tetto.
  */
 function disegnaFacciata(
   ctx: CanvasRenderingContext2D,
@@ -123,11 +141,19 @@ function disegnaFacciata(
   profondita: number,
   altezza: number,
 ) {
+  const base = profondita + SPORGENZA_FACCIATA
+  const cima = base - altezza
+
   ctx.fillStyle = css(aspetto.facciata)
-  ctx.fillRect(0, profondita, larghezza, altezza)
+  ctx.fillRect(0, cima, larghezza, altezza)
 
   ctx.fillStyle = css(aspetto.zoccolo)
-  ctx.fillRect(0, profondita + altezza - 4, larghezza, 4)
+  ctx.fillRect(0, base - 4, larghezza, 4)
+
+  // La gronda: il tetto sporge di un dito sul muro, altrimenti l'edificio
+  // sembra un adesivo appiccicato al suolo.
+  ctx.fillStyle = css(scurisci(aspetto.tetto, 0.7))
+  ctx.fillRect(0, cima - 3, larghezza, 3)
 
   // La porta cade nella colonna della soglia, non al centro per comodità.
   const colonna = Math.min(
@@ -135,36 +161,39 @@ function disegnaFacciata(
     luogo.larghezza - 1,
   )
   const centroPorta = colonna * TILE_W + TILE_W / 2
-  const larghezzaPorta = Math.min(18, TILE_W * 0.4)
-  const altezzaPorta = altezza * 0.72
+  const larghezzaPorta = Math.min(24, TILE_W * 0.5)
+  // Tutta l'altezza del muro meno lo zoccolo: è la porta a dare la scala
+  // all'edificio, e chi la guarda ci confronta il proprio personaggio.
+  const altezzaPorta = altezza - 6
 
   ctx.fillStyle = css(aspetto.infissi)
   ctx.fillRect(
     centroPorta - larghezzaPorta / 2,
-    profondita + altezza - altezzaPorta - 4,
+    base - 4 - altezzaPorta,
     larghezzaPorta,
     altezzaPorta,
   )
 
-  // Le finestre stanno nelle altre campate, una per cella.
+  // Le finestre stanno nelle altre campate, una per cella, in alto sul muro.
   for (let c = 0; c < luogo.larghezza; c++) {
     if (c === colonna) continue
 
     const centro = c * TILE_W + TILE_W / 2
-    const larghezzaFinestra = Math.min(20, TILE_W * 0.42)
-    const altezzaFinestra = Math.min(14, altezza * 0.38)
+    const larghezzaFinestra = Math.min(22, TILE_W * 0.45)
+    const altezzaFinestra = Math.min(18, altezza * 0.3)
+    const altoFinestra = cima + 8
 
     ctx.fillStyle = css(aspetto.infissi)
     ctx.fillRect(
       centro - larghezzaFinestra / 2,
-      profondita + altezza * 0.28,
+      altoFinestra,
       larghezzaFinestra,
       altezzaFinestra,
     )
     ctx.fillStyle = 'rgba(255,255,255,0.22)'
     ctx.fillRect(
       centro - larghezzaFinestra / 2 + 2,
-      profondita + altezza * 0.28 + 2,
+      altoFinestra + 2,
       larghezzaFinestra - 4,
       altezzaFinestra - 4,
     )
@@ -172,7 +201,7 @@ function disegnaFacciata(
 
   ctx.strokeStyle = css(scurisci(aspetto.facciata, 0.55))
   ctx.lineWidth = 1
-  ctx.strokeRect(0.5, profondita + 0.5, larghezza - 1, altezza - 1)
+  ctx.strokeRect(0.5, cima + 0.5, larghezza - 1, altezza - 1)
 }
 
 /** Tetto a falde: due spioventi che si incontrano sul colmo. */

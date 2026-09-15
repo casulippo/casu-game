@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { TILE_W } from '../engine/iso'
 import { DIREZIONE_OMBRA } from './scenes/comuni'
 
 /**
@@ -170,7 +171,18 @@ const ASPETTO_ALBERO: Record<TipoAlbero, AspettoAlbero> = {
   },
 }
 
-const LATO_ALBERO = 64
+/**
+ * Il lato del riquadro dell'albero: è questo a decidere quanto è grande a
+ * schermo, perché la texture nasce già alla misura finale.
+ *
+ * L'albero è alto quasi due celle — il doppio di un personaggio, che ne è
+ * alto una scarsa: più basso sembrerebbe un cespuglio. Largo invece resta
+ * una cella e mezza, perché a fermare il passo è solo la cella del tronco:
+ * una chioma più larga si farebbe attraversare, e disegno e collisione
+ * direbbero due cose diverse.
+ */
+const LATO_ALBERO = Math.round(TILE_W * 2.5)
+
 /** Centro della base del tronco, nel riquadro dell'albero. */
 const ANCORA_ALBERO = { x: 0.5, y: 0.86 }
 
@@ -181,18 +193,21 @@ export function chiaveAlbero(scena: Phaser.Scene, tipo: TipoAlbero): string {
   const { canvas, ctx } = tela(LATO_ALBERO, LATO_ALBERO)
   if (!ctx) return chiave
 
+  // Tutte le misure del disegno sono frazioni del lato: cambiare
+  // `LATO_ALBERO` ridimensiona l'albero senza deformarlo.
+  const L = LATO_ALBERO
   const aspetto = ASPETTO_ALBERO[tipo]
-  const baseX = LATO_ALBERO * ANCORA_ALBERO.x
-  const baseY = LATO_ALBERO * ANCORA_ALBERO.y
+  const baseX = L * ANCORA_ALBERO.x
+  const baseY = L * ANCORA_ALBERO.y
 
   // L'ombra a terra, nella stessa direzione del sole del resto della mappa.
   ctx.fillStyle = 'rgba(0,0,0,0.28)'
   ctx.beginPath()
   ctx.ellipse(
-    baseX + DIREZIONE_OMBRA.x * 8,
-    baseY + DIREZIONE_OMBRA.y * 5,
-    16,
-    7,
+    baseX + DIREZIONE_OMBRA.x * L * 0.12,
+    baseY + DIREZIONE_OMBRA.y * L * 0.07,
+    L * 0.22,
+    L * 0.09,
     0,
     0,
     Math.PI * 2,
@@ -201,53 +216,59 @@ export function chiaveAlbero(scena: Phaser.Scene, tipo: TipoAlbero): string {
 
   // Il tronco: solo un accenno, la chioma lo copre quasi tutto dall'alto.
   ctx.fillStyle = css(aspetto.tronco)
-  ctx.fillRect(baseX - 4, baseY - 10, 8, 10)
+  ctx.fillRect(baseX - L * 0.055, baseY - L * 0.22, L * 0.11, L * 0.22)
 
   // La chioma: un ciuffo di lobi tondi per le latifoglie, un cono per la conifera.
-  const centroChioma = { x: baseX, y: baseY - 22 }
+  const centroChioma = { x: baseX, y: baseY - L * 0.42 }
   if (aspetto.appuntita) {
     ctx.fillStyle = css(aspetto.chiomaScura)
     ctx.beginPath()
-    ctx.moveTo(centroChioma.x, centroChioma.y - 22)
-    ctx.lineTo(centroChioma.x + 18, centroChioma.y + 14)
-    ctx.lineTo(centroChioma.x - 18, centroChioma.y + 14)
+    ctx.moveTo(centroChioma.x, centroChioma.y - L * 0.35)
+    ctx.lineTo(centroChioma.x + L * 0.29, centroChioma.y + L * 0.22)
+    ctx.lineTo(centroChioma.x - L * 0.29, centroChioma.y + L * 0.22)
     ctx.closePath()
     ctx.fill()
 
     ctx.fillStyle = css(aspetto.chioma)
     ctx.beginPath()
-    ctx.moveTo(centroChioma.x, centroChioma.y - 22)
-    ctx.lineTo(centroChioma.x + 13, centroChioma.y + 6)
-    ctx.lineTo(centroChioma.x - 13, centroChioma.y + 6)
+    ctx.moveTo(centroChioma.x, centroChioma.y - L * 0.35)
+    ctx.lineTo(centroChioma.x + L * 0.21, centroChioma.y + L * 0.09)
+    ctx.lineTo(centroChioma.x - L * 0.21, centroChioma.y + L * 0.09)
     ctx.closePath()
     ctx.fill()
 
     ctx.fillStyle = css(aspetto.chiomaChiara)
     ctx.beginPath()
-    ctx.arc(centroChioma.x - 4, centroChioma.y - 12, 3.5, 0, Math.PI * 2)
+    ctx.arc(centroChioma.x - L * 0.06, centroChioma.y - L * 0.19, L * 0.055, 0, Math.PI * 2)
     ctx.fill()
   } else {
     const lobi = [
-      { dx: 0, dy: 0, r: 17 },
-      { dx: -12, dy: 6, r: 12 },
-      { dx: 12, dy: 6, r: 12 },
-      { dx: 0, dy: -10, r: 12 },
+      { dx: 0, dy: 0, r: 0.22 },
+      { dx: -0.15, dy: 0.08, r: 0.15 },
+      { dx: 0.15, dy: 0.08, r: 0.15 },
+      { dx: 0, dy: -0.15, r: 0.16 },
     ]
     ctx.fillStyle = css(aspetto.chiomaScura)
     for (const lobo of lobi) {
       ctx.beginPath()
-      ctx.arc(centroChioma.x + lobo.dx, centroChioma.y + lobo.dy + 2, lobo.r, 0, Math.PI * 2)
+      ctx.arc(
+        centroChioma.x + lobo.dx * L,
+        centroChioma.y + lobo.dy * L + L * 0.03,
+        lobo.r * L,
+        0,
+        Math.PI * 2,
+      )
       ctx.fill()
     }
     ctx.fillStyle = css(aspetto.chioma)
     for (const lobo of lobi) {
       ctx.beginPath()
-      ctx.arc(centroChioma.x + lobo.dx, centroChioma.y + lobo.dy, lobo.r, 0, Math.PI * 2)
+      ctx.arc(centroChioma.x + lobo.dx * L, centroChioma.y + lobo.dy * L, lobo.r * L, 0, Math.PI * 2)
       ctx.fill()
     }
     ctx.fillStyle = css(aspetto.chiomaChiara)
     ctx.beginPath()
-    ctx.arc(centroChioma.x - 6, centroChioma.y - 8, 6, 0, Math.PI * 2)
+    ctx.arc(centroChioma.x - L * 0.075, centroChioma.y - L * 0.1, L * 0.075, 0, Math.PI * 2)
     ctx.fill()
   }
 
