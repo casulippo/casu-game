@@ -9,6 +9,11 @@ comune e centrata, in una griglia di 4 colonne per 4 righe.
 L'ordine delle righe è quello che il gioco si aspetta: fronte, schiena,
 sinistra, destra. La destra si ottiene specchiando la sinistra — un profilo
 speculare è indistinguibile da uno disegnato apposta, e costa la metà.
+
+Perché serve `specchia`: il generatore non rispetta il verso richiesto, e fra
+le figure di profilo di uno stesso foglio ce ne sono di rivolte a destra. Se
+finiscono nella riga così come sono, il personaggio gira la faccia a metà
+camminata. Vanno raddrizzate qui, una volta sola, non a occhio dal gioco.
 """
 
 from PIL import Image
@@ -28,12 +33,14 @@ RIGHE = 4
 # Per ogni personaggio: quali figure usare, e quanto è alto rispetto alla cella.
 # L'altezza tiene le proporzioni tra i personaggi: l'armiere è un armadio,
 # Kai è un ragazzino.
+# `specchia` elenca le posizioni di `lato` (0-3) la cui figura guarda a destra
+# nel foglio generato: vanno ribaltate perché la riga guardi tutta a sinistra.
 SCELTE = {
-    "kai":       {"fronte": [0, 1, 2, 3], "schiena": [4, 5, 6, 7],  "lato": [8, 11, 14, 21], "altezza": 0.84},
-    "armiere":   {"fronte": [0, 1, 2, 3], "schiena": [4, 5, 6, 7],  "lato": [8, 11, 16, 20], "altezza": 0.94},
-    "venditore": {"fronte": [0, 1, 2, 3], "schiena": [8, 10, 12, 13], "lato": [16, 18, 19, 20], "altezza": 0.87},
-    "mafia":     {"fronte": [0, 1, 2, 3], "schiena": [8, 9, 10, 11], "lato": [16, 17, 18, 20], "altezza": 0.92},
-    "capo":      {"fronte": [0, 1, 2, 3], "schiena": [8, 9, 10, 11], "lato": [16, 17, 18, 20], "altezza": 0.84},
+    "kai":       {"fronte": [0, 1, 2, 3], "schiena": [4, 5, 6, 7],  "lato": [8, 11, 14, 21], "specchia": [2, 3],       "altezza": 0.84},
+    "armiere":   {"fronte": [0, 1, 2, 3], "schiena": [4, 5, 6, 7],  "lato": [8, 11, 16, 20], "specchia": [1],          "altezza": 0.94},
+    "venditore": {"fronte": [0, 1, 2, 3], "schiena": [8, 10, 12, 13], "lato": [16, 18, 19, 20], "specchia": [0, 1, 2, 3], "altezza": 0.87},
+    "mafia":     {"fronte": [0, 1, 2, 3], "schiena": [8, 9, 10, 11], "lato": [16, 17, 18, 20], "specchia": [0, 1, 2, 3], "altezza": 0.92},
+    "capo":      {"fronte": [0, 1, 2, 3], "schiena": [8, 9, 10, 11], "lato": [16, 17, 18, 20], "specchia": [0, 1, 2, 3], "altezza": 0.84},
 }
 
 
@@ -70,10 +77,15 @@ def componi(nome):
         scelta["lato"],
     ]
 
+    specchia = set(scelta.get("specchia", []))
+
     for r, indici in enumerate(righe):
         for c, i in enumerate(indici):
             pezzo = tutti[i]
-            if r == 3:
+            # Prima si raddrizza la figura verso sinistra, poi la riga di
+            # destra ribalta tutto: due ribaltamenti si annullano.
+            gira = (r >= 2 and c in specchia) != (r == 3)
+            if gira:
                 pezzo = pezzo.transpose(Image.FLIP_LEFT_RIGHT)
             posa(tela, pezzo, c, r, altezza_utile)
 
