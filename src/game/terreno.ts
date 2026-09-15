@@ -4,19 +4,17 @@ import type { Attraversamento, Mezzeria } from '../engine/city'
 import type { Pavimentazione } from '../engine/quartieri'
 
 /**
- * Le superfici del suolo: fotografie vere, non più texture disegnate da codice.
+ * Le superfici del suolo: colori piatti disegnati a runtime, nello stesso
+ * linguaggio cartoon degli edifici e dei personaggi — non più fotografie.
  *
- * Ogni materiale è un'unica immagine seamless (1024x1024, si ripete senza
- * cuciture) in `public/terreno/`. Il gioco non la ridimensiona in tante
- * varianti: la campiona a finestre di una cella, alla posizione che quella
- * cella occupa nel mondo — così il disegno continua identico attraverso i
- * confini dei blocchi in cui il suolo viene dipinto, senza bisogno di
- * generare nulla in anticipo.
+ * Ogni cella si dipinge da sé, con un pattern deterministico dato dalle sue
+ * coordinate nel mondo: così il disegno continua identico attraverso i
+ * confini dei blocchi in cui il suolo viene dipinto, senza dover campionare
+ * nulla da un'immagine sorgente.
  *
- * Le fotografie non portano ombre proprie: quelle sono affare di chi ci sta
+ * Le superfici non portano ombre proprie: quelle sono affare di chi ci sta
  * sopra (alberi, personaggi, edifici), tutti allineati sullo stesso sole in
- * `comuni.ts`. Un tile con l'ombra già dentro la proietterebbe due volte, o
- * nella direzione sbagliata a seconda di dove cade sulla mappa.
+ * `comuni.ts`.
  */
 
 const MATERIALI = {
@@ -29,86 +27,157 @@ const MATERIALI = {
 
 export type Materiale = keyof typeof MATERIALI
 
-/** Lato della fotografia sorgente, in pixel: tutte e cinque sono quadrate uguali. */
-const LATO_SORGENTE = 1024
-
-function chiaveSorgente(materiale: Materiale): string {
-  return `terreno-src-${materiale}`
+interface Tinta {
+  base: number
+  chiaro: number
+  scuro: number
 }
 
-export function caricaTerreno(scena: Phaser.Scene) {
-  for (const nome of Object.keys(MATERIALI) as Materiale[]) {
-    scena.load.image(chiaveSorgente(nome), `terreno/${nome}.jpg`)
-  }
+const TINTE: Record<Materiale, Tinta> = {
+  erba: { base: 0x7bc36b, chiaro: 0x8fd47e, scuro: 0x63a856 },
+  asfalto: { base: 0x53575f, chiaro: 0x63676f, scuro: 0x3f434a },
+  sterrato: { base: 0xad8552, chiaro: 0xc09a63, scuro: 0x8e6a3f },
+  ciottolato: { base: 0xb7ab8d, chiaro: 0xc7bda3, scuro: 0x968a6d },
+  lastricato: { base: 0xcbc6b6, chiaro: 0xd9d5c8, scuro: 0xaaa495 },
+}
+
+/** Rumore deterministico in [0, 1), stabile per ogni cella del mondo. */
+function rumoreCella(x: number, y: number, sale: number): number {
+  const v = Math.sin(x * 12.9898 + y * 78.233 + sale * 37.719) * 43758.5453
+  return v - Math.floor(v)
 }
 
 /**
- * Disegna una cella di terreno campionando la fotografia alla sua posizione
- * nel mondo, non a una posizione relativa al pezzo di canvas che la ospita.
- *
- * È questo a far continuare il disegno da un blocco all'altro: due celle
- * adiacenti che cadono in blocchi diversi campionano comunque punti adiacenti
- * della stessa foto.
- *
- * Quando la finestra scavalca il bordo della foto (che si ripete), va
- * spezzata in più rettangoli — fino a quattro, se cade proprio sull'angolo.
- * È l'equivalente su canvas 2D del `GL_REPEAT` di una scheda grafica.
+ * Dipinge una cella di terreno con un pattern cartoon piatto, in coordinate
+ * di cella nel mondo (non di blocco): è da lì che il pattern prende il seme,
+ * così due celle adiacenti in blocchi diversi restano coerenti.
  */
-function disegnaTerrenoRipetuto(
+function disegnaMateriale(
   ctx: CanvasRenderingContext2D,
-  sorgente: CanvasImageSource,
-  mondoX: number,
-  mondoY: number,
+  materiale: Materiale,
+  cellaX: number,
+  cellaY: number,
   destX: number,
   destY: number,
 ) {
-  const sx = ((mondoX % LATO_SORGENTE) + LATO_SORGENTE) % LATO_SORGENTE
-  const sy = ((mondoY % LATO_SORGENTE) + LATO_SORGENTE) % LATO_SORGENTE
+  const tinta = TINTE[materiale]
+  ctx.fillStyle = css(tinta.base)
+  ctx.fillRect(destX, destY, TILE_W, TILE_H)
 
-  const largoA = Math.min(TILE_W, LATO_SORGENTE - sx)
-  const altoA = Math.min(TILE_H, LATO_SORGENTE - sy)
+  switch (materiale) {
+    case 'erba':
+      disegnaErba(ctx, tinta, cellaX, cellaY, destX, destY)
+      break
+    case 'asfalto':
+      disegnaFlecce(ctx, tinta, cellaX, cellaY, destX, destY, 5, 1.6)
+      break
+    case 'sterrato':
+      disegnaFlecce(ctx, tinta, cellaX, cellaY, destX, destY, 6, 2.4)
+      break
+    case 'ciottolato':
+      disegnaCiottoli(ctx, tinta, cellaX, cellaY, destX, destY)
+      break
+    case 'lastricato':
+      disegnaLastre(ctx, tinta, destX, destY)
+      break
+  }
+}
 
-  ctx.drawImage(sorgente, sx, sy, largoA, altoA, destX, destY, largoA, altoA)
+/** Ciuffi d'erba: due tocchi più scuri e uno più chiaro, mai nella stessa posa. */
+function disegnaErba(
+  ctx: CanvasRenderingContext2D,
+  tinta: Tinta,
+  cellaX: number,
+  cellaY: number,
+  destX: number,
+  destY: number,
+) {
+  for (let i = 0; i < 3; i++) {
+    const rx = rumoreCella(cellaX, cellaY, i * 2 + 1)
+    const ry = rumoreCella(cellaX, cellaY, i * 2 + 2)
+    const cx = destX + 6 + rx * (TILE_W - 12)
+    const cy = destY + 6 + ry * (TILE_H - 12)
 
-  if (largoA < TILE_W) {
-    ctx.drawImage(
-      sorgente,
-      0,
-      sy,
-      TILE_W - largoA,
-      altoA,
-      destX + largoA,
-      destY,
-      TILE_W - largoA,
-      altoA,
-    )
+    ctx.strokeStyle = css(i === 0 ? tinta.chiaro : tinta.scuro)
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(cx - 3, cy + 4)
+    ctx.lineTo(cx, cy - 5)
+    ctx.moveTo(cx + 3, cy + 4)
+    ctx.lineTo(cx, cy - 5)
+    ctx.stroke()
   }
-  if (altoA < TILE_H) {
-    ctx.drawImage(
-      sorgente,
-      sx,
-      0,
-      largoA,
-      TILE_H - altoA,
-      destX,
-      destY + altoA,
-      largoA,
-      TILE_H - altoA,
-    )
+}
+
+/** Puntini sparsi, per superfici granulose come asfalto e sterrato. */
+function disegnaFlecce(
+  ctx: CanvasRenderingContext2D,
+  tinta: Tinta,
+  cellaX: number,
+  cellaY: number,
+  destX: number,
+  destY: number,
+  quante: number,
+  raggio: number,
+) {
+  for (let i = 0; i < quante; i++) {
+    const rx = rumoreCella(cellaX, cellaY, i * 3 + 1)
+    const ry = rumoreCella(cellaX, cellaY, i * 3 + 2)
+    const rc = rumoreCella(cellaX, cellaY, i * 3 + 3)
+
+    ctx.fillStyle = css(rc > 0.5 ? tinta.chiaro : tinta.scuro)
+    ctx.globalAlpha = 0.5
+    ctx.beginPath()
+    ctx.arc(destX + rx * TILE_W, destY + ry * TILE_H, raggio, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.globalAlpha = 1
   }
-  if (largoA < TILE_W && altoA < TILE_H) {
-    ctx.drawImage(
-      sorgente,
-      0,
-      0,
-      TILE_W - largoA,
-      TILE_H - altoA,
-      destX + largoA,
-      destY + altoA,
-      TILE_W - largoA,
-      TILE_H - altoA,
-    )
+}
+
+/** Sassetti tondi disposti su una griglia leggera, col bordo scuro tipico del cartoon. */
+function disegnaCiottoli(
+  ctx: CanvasRenderingContext2D,
+  tinta: Tinta,
+  cellaX: number,
+  cellaY: number,
+  destX: number,
+  destY: number,
+) {
+  const passo = TILE_W / 3
+  for (let ry = 0; ry < 3; ry++) {
+    for (let rx = 0; rx < 3; rx++) {
+      const jx = (rumoreCella(cellaX, cellaY, rx * 3 + ry + 1) - 0.5) * 6
+      const jy = (rumoreCella(cellaX, cellaY, rx * 3 + ry + 11) - 0.5) * 6
+      const chiaro = rumoreCella(cellaX, cellaY, rx * 3 + ry + 21) > 0.5
+
+      const cx = destX + passo * (rx + 0.5) + jx
+      const cy = destY + passo * (ry + 0.5) + jy
+
+      ctx.fillStyle = css(chiaro ? tinta.chiaro : tinta.base)
+      ctx.strokeStyle = css(tinta.scuro)
+      ctx.lineWidth = 1
+      ctx.beginPath()
+      ctx.arc(cx, cy, passo * 0.32, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+    }
   }
+}
+
+/** Lastre di pavimentazione: giunti netti sui due lati, come tessere posate. */
+function disegnaLastre(
+  ctx: CanvasRenderingContext2D,
+  tinta: Tinta,
+  destX: number,
+  destY: number,
+) {
+  ctx.strokeStyle = css(tinta.scuro)
+  ctx.lineWidth = 2
+  ctx.strokeRect(destX + 1, destY + 1, TILE_W - 2, TILE_H - 2)
+
+  ctx.strokeStyle = css(tinta.chiaro)
+  ctx.lineWidth = 1
+  ctx.strokeRect(destX + 3, destY + 3, TILE_W - 6, TILE_H - 6)
 }
 
 export interface SuoloDipinto {
@@ -122,7 +191,7 @@ export interface DescrizioneCella {
   materiale: Materiale | null
   rialzo: number
   coloreCordolo: number | null
-  /** Usato solo dove non c'è una fotografia (l'acqua). */
+  /** Usato solo dove non c'è un materiale (l'acqua). */
   colore: number
   mezzeria?: Mezzeria
   strisce?: Attraversamento | null
@@ -196,7 +265,7 @@ function dipingiBlocco(
       const sinistra = (x - x0) * TILE_W
       const alto = (y - y0) * TILE_H + SPORGENZA
 
-      // Superfici senza fotografia, come il mare: un quadrato di colore pieno.
+      // Superfici senza materiale, come il mare: un quadrato di colore pieno.
       if (!info.materiale) {
         ctx.fillStyle = css(info.colore)
         ctx.fillRect(sinistra, alto, TILE_W, TILE_H)
@@ -209,11 +278,7 @@ function dipingiBlocco(
 
       const cima = alto - info.rialzo
 
-      const sorgente = scena.textures
-        .get(chiaveSorgente(info.materiale))
-        .getSourceImage() as CanvasImageSource
-
-      disegnaTerrenoRipetuto(ctx, sorgente, x * TILE_W, y * TILE_H, sinistra, cima)
+      disegnaMateriale(ctx, info.materiale, x, y, sinistra, cima)
 
       if (info.strisce) disegnaStrisce(ctx, sinistra, cima, info.strisce)
       else if (info.mezzeria) disegnaMezzeria(ctx, sinistra, cima, info.mezzeria)

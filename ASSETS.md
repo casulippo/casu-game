@@ -5,25 +5,26 @@ Ogni risorsa grafica usata nel gioco va registrata qui con provenienza e licenza
 
 ## Asset di gioco
 
-Nessuno: al momento tutto è disegnato a runtime con forme geometriche.
+Terreno, alberi e arredo di periferia sono disegnati a runtime (canvas), stile
+cartoon piatto — nessun file da registrare. Restano immagini vere solo i
+personaggi.
 
 | File | Contenuto | Provenienza | Licenza |
 |---|---|---|---|
-| — | — | — | — |
+| `public/personaggi/*.png` | Walk-cycle 4 direzioni, cartoon cel-shaded | da verificare con chi li ha prodotti | da tracciare |
 
 ## Specifiche per nuovi asset
 
 Perché un'immagine sia utilizzabile e non solo ispirazione:
 
-- **Formato PNG**, mai JPEG: la compressione lossy sfoca i bordi netti della pixel art.
-- **Prospettiva isometrica 2:1**, coerente con il resto del gioco.
-- **Tile 64×32 px**, o multipli esatti per gli oggetti che occupano più celle.
-- **Tileset o spritesheet**, non scene già composte: servono elementi ripetibili
-  e componibili, non un ambiente finito.
+- **Formato PNG**, mai JPEG: la compressione lossy sfoca i bordi netti.
+- **Prospettiva dall'alto, piatta**: niente isometrico né obliquo — vedi CLAUDE.md.
+- **Tile 48×48 px** (`TILE_W`/`TILE_H` in `src/engine/iso.ts`), o multipli esatti
+  per gli oggetti che occupano più celle.
 - **Fondo trasparente** per tutto ciò che non è pavimentazione.
 
 ## Nota sulla prospettiva
 
-Il gioco è oggi in isometrica 2:1. Un tileset disegnato in top-down ortogonale
-non è convertibile: i due sistemi non si mescolano. Se si decide di passare al
-top-down, va deciso prima di produrre gli asset, non dopo.
+Il gioco è in top-down ortogonale, griglia quadrata (`src/engine/iso.ts`). Gli
+edifici e l'arredo verticale mostrano solo una fascia di facciata verso chi
+guarda — mai una faccia obliqua o isometrica, nemmeno negli asset.

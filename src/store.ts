@@ -92,7 +92,7 @@ export type Ambiente = 'citta' | 'interno'
  *
  * Phaser scrive qui (il tempo che scorre, dove si trova il giocatore),
  * React si sottoscrive e si ridisegna da solo. I due strati non si parlano
- * mai direttamente: è l'equivalente tipizzato dei signal di Godot.
+ * mai direttamente: è un bus di stato tipizzato, non un event bus.
  *
  * Qui non ci sono regole di gioco: ogni azione chiama una funzione di
  * `engine/` e mette a posto lo stato con quello che torna.

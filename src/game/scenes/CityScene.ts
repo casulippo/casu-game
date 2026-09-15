@@ -38,20 +38,9 @@ import {
   disegnaOmbra,
   puntiDaVertici,
 } from './comuni'
-import {
-  caricaTerreno,
-  costruisciSuolo,
-  materialeMarciapiede,
-  materialeStrada,
-} from '../terreno'
+import { costruisciSuolo, materialeMarciapiede, materialeStrada } from '../terreno'
 import { disegnaLuogo } from '../edifici'
-import {
-  LUMINOSI,
-  caricaArredo,
-  muroPer,
-  pezzoPer,
-  preparaArredo,
-} from '../arredoSprite'
+import { LUMINOSI, muroPer, pezzoPer, preparaArredo } from '../arredoSprite'
 import {
   caricaPersonaggi,
   creaPersonaggio,
@@ -62,7 +51,6 @@ import {
   ALBERI,
   ancoraAlbero,
   ancoraVolume,
-  caricaAlberi,
   chiaveAlbero,
   texturaAlone,
   texturaLampione,
@@ -190,10 +178,7 @@ export class CityScene extends Phaser.Scene {
   }
 
   preload() {
-    caricaArredo(this)
     caricaPersonaggi(this)
-    caricaAlberi(this)
-    caricaTerreno(this)
   }
 
   create() {
@@ -687,10 +672,10 @@ export class CityScene extends Phaser.Scene {
         if (this.mappa[y][x] !== 'albero') continue
 
         const tipo = ALBERI[Math.floor(varianteAlbero(x, y) * ALBERI.length)]
-        const ancora = ancoraAlbero(tipo)
+        const ancora = ancoraAlbero()
 
         const { sx, sy } = grigliaASchermo({ x, y })
-        const albero = this.add.image(sx, sy, chiaveAlbero(tipo))
+        const albero = this.add.image(sx, sy, chiaveAlbero(this, tipo))
         albero.setOrigin(ancora.x, ancora.y)
         albero.setScale(SCALA_ALBERO)
         albero.setDepth(profondita({ x, y }))

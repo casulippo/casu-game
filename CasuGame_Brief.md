@@ -822,8 +822,8 @@ src/
 ### Come comunicano gli strati
 Lo store Zustand è l'unico ponte. Phaser legge lo stato per sapere dove disegnare gli NPC
 e scrive quando il giocatore interagisce; React si sottoscrive e si ridisegna da solo.
-Nessuna chiamata diretta tra `game/` e `ui/` — è l'equivalente dei signal di Godot, ma
-tipizzato.
+Nessuna chiamata diretta tra `game/` e `ui/` — è un bus di stato tipizzato, non un event
+bus.
 
 ---
 

@@ -1,4 +1,5 @@
 import Phaser from 'phaser'
+import { DIREZIONE_OMBRA } from './scenes/comuni'
 
 /**
  * Genera texture per gli elementi statici della scena.
@@ -127,35 +128,135 @@ export function ancoraVolume(
 }
 
 /**
- * Gli alberi: render fotorealistici dall'alto, non più disegnati da codice.
+ * Gli alberi: chioma e tronco disegnati a runtime, stesso linguaggio cartoon
+ * piatto degli edifici e dell'arredo — non più render fotorealistici.
  *
- * Ogni albero porta già la propria ombra incisa nel PNG — estratta in
- * `strumenti/albero.py` mantenendo la stessa direzione di `DIREZIONE_OMBRA`,
- * così che alberi e personaggi condividano lo stesso sole pur venendo da
- * pipeline diverse. L'ancora non è il centro dell'immagine: è il centro della
- * sola chioma, calcolato da quello script, perché il riquadro include anche
- * l'ombra che si allunga verso basso-destra.
+ * L'ombra a terra segue `DIREZIONE_OMBRA`, la stessa di personaggi e arredo,
+ * così tutta la mappa resta illuminata da un sole solo. L'ancora è il centro
+ * della base del tronco: dove l'albero "tocca" la cella.
  */
 export const ALBERI = ['verde', 'autunno', 'conifera'] as const
 export type TipoAlbero = (typeof ALBERI)[number]
 
-/** Calcolata da `strumenti/albero.py`: centro della chioma, non del riquadro. */
-const ANCORA_ALBERO: Record<TipoAlbero, { x: number; y: number }> = {
-  verde: { x: 0.406, y: 0.417 },
-  autunno: { x: 0.409, y: 0.418 },
-  conifera: { x: 0.386, y: 0.429 },
+interface AspettoAlbero {
+  chioma: number
+  chiomaChiara: number
+  chiomaScura: number
+  tronco: number
+  appuntita: boolean
 }
 
-export function caricaAlberi(scena: Phaser.Scene) {
-  for (const tipo of ALBERI) scena.load.image(chiaveAlbero(tipo), `alberi/${tipo}.png`)
+const ASPETTO_ALBERO: Record<TipoAlbero, AspettoAlbero> = {
+  verde: {
+    chioma: 0x5fae53,
+    chiomaChiara: 0x77c669,
+    chiomaScura: 0x4a8f40,
+    tronco: 0x6b4a30,
+    appuntita: false,
+  },
+  autunno: {
+    chioma: 0xd98a3d,
+    chiomaChiara: 0xe8a959,
+    chiomaScura: 0xb56b2a,
+    tronco: 0x6b4a30,
+    appuntita: false,
+  },
+  conifera: {
+    chioma: 0x3f7a52,
+    chiomaChiara: 0x54935f,
+    chiomaScura: 0x2f5f40,
+    tronco: 0x5a4632,
+    appuntita: true,
+  },
 }
 
-export function chiaveAlbero(tipo: TipoAlbero): string {
-  return `albero-${tipo}`
+const LATO_ALBERO = 64
+/** Centro della base del tronco, nel riquadro dell'albero. */
+const ANCORA_ALBERO = { x: 0.5, y: 0.86 }
+
+export function chiaveAlbero(scena: Phaser.Scene, tipo: TipoAlbero): string {
+  const chiave = `albero-${tipo}`
+  if (scena.textures.exists(chiave)) return chiave
+
+  const { canvas, ctx } = tela(LATO_ALBERO, LATO_ALBERO)
+  if (!ctx) return chiave
+
+  const aspetto = ASPETTO_ALBERO[tipo]
+  const baseX = LATO_ALBERO * ANCORA_ALBERO.x
+  const baseY = LATO_ALBERO * ANCORA_ALBERO.y
+
+  // L'ombra a terra, nella stessa direzione del sole del resto della mappa.
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'
+  ctx.beginPath()
+  ctx.ellipse(
+    baseX + DIREZIONE_OMBRA.x * 8,
+    baseY + DIREZIONE_OMBRA.y * 5,
+    16,
+    7,
+    0,
+    0,
+    Math.PI * 2,
+  )
+  ctx.fill()
+
+  // Il tronco: solo un accenno, la chioma lo copre quasi tutto dall'alto.
+  ctx.fillStyle = css(aspetto.tronco)
+  ctx.fillRect(baseX - 4, baseY - 10, 8, 10)
+
+  // La chioma: un ciuffo di lobi tondi per le latifoglie, un cono per la conifera.
+  const centroChioma = { x: baseX, y: baseY - 22 }
+  if (aspetto.appuntita) {
+    ctx.fillStyle = css(aspetto.chiomaScura)
+    ctx.beginPath()
+    ctx.moveTo(centroChioma.x, centroChioma.y - 22)
+    ctx.lineTo(centroChioma.x + 18, centroChioma.y + 14)
+    ctx.lineTo(centroChioma.x - 18, centroChioma.y + 14)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.fillStyle = css(aspetto.chioma)
+    ctx.beginPath()
+    ctx.moveTo(centroChioma.x, centroChioma.y - 22)
+    ctx.lineTo(centroChioma.x + 13, centroChioma.y + 6)
+    ctx.lineTo(centroChioma.x - 13, centroChioma.y + 6)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.fillStyle = css(aspetto.chiomaChiara)
+    ctx.beginPath()
+    ctx.arc(centroChioma.x - 4, centroChioma.y - 12, 3.5, 0, Math.PI * 2)
+    ctx.fill()
+  } else {
+    const lobi = [
+      { dx: 0, dy: 0, r: 17 },
+      { dx: -12, dy: 6, r: 12 },
+      { dx: 12, dy: 6, r: 12 },
+      { dx: 0, dy: -10, r: 12 },
+    ]
+    ctx.fillStyle = css(aspetto.chiomaScura)
+    for (const lobo of lobi) {
+      ctx.beginPath()
+      ctx.arc(centroChioma.x + lobo.dx, centroChioma.y + lobo.dy + 2, lobo.r, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillStyle = css(aspetto.chioma)
+    for (const lobo of lobi) {
+      ctx.beginPath()
+      ctx.arc(centroChioma.x + lobo.dx, centroChioma.y + lobo.dy, lobo.r, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.fillStyle = css(aspetto.chiomaChiara)
+    ctx.beginPath()
+    ctx.arc(centroChioma.x - 6, centroChioma.y - 8, 6, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  scena.textures.addCanvas(chiave, canvas)
+  return chiave
 }
 
-export function ancoraAlbero(tipo: TipoAlbero): { x: number; y: number } {
-  return ANCORA_ALBERO[tipo]
+export function ancoraAlbero(): { x: number; y: number } {
+  return ANCORA_ALBERO
 }
 
 /** Un lampione visto dall'alto: solo il cerchio della lampada e la sua ombra. */
