@@ -33,3 +33,6 @@ desktop.ini
 # Python (strumenti)
 __pycache__/
 *.pyc
+
+# Dati grezzi scaricati (grandi, rigenerabili)
+data/raw/

@@ -1,0 +1,3872 @@
+{
+  "stagione": "2026-27",
+  "lordoSuNetto": 1.85,
+  "giocatori": [
+    {
+      "club": "Atalanta",
+      "giocatore": "Franck Kessie",
+      "nettoMln": 4,
+      "lordoMln": 7.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Giacomo Raspadori",
+      "nettoMln": 3.57,
+      "lordoMln": 6.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Gianluca Scamacca",
+      "nettoMln": 3.19,
+      "lordoMln": 5.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Eljif Elmas",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Ederson",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Mario Pasalic",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Raoul Bellanova",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Charles De Ketelaere",
+      "nettoMln": 1.73,
+      "lordoMln": 3.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Kamaldeen Sulemana",
+      "nettoMln": 1.62,
+      "lordoMln": 3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Nicola Zalewski",
+      "nettoMln": 1.62,
+      "lordoMln": 3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Jonathan Rowe",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Giorgio Scalvini",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Sead Kolasinac",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Gianluca Gaetano",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Nikola Krstovic",
+      "nettoMln": 1.14,
+      "lordoMln": 2.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Lazar Samardzic",
+      "nettoMln": 1.03,
+      "lordoMln": 1.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Odilon Kossounou",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Marco Sportiello",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Isak Hien",
+      "nettoMln": 0.86,
+      "lordoMln": 1.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Davide Zappacosta",
+      "nettoMln": 0.86,
+      "lordoMln": 1.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Marco Carnesecchi",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Atalanta",
+      "giocatore": "Honest Ahanor",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Riccardo Orsolini",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Arthur Theate",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Artem Dovbyk",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Federico Bernardeschi",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Roberto Piccoli",
+      "nettoMln": 1.62,
+      "lordoMln": 3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Samuel Mbangula",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Juan Miranda",
+      "nettoMln": 1.41,
+      "lordoMln": 2.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Lukasz Skorupski",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Tommaso Pobega",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Nicolò Casale",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Nadir Zortea",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Jens Odgaard",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Matteo Darmian",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Lewis Ferguson",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Nikola Moro",
+      "nettoMln": 0.65,
+      "lordoMln": 1.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Martin Vitik",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Nicolò Cambiaghi",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Emil Holm",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Torbjørn Heggem",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Jay Enem",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Eivind Helland",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Mikel Amondarain",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Oussama El Azzouzi",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Jesper Karlsson",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Rahim Alhassane",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Lorenzo De Silvestri",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Massimo Pessina",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Ukko Happonen",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Bologna",
+      "giocatore": "Mihajlo Ilić",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Paul Mendy",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Harry Winks",
+      "nettoMln": 1.41,
+      "lordoMln": 2.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Yukinari Sugawara",
+      "nettoMln": 1.24,
+      "lordoMln": 2.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Jacopo Fazzini",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Daniel Maldini",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Yerry Mina",
+      "nettoMln": 1.03,
+      "lordoMln": 1.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Zè Pedro",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Kevin Carlos",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Elia Caprile",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Michel Adopo",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Mbala Nzola",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Adam Obert",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Boris Radunovic",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Alieu Fadera",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Alessandro Deiola",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Roberto Gagliardini",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Juan Rodríguez",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Rafael Kofler",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Mattia Felici",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Alessandro Romano",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Giuseppe Aurelio",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Joseph Liteta",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Yanis Massolin",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Riyad Idrissi",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Cagliari",
+      "giocatore": "Yael Trepy",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Nico Paz",
+      "nettoMln": 4,
+      "lordoMln": 7.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Maxence Caqueret",
+      "nettoMln": 3.57,
+      "lordoMln": 6.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Trevoh Chalobah",
+      "nettoMln": 3.57,
+      "lordoMln": 6.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Moise Kean",
+      "nettoMln": 5,
+      "lordoMln": 6.4,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Samuele Ricci",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Yan Couto",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Luis Milla",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Robert Sanchez",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Kaiki",
+      "nettoMln": 1.41,
+      "lordoMln": 2.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Lucas da Cunha",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Jean Butez",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Mattia Liberali",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Alberto Dossena",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Máximo Perrone",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Marc Oliver Kempf",
+      "nettoMln": 0.92,
+      "lordoMln": 1.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Tasos Douvikas",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Willy Kambwala",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Jesus Rodriguez",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Martin Baturina",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Ivan Smolcic",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Assane Diao",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Edoardo Goldaniga",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Jayden Addai",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Álex Valle",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Como",
+      "giocatore": "Jacobo Ramon",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "David de Gea",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Radu Dragusin",
+      "nettoMln": 2.81,
+      "lordoMln": 5.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Beto",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Joao Mario",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Nicolò Fagioli",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Franco Mastantuono",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Fabiano Parisi",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Goncalves",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Marin Pongracic",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Christ Inao Oulai",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Mateo Pellegrino",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Arthur Atta",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Wilfried Gnonto",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Luca Ranieri",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Dodo",
+      "nettoMln": 1.03,
+      "lordoMln": 1.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Marco Brescianini",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Cher Ndour",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Alex Jimenez",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Riccardo Sottil",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Viery",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Alieau Njie",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Fiorentina",
+      "giocatore": "Victor Valdepenas",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Romano Schmid",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Tomas Bobcek",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Daniel Bîrligea",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Florian Grillitsch",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Aleksa Terzic",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Kevin Akpoguma",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Francesco Gelli",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Giacomo Calò",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Alessio Zerbin",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Farès Ghedjemis",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Ilias Koutsoupias",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Antonio Raimondo",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Anthony Oyono",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Seydou Fini",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Gabriele Bracaglia",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Gabriele Calvani",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Luis Hasa",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Anouar El Azzouzi",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Ilario Monterisi",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Patrizio Masini",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Giorgio Cittadini",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Enzo Tchato",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Sebastiano Desplanches",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Lorenzo Palmisani",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Matteo Cichella",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Giorgi Kvernadze",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Wisdom Amey",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Ben Lhassine Koné",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Omar Fayed",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Matteo Pisseri",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Alejandro Cichero",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Frosinone",
+      "giocatore": "Eldin Lolic",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Vitinha",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Hamed Traoré",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Justin Bijlow",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Djibril Sow",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Mario Mitaj",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Stephan El Shaarawy",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Leo Østigård",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Johan Vásquez",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Mikael Ellertsson",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Morten Frendrup",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Tommaso Baldanzi",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Lorenzo Colombo",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Junior Walter Messias",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Milutin Osmaijc",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Stefano Sabelli",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Alessandro Marcandalli",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Cody Drameh",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Franz Ethan Meichtry",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Amorim",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Robinho Junior",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "David Puczka",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Elias Havel",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Samuel Wiafe",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Daniele Sommariva",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Genoa",
+      "giocatore": "Lorenzo Venturino",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Lautaro Martínez",
+      "nettoMln": 9,
+      "lordoMln": 16.6,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Nicolò Barella",
+      "nettoMln": 6.5,
+      "lordoMln": 12,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Hakan Çalhanoglu",
+      "nettoMln": 6.5,
+      "lordoMln": 11,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Alessandro Bastoni",
+      "nettoMln": 5.5,
+      "lordoMln": 10,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Piotr Zielinski",
+      "nettoMln": 4.5,
+      "lordoMln": 8.3,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Marcus Thuram",
+      "nettoMln": 6,
+      "lordoMln": 7.7,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Federico Dimarco",
+      "nettoMln": 4,
+      "lordoMln": 7.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "John Stones",
+      "nettoMln": 4,
+      "lordoMln": 7.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Manuel Akanji",
+      "nettoMln": 3.78,
+      "lordoMln": 7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Curtis Jones",
+      "nettoMln": 3.51,
+      "lordoMln": 6.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Benjamin Pavard",
+      "nettoMln": 5,
+      "lordoMln": 6.4,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Djed Spence",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Francesco Pio Esposito",
+      "nettoMln": 2.7,
+      "lordoMln": 5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Luis Henrique",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Yann Bisseck",
+      "nettoMln": 2.05,
+      "lordoMln": 3.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Ange-Yoan Bonny",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Andy Diouf",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Carlos Augusto",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Ivan Provedel",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Josep Martínez",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Petar Sucic",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Henrik Mkhitaryan",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Aleksandar Stankovic",
+      "nettoMln": 1.08,
+      "lordoMln": 2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Ebenezer Akisanmiro",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Inter",
+      "giocatore": "Raffaele Di Gennaro",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Kenan Yildiz",
+      "nettoMln": 6,
+      "lordoMln": 11.1,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Randal Kolo Muani",
+      "nettoMln": 5.5,
+      "lordoMln": 10,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Bremer",
+      "nettoMln": 5,
+      "lordoMln": 9,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Douglas Luiz",
+      "nettoMln": 5,
+      "lordoMln": 8.3,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Nick Woltemade",
+      "nettoMln": 4.38,
+      "lordoMln": 8.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Manuel Locatelli",
+      "nettoMln": 4,
+      "lordoMln": 7.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Francisco Conceicao",
+      "nettoMln": 3.78,
+      "lordoMln": 7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Teun Koopmeiners",
+      "nettoMln": 4.5,
+      "lordoMln": 5.7,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Federico Gatti",
+      "nettoMln": 3.08,
+      "lordoMln": 5.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Kerim Alajbegovic",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Pape Sarr",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Weston Mckennie",
+      "nettoMln": 2.86,
+      "lordoMln": 5.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Jeremie Boga",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Guglielmo Vicario",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Edon Zhegrova",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Nico Gonzalez",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Andrea Cambiaso",
+      "nettoMln": 2.38,
+      "lordoMln": 4.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Lloyd Kelly",
+      "nettoMln": 2.38,
+      "lordoMln": 4.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Zaki Celik",
+      "nettoMln": 2.22,
+      "lordoMln": 4.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Kephren Thuram",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Daniele Rugani",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Jhon Lucumì",
+      "nettoMln": 1.73,
+      "lordoMln": 3.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Kamil Grabara",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Pierre Kalulu",
+      "nettoMln": 1.62,
+      "lordoMln": 3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Jeff Ekhator",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Juan David Cabal",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Arkadiusz Milik",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Juventus",
+      "giocatore": "Carlo Pinsoglio",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Mattia Zaccagni",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Davide Frattesi",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Nuno Tavares",
+      "nettoMln": 2.38,
+      "lordoMln": 4.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Andrea Pinamonti",
+      "nettoMln": 2.16,
+      "lordoMln": 4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Nicolò Rovella",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Alfonso Pedraza",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Adam Marusic",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Manuel Lazzari",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Danilho Doekhi",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Kenneth Taylor",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Danilo Cataldi",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Albert Gudmunsson",
+      "nettoMln": 1.51,
+      "lordoMln": 2.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Josip Sutalo",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Fisayo Dele-Bashiru",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Tijjani Noslin",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Luca Pellegrini",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Patric",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Mohamed Fares",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Toma Basic",
+      "nettoMln": 1.08,
+      "lordoMln": 2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Gustav Isaksen",
+      "nettoMln": 1.03,
+      "lordoMln": 1.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Reda Belahyane",
+      "nettoMln": 0.86,
+      "lordoMln": 1.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Matteo Cancellieri",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Christos Mandas",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Oliver Provstgaard",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Edoardo Motta",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lazio",
+      "giocatore": "Romano Floriani Mussolini",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Willem Geubbels",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Joel Monteiro",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Nikola Stulic",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Omri Gandelman",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Youssef Maleh",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Antonino Gallo",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Wladimiro Falcone",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Jamil Siebert",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Lassana Coulibaly",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Ivan Ilic",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Gaby Jean",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Kialonda Gaspar",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Konan N’Dri",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Santiago Pierotti",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Danilo Veiga",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Tiago Gabriel",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Medon Berisha",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Oumar Ngom",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Corrie Ndaba",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Sadik Fofana",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Milos Jovic",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Ali Dembélé",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Amar Fatah",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Marco Bleve",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Sebastian Esposito",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Alexandru Borbei",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Paco Esteban",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Elijah Scott",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Marlon Ubani",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Vernon Addo",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Niko Kovac",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Plamen Penev",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Lecce",
+      "giocatore": "Olaf Gorter",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Adrien Rabiot",
+      "nettoMln": 4.97,
+      "lordoMln": 9.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Goncalo Ramos",
+      "nettoMln": 5,
+      "lordoMln": 7.4,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Mike Maignan",
+      "nettoMln": 5,
+      "lordoMln": 6.4,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Luka Modric",
+      "nettoMln": 3.46,
+      "lordoMln": 6.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Mario Gila",
+      "nettoMln": 5,
+      "lordoMln": 5.7,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Diego Moreira",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Samuel Chukwueze",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Ruben Loftus-Cheek",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Christian Pulisic",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Pervis Estupiñán",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Ardon Jashari",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Fikayo Tomori",
+      "nettoMln": 2.43,
+      "lordoMln": 4.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Alexis Saelemaekers",
+      "nettoMln": 2.05,
+      "lordoMln": 3.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Matteo Gabbia",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Omari Hutchinson",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Koni De Winter",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Strahinja Pavlovic",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Yunus Musah",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Warren Bondo",
+      "nettoMln": 1.03,
+      "lordoMln": 1.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Pietro Terracciano",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Filippo Terracciano",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Francesco Camarda",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Davide Bartesaghi",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Alphadjo Cisse",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Milan",
+      "giocatore": "Lorenzo Torriani",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Michael Folorunsho",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Andrea Colpani",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Patrick Ciurria",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Matteo Pessina",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Jan Ziolkowski",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Samuele Birindelli",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Idrissa Touré",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Dany Mota",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Saba Goglichidze",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Ricardo Mangas",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Exequiel Zeballos",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Andrea Carboni",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Keita Baldé",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Demba Thiam",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Cyril Ngonge",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Valentin Antov",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Ebenezer Akinsanmiro",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Patrick Cutrone",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Omari Forson",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Leonardo Colombo",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Jay Robinson",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Eddy Kouadio",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Lorenzo Lucchesi",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Adam Bakoune",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Foe Ondoa",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Gustavo Varela",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Mathis Mout",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Noel Törnqvist",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Yvan Maye",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Kevin Martins",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Monza",
+      "giocatore": "Aljaz Strajnar",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Kevin De Bruyne",
+      "nettoMln": 5.5,
+      "lordoMln": 11.1,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Rasmus Højlund",
+      "nettoMln": 5,
+      "lordoMln": 9.2,
+      "fonte": "calcioefinanza"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Giovanni Di Lorenzo",
+      "nettoMln": 3.51,
+      "lordoMln": 6.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Matteo Politano",
+      "nettoMln": 3.51,
+      "lordoMln": 6.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "David Neres",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Scott McTominay",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Benoit Badiashile",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Alessandro Buongiorno",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Noa Lang",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Alex Meret",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Vanja Milinkovic Savic",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Leonardo Spinazzola",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Lorenzo Lucca",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Stanislav Lobotka",
+      "nettoMln": 1.95,
+      "lordoMln": 3.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Frank Anguissa",
+      "nettoMln": 1.84,
+      "lordoMln": 3.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Billy Gilmour",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Antonio Vergara",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Sam Beukema",
+      "nettoMln": 1.73,
+      "lordoMln": 3.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Amir Rrahmani",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Mathías Olivera",
+      "nettoMln": 1.41,
+      "lordoMln": 2.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Giovane",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Rafa Marin",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Luca Marianucci",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Alisson Santos",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Nikita Contini",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Napoli",
+      "giocatore": "Costantino Favasuli",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Diego Carlos",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Giovanni Fabbian",
+      "nettoMln": 1.62,
+      "lordoMln": 3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Enrico Del Prato",
+      "nettoMln": 1.3,
+      "lordoMln": 2.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Emanuele Valeri",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Mandela Keita",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Matija Frigan",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Pontus Almqvist",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Adrian Bernabé",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "El Bilal Touré",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Edoardo Corvi",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Christian Ordóñez",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Abdoulaye Ndiaye",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Hans Nicolussi Caviglia",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Mariano Troilo",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Lautaro Valenti",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "David Romero",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Giovanni Daffara",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Nesta Elphege",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Jacob Ondrejka",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Benja Cremaschi",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Simone Ghidotti",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Franco Carboni",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Simone Lontani",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Ousmane Diallo",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Abdou-Salam Konaté",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Dominik Drobnic",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Sascha Britschgi",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Parma",
+      "giocatore": "Thomas De Martis",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Donyell Malen",
+      "nettoMln": 4,
+      "lordoMln": 7.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Mario Hermoso",
+      "nettoMln": 3.51,
+      "lordoMln": 6.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Gianluca Mancini",
+      "nettoMln": 3.41,
+      "lordoMln": 6.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Bryan Cristante",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Manu Koné",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Evan Ndicka",
+      "nettoMln": 2.76,
+      "lordoMln": 5.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Nahuel Molina",
+      "nettoMln": 2.7,
+      "lordoMln": 5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Lorenzo Pellegrini",
+      "nettoMln": 2.49,
+      "lordoMln": 4.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Leonardo Balerdi",
+      "nettoMln": 2.43,
+      "lordoMln": 4.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Mile Svilar",
+      "nettoMln": 2.32,
+      "lordoMln": 4.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Santiago Castro",
+      "nettoMln": 2.16,
+      "lordoMln": 4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Matías Soulé",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Wesley",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Kostantinos Koulierakis",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Marten de Roon",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Niccolò Pisilli",
+      "nettoMln": 1.89,
+      "lordoMln": 3.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Rodrigo Mora",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Devyne Rensch",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Daniele Ghilardi",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Pierluigi Gollini",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Devis Vásquez",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Roma",
+      "giocatore": "Emanuele Lulli",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Domenico Berardi",
+      "nettoMln": 2.97,
+      "lordoMln": 5.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Nemanja Matic",
+      "nettoMln": 2,
+      "lordoMln": 3.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Sebastiano Esposito",
+      "nettoMln": 1.62,
+      "lordoMln": 3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Armand Laurienté",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Arijanet Muric",
+      "nettoMln": 1.14,
+      "lordoMln": 2.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Duje Caleta-Car",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Josh Doig",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Sebastian Walukiewicz",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Ismaël Koné",
+      "nettoMln": 0.76,
+      "lordoMln": 1.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Cristian Volpato",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Nicholas Pierini",
+      "nettoMln": 0.65,
+      "lordoMln": 1.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Jay Idzes",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Daniel Boloca",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Ibrahim Sulemana",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Stefano Turati",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Kristian Thorstvedt",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Darryl Bakola",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Benjamín Domínguez",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Vasilije Adzic",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Laurs Skjellerup",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Agustín Álvarez",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Fali Candé",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Edoardo Pieragnolo",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Janis Antiste",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Ignace Van der Brempt",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Kieron Bowie",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Cas Odenthal",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Andrea Ghion",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Yeferson Paz",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Rafa Obrador",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Luca Lipani",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Fedde Leysen",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Giacomo Satalino",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Simone Cinquegrano",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Giorgio Vezzosi",
+      "nettoMln": 0.11,
+      "lordoMln": 0.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Sassuolo",
+      "giocatore": "Lorenzo Nyarko",
+      "nettoMln": 0.05,
+      "lordoMln": 0.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Ché Adams",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Giovanni Simeone",
+      "nettoMln": 1.68,
+      "lordoMln": 3.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Rolando Mandragora",
+      "nettoMln": 1.62,
+      "lordoMln": 3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Cesare Casadei",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Lucas Perri",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Duvan Zapata",
+      "nettoMln": 1.46,
+      "lordoMln": 2.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Nikola Vlasic",
+      "nettoMln": 1.35,
+      "lordoMln": 2.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Nathan Patterson",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Ricardo Rodriguez",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Ardian Ismajli",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Zakaria Aboukhlal",
+      "nettoMln": 1.08,
+      "lordoMln": 2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Pietro Comuzzo",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Sandro Kulenovic",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Saúl Coco",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Gvidas Gineitis",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Franco Israel",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Pietro Pellegri",
+      "nettoMln": 0.65,
+      "lordoMln": 1.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Rafik Belghali",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Cristiano Biraghi",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Eray Comert",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Daniel Braganca",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Alberto Paleari",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Kien Fritz-Jim",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Gaetano Oristanio",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Emirhan Ilkhan",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Alessio Cacciamani",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Torino",
+      "giocatore": "Diego Mascardi",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Nicolò Zaniolo",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "David Alaba",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Keinan Davis",
+      "nettoMln": 1.03,
+      "lordoMln": 1.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Mergem Vojvoda",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Jesper Karlström",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Christian Kabasele",
+      "nettoMln": 0.86,
+      "lordoMln": 1.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Hassane Kamara",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Jurgen Ekkelenkamp",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Giorgi Chakvetadze",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Oumar Solet",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Jakub Piotrowski",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Enzo Ebosse",
+      "nettoMln": 0.54,
+      "lordoMln": 1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Vakoun Bayo",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Alessandro Zanoli",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Sandi Lovric",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Maduka Okoye",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Unai Gomez",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Nicolò Bertola",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Matteo Palma",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Idrissa Gueye",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Lennon Miller",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Bartosz Mrozek",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Lazar Jovanovic",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Oier Zarraga",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Udinese",
+      "giocatore": "Daniele Padelli",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Akor Adams",
+      "nettoMln": 1.78,
+      "lordoMln": 3.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Gianluca Busio",
+      "nettoMln": 1.24,
+      "lordoMln": 2.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Alfred Duncan",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Albion Rrahmani",
+      "nettoMln": 1.19,
+      "lordoMln": 2.2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Toma Basic",
+      "nettoMln": 1.08,
+      "lordoMln": 2,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Pasquale Mazzocchi",
+      "nettoMln": 0.97,
+      "lordoMln": 1.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Simon Sohm",
+      "nettoMln": 0.92,
+      "lordoMln": 1.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Juan Jesus",
+      "nettoMln": 0.81,
+      "lordoMln": 1.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "kike Perez",
+      "nettoMln": 0.7,
+      "lordoMln": 1.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "John Yeboah",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Filip Stankovic",
+      "nettoMln": 0.59,
+      "lordoMln": 1.1,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Lorenzo Montipò",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Armel Bella-Kotchap",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Thierry Correia",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Bartol Franjic",
+      "nettoMln": 0.49,
+      "lordoMln": 0.9,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Ridgeciano Haps",
+      "nettoMln": 0.43,
+      "lordoMln": 0.8,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Matia Moreno",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Andrea Adorante",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Antoine Hainaut",
+      "nettoMln": 0.38,
+      "lordoMln": 0.7,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Lion Lauberbach",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Marin Sverko",
+      "nettoMln": 0.32,
+      "lordoMln": 0.6,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Richie Salgado",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Joel Schingtienne",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Radouane Halhal",
+      "nettoMln": 0.27,
+      "lordoMln": 0.5,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Toni Fernandez",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Junior Ligue",
+      "nettoMln": 0.22,
+      "lordoMln": 0.4,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Matteo Grandi",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Thorir Helgason",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Matteo Dagasso",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    },
+    {
+      "club": "Venezia",
+      "giocatore": "Kornel Lisman",
+      "nettoMln": 0.16,
+      "lordoMln": 0.3,
+      "fonte": "virgilio-lordo-convertito"
+    }
+  ],
+  "discordanze": [
+    {
+      "club": "Como",
+      "nome": "Moise Kean",
+      "lordo": 6.4,
+      "netto": 5,
+      "rapporto": 1.28
+    },
+    {
+      "club": "Inter",
+      "nome": "Hakan Çalhanoglu",
+      "lordo": 11,
+      "netto": 6.5,
+      "rapporto": 1.69
+    },
+    {
+      "club": "Inter",
+      "nome": "Marcus Thuram",
+      "lordo": 7.7,
+      "netto": 6,
+      "rapporto": 1.28
+    },
+    {
+      "club": "Inter",
+      "nome": "Benjamin Pavard",
+      "lordo": 6.4,
+      "netto": 5,
+      "rapporto": 1.28
+    },
+    {
+      "club": "Juventus",
+      "nome": "Douglas Luiz",
+      "lordo": 8.3,
+      "netto": 5,
+      "rapporto": 1.66
+    },
+    {
+      "club": "Juventus",
+      "nome": "Teun Koopmeiners",
+      "lordo": 5.7,
+      "netto": 4.5,
+      "rapporto": 1.27
+    },
+    {
+      "club": "Milan",
+      "nome": "Goncalo Ramos",
+      "lordo": 7.4,
+      "netto": 5,
+      "rapporto": 1.48
+    },
+    {
+      "club": "Milan",
+      "nome": "Mike Maignan",
+      "lordo": 6.4,
+      "netto": 5,
+      "rapporto": 1.28
+    },
+    {
+      "club": "Milan",
+      "nome": "Mario Gila",
+      "lordo": 5.7,
+      "netto": 5,
+      "rapporto": 1.14
+    },
+    {
+      "club": "Napoli",
+      "nome": "Kevin De Bruyne",
+      "lordo": 11.1,
+      "netto": 5.5,
+      "rapporto": 2.02
+    }
+  ]
+}
