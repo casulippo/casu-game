@@ -12,11 +12,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "idb-keyval": "^6.3.0",
-    "phaser": "^4.2.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "zustand": "^5.0.15"
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
