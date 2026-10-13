@@ -248,6 +248,7 @@ export default function Campo3D({
 
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.5, 400)
     let camX = 0
+    let ultimoTempo = tempo.current
     const anima = creaAnimatore()
     const pupazzi = new Map<string, Pupazzo>()
 
@@ -285,7 +286,8 @@ export default function Campo3D({
           velocita > 0.6 ? Math.atan2(vx, vy) : Math.atan2(stato.palla.x - g.x, stato.palla.y - g.y)
         let delta = mira - p.gruppo.rotation.y
         delta = Math.atan2(Math.sin(delta), Math.cos(delta))
-        p.gruppo.rotation.y += delta * Math.min(1, dt * 8)
+        // Si gira gradualmente, al massimo di circa mezzo giro al secondo.
+        p.gruppo.rotation.y += Math.sign(delta) * Math.min(Math.abs(delta) * Math.min(1, dt * 6), dt * 3.5)
         p.fase += Math.min(velocita, 12) * dt * 1.8
         const ampiezza = Math.min(0.9, velocita * 0.12)
         const oscilla = Math.sin(p.fase) * ampiezza
@@ -308,6 +310,9 @@ export default function Campo3D({
 
       palla.position.set(aX(stato.palla.x), 0.28 + stato.palla.h, aZ(stato.palla.y))
       ombraPalla.position.set(aX(stato.palla.x), 0.02, aZ(stato.palla.y))
+      // Dopo uno stacco la telecamera è già sull'azione, senza panoramiche lunghe.
+      if (Math.abs(tempo.current - ultimoTempo) > 0.3) camX = aX(stato.palla.x) * 0.8
+      ultimoTempo = tempo.current
       camX += (aX(stato.palla.x) * 0.8 - camX) * (1 - Math.exp(-dt * 1.8))
       camera.position.set(camX, 26, 55)
       camera.lookAt(camX, 0, 4)

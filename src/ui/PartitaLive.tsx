@@ -1,4 +1,4 @@
-import { Fragment, lazy, Suspense, useMemo, useState } from 'react'
+import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { cambi, giocaGiornata, MAX_CAMBI, prossimaGiornata, rosa, xiDi } from '../engine/carriera'
 import { formazione, giocaPartita, xiAlMinuto, type Fase as FaseGioco } from '../engine/partita'
 import { MODULI, tipoEvento, type Carriera, type Evento, type Giocatore, type Modulo, type Partita } from '../engine/tipi'
@@ -16,10 +16,13 @@ type Vista = '2d' | '3d' | 'cronaca'
 
 // Secondi reali per minuto di gioco: nelle azioni salienti il tempo rallenta per seguirle.
 const RITMI = [
-  { nome: 'Lenta', gioco: 4, azione: 35 },
-  { nome: 'Normale', gioco: 2.5, azione: 22 },
-  { nome: 'Veloce', gioco: 0.8, azione: 10 },
+  { nome: 'Lenta', gioco: 4, azione: 35, azione3d: 60 },
+  { nome: 'Normale', gioco: 2.5, azione: 22, azione3d: 40 },
+  { nome: 'Veloce', gioco: 0.8, azione: 10, azione3d: 22 },
 ]
+
+// In 3D, come in Football Manager, si vedono solo le azioni salienti: tra l'una e l'altra uno stacco.
+const DURATA_STACCO_MS = 1200
 
 const VISTE: { id: Vista; nome: string }[] = [
   { id: '2d', nome: 'Campo 2D' },
@@ -93,6 +96,8 @@ export function PartitaLive({
 
   const orologio = useOrologio(ripresa ? 90 : 45, pannello, (t) => {
     if (vista === 'cronaca') return salienteA(scena, t) ? ritmo.gioco * 3 : ritmo.gioco
+    // In 3D le azioni scorrono a velocità quasi reale; fuori dalle azioni il tempo resta quasi fermo durante lo stacco.
+    if (vista === '3d') return salienteA(scena, t) ? ritmo.azione3d : 600
     if (salienteA(scena, t)) return ritmo.azione
     // Frenata progressiva nell'ultimo mezzo minuto prima di un'azione.
     const prossima = scena.salienti.find((s) => s.inizio > t)
@@ -174,6 +179,21 @@ export function PartitaLive({
       }),
   ].sort((a, b) => b.t - a.t)
 
+  const inAzione = salienteA(scena, minuto) !== undefined
+  const stacco = vista === '3d' && !inAzione && !pannello && (fase === 'primo' || fase === 'secondo')
+  const saltaA = orologio.salta
+  const leggiTempo = orologio.leggi
+  useEffect(() => {
+    if (!stacco) return
+    const timer = setTimeout(() => {
+      const ora = leggiTempo()
+      const fineTempo = ora < 45 ? 45 : 90
+      const prossima = scena.salienti.find((s) => s.inizio > ora && s.inizio < fineTempo)
+      saltaA(prossima ? prossima.inizio + 0.001 : fineTempo)
+    }, DURATA_STACCO_MS)
+    return () => clearTimeout(timer)
+  }, [stacco, scena, saltaA, leggiTempo])
+
   const salta = () => orologio.salta(fase === 'primo' ? 45 : 90)
   const scegliVista = (v: Vista) => {
     setVista(v)
@@ -253,10 +273,18 @@ export function PartitaLive({
           </div>
         )}
         {vista === '3d' && (
-          <div className="mt-3">
+          <div className="relative mt-3">
             <Suspense fallback={<div className="flex aspect-video items-center justify-center rounded-xl bg-slate-900 text-slate-400">Carico lo stadio…</div>}>
               <Campo3D scena={scena} tempo={orologio.tempo} ritmo={orologio.ritmo} divise={coloriSquadre} nomi={nomiGiocatori} />
             </Suspense>
+            <div
+              className={`pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-slate-950 transition-opacity duration-500 ${
+                stacco ? 'opacity-90' : 'opacity-0'
+              }`}
+            >
+              <span className="text-sm tracking-wider text-slate-300 uppercase">Verso la prossima azione…</span>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">In 3D vedi solo le azioni salienti, come in Football Manager. Per tutta la partita usa il campo 2D.</p>
           </div>
         )}
 

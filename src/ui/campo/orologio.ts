@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 // Tempo di gioco continuo (minuti con decimali) che avanza in tempo reale fino a `limite`.
 // `secondiPerMinuto(t)` decide il ritmo voluto; quello effettivo lo raggiunge gradualmente,
@@ -36,10 +36,15 @@ export function useOrologio(limite: number, fermo: boolean, secondiPerMinuto: (t
     return () => cancelAnimationFrame(frame)
   }, [limite, fermo])
 
-  const salta = (a: number) => {
-    tempo.current = Math.min(limite, a)
-    setT(tempo.current)
-  }
+  const salta = useCallback(
+    (a: number) => {
+      tempo.current = Math.min(limite, a)
+      setT(tempo.current)
+    },
+    [limite],
+  )
 
-  return { tempo, t, salta, ritmo: ritmoAttuale }
+  const leggi = useCallback(() => tempo.current, [])
+
+  return { tempo, t, salta, leggi, ritmo: ritmoAttuale }
 }
