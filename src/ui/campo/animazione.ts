@@ -57,7 +57,8 @@ export function creaAnimatore() {
     const quotaCasa = veloce ? veloce.quotaCasa + (esatto.quotaCasa - veloce.quotaCasa) * regime : esatto.quotaCasa
 
     // 9 m/s di gioco convertiti in tempo reale nelle azioni; nell'avanti veloce un limite basso, per calma.
-    const velocitaMax = 14 + ((9 * 60) / secondiPerMinuto - 14) * regime
+    // Mai oltre 30 m/s: quando l'orologio sta ancora frenando, la conversione darebbe valori assurdi.
+    const velocitaMax = 14 + (Math.min(30, (9 * 60) / secondiPerMinuto) - 14) * regime
     const movimenti = new Map<string, { dx: number; dy: number }>()
     const giocatori = esatto.giocatori.map((g) => {
       let x = g.x
@@ -78,14 +79,9 @@ export function creaAnimatore() {
       return { ...g, x: p.x, y: p.y, conPalla }
     })
 
-    // Palla mostrata: esatta nelle azioni, sui piedi del portatore nell'avanti veloce.
+    // Palla mostrata: ai piedi di chi la porta quando qualcuno la porta, sul suo percorso quando è in volo.
     const chi = giocatori.find((g) => g.conPalla)
-    const aiPiedi: Palla = chi ? { x: chi.x + (chi.casa ? 0.9 : -0.9), y: chi.y, h: 0 } : vera
-    const voluta: Palla = {
-      x: aiPiedi.x + (vera.x - aiPiedi.x) * regime,
-      y: aiPiedi.y + (vera.y - aiPiedi.y) * regime,
-      h: vera.h * regime,
-    }
+    const voluta: Palla = chi ? { x: chi.x + (chi.casa ? 0.9 : -0.9), y: chi.y, h: 0 } : vera
     mostrata ??= { ...voluta }
     const rapidita = regime === 1 ? 40 : 25
     mostrata.x = avvicina(mostrata.x, voluta.x, dt, rapidita)

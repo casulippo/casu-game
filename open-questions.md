@@ -51,6 +51,10 @@ Punti critici:
 - abbinare lo stesso giocatore tra FIFA e le altre fonti (nomi scritti in modo diverso);
 - leadership, carattere e simili restano non ricavabili dalle statistiche.
 
+## Possesso che non diventa occasioni
+
+Nel collaudo del 2026-10-13 l'Inter ha avuto il 72% e il 78% di possesso contro Venezia e Frosinone, ma solo 6 e 9 tiri (in Serie A una squadra che domina ne fa 15-20). Il motore a possessi fa girare palla ma, contro una difesa schierata, raramente entra in area. Da capire: più conduzioni e passaggi filtranti negli ultimi 30 metri, cross più frequenti, oppure tiri da fuori quando la difesa è chiusa. Va ritarato senza alzare troppo i gol medi (oggi 2,44 a partita).
+
 ## Transfermarkt fermo a luglio 2026
 
 Il database pubblico di `transfermarkt-datasets` non si aggiorna dal 6 luglio 2026, senza data di ripresa. Valori di mercato, contratti e trasferimenti invecchiano: serve una fonte alternativa se gli aggiornamenti non ripartono.
