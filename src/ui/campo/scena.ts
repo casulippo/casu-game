@@ -278,6 +278,7 @@ export function palla(scena: Scena, t: number): { x: number; y: number; h: numbe
 // Avvicina una pedina alla posizione voluta senza superare una velocità di corsa credibile.
 // Nelle azioni salienti ~9 m/s reali; nell'avanti veloce il tempo è compresso e si concede di più.
 export function insegui(p: { x: number; y: number }, obiettivo: { x: number; y: number }, dt: number, saliente: boolean) {
+  if (!(dt > 0)) return { dx: 0, dy: 0 }
   const dx = (obiettivo.x - p.x) * (1 - Math.exp(-dt * 6))
   const dy = (obiettivo.y - p.y) * (1 - Math.exp(-dt * 6))
   const passo = Math.hypot(dx, dy)

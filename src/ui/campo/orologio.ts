@@ -16,7 +16,7 @@ export function useOrologio(limite: number, fermo: boolean, secondiPerMinuto: (t
     let ultimo = performance.now()
     let ultimoAggiornamento = 0
     let frame = requestAnimationFrame(function passo(ora) {
-      const dt = Math.min(0.1, (ora - ultimo) / 1000)
+      const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
       tempo.current = Math.min(limite, tempo.current + dt / ritmo.current(tempo.current))
       // Lo stato React si aggiorna 10 volte al secondo: basta per cronaca e tabellone.

@@ -4,7 +4,7 @@ import { mondoDaRighe, QUERY } from '../../data/seed'
 import { giocaGiornata, nuovaCarriera, xiDi } from '../../engine/carriera'
 import { possesso } from '../../engine/partita'
 import { tipoEvento } from '../../engine/tipi'
-import { creaScena, LARGHEZZA, LUNGHEZZA, palla, statoScena } from './scena'
+import { creaScena, insegui, LARGHEZZA, LUNGHEZZA, palla, statoScena } from './scena'
 
 const db = new DatabaseSync('public/seed.sqlite', { readOnly: true })
 const q = (s: string) => db.prepare(s).all() as Record<string, unknown>[]
@@ -59,6 +59,13 @@ describe.each(['46', '5', '1005'])('scena della prima giornata (club %s)', (club
     expect(b.x).toBeCloseTo(LUNGHEZZA / 2)
     expect(b.y).toBeCloseTo(LARGHEZZA / 2)
   })
+})
+
+it.each([-0.004, 0, 0.016])('insegui non produce NaN (dt %f, pedina già in posizione)', (dt) => {
+  const p = { x: 10, y: 20 }
+  insegui(p, { x: 10, y: 20 }, dt, true)
+  insegui(p, { x: 30, y: 20 }, dt, false)
+  expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true)
 })
 
 it('dopo un cambio al 60° scende in campo il subentrato', () => {

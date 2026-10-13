@@ -16,7 +16,7 @@ function useStatoAnimato(scena: Scena, tempo: RefObject<number>) {
   useEffect(() => {
     let ultimo = performance.now()
     let frame = requestAnimationFrame(function passo(ora) {
-      const dt = Math.min(0.1, (ora - ultimo) / 1000)
+      const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
       const obiettivo = statoScena(scenaRef.current, tempo.current)
       const giocatori = obiettivo.giocatori.map((g) => {

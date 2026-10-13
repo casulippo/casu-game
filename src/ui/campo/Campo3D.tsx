@@ -263,7 +263,7 @@ export default function Campo3D({
     let ultimo = performance.now()
     let ultimaSovra = 0
     let frame = requestAnimationFrame(function passo(ora) {
-      const dt = Math.min(0.1, (ora - ultimo) / 1000)
+      const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
       const stato = statoScena(scenaRef.current, tempo.current)
       const presenti = new Set<string>()
