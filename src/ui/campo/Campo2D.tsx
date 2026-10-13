@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Divisa } from './colori'
 import { PORTIERE_CASA, PORTIERE_OSPITE } from './colori'
-import { insegui, LARGHEZZA, LUNGHEZZA, smorzaPalla, statoScena, type Scena, type Stato } from './scena'
+import { limita } from '../../engine/campo'
+import { insegui, LARGHEZZA, LUNGHEZZA, smorzaPalla, statoScena, vivacita, type Scena, type Stato } from './scena'
 
 // Le pedine inseguono la posizione calcolata con un ritardo morbido, come giocatori che corrono.
 function useStatoAnimato(scena: Scena, tempo: RefObject<number>) {
   const [stato, setStato] = useState<Stato>(() => statoScena(scena, tempo.current))
   const posizioni = useRef(new Map<string, { x: number; y: number }>())
   const pallaVista = useRef<{ x: number; y: number; h: number } | null>(null)
+  const salienteRef = useRef(true)
   const scenaRef = useRef(scena)
 
   useEffect(() => {
@@ -19,10 +21,12 @@ function useStatoAnimato(scena: Scena, tempo: RefObject<number>) {
     let frame = requestAnimationFrame(function passo(ora) {
       const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
-      const obiettivo = statoScena(scenaRef.current, tempo.current)
+      const obiettivo = statoScena(scenaRef.current, tempo.current, salienteRef.current ? undefined : (pallaVista.current ?? undefined))
+      salienteRef.current = obiettivo.saliente
       const giocatori = obiettivo.giocatori.map((g) => {
         const p = posizioni.current.get(g.id) ?? { x: g.x, y: g.y }
-        insegui(p, g, dt, obiettivo.saliente)
+        const v = vivacita(g, ora / 1000, obiettivo.possessoCasa)
+        insegui(p, { x: limita(g.x + v.x, 1, LUNGHEZZA - 1), y: limita(g.y + v.y, 1, LARGHEZZA - 1) }, dt, obiettivo.saliente)
         posizioni.current.set(g.id, p)
         return { ...g, x: p.x, y: p.y }
       })

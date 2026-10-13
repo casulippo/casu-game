@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
 import { Sovraimpressione } from './Campo2D'
 import { PORTIERE_CASA, PORTIERE_OSPITE, type Divisa } from './colori'
-import { insegui, LARGHEZZA, LUNGHEZZA, smorzaPalla, statoScena, type Scena, type Stato } from './scena'
+import { limita } from '../../engine/campo'
+import { insegui, LARGHEZZA, LUNGHEZZA, smorzaPalla, statoScena, vivacita, type Scena, type Stato } from './scena'
 
 const PELLI = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0673a']
 // Giocatori un po' più grandi del vero: dalla tribuna devono restare leggibili.
@@ -248,6 +249,7 @@ export default function Campo3D({
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.5, 400)
     let camX = 0
     let pallaVista: { x: number; y: number; h: number } | null = null
+    let ultimoSaliente = true
     const pupazzi = new Map<string, Pupazzo>()
 
     const ridimensiona = () => {
@@ -266,7 +268,8 @@ export default function Campo3D({
     let frame = requestAnimationFrame(function passo(ora) {
       const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
-      const stato = statoScena(scenaRef.current, tempo.current)
+      const stato = statoScena(scenaRef.current, tempo.current, ultimoSaliente ? undefined : (pallaVista ?? undefined))
+      ultimoSaliente = stato.saliente
       const presenti = new Set<string>()
 
       for (const g of stato.giocatori) {
@@ -280,7 +283,8 @@ export default function Campo3D({
           mondo.add(p.gruppo, p.ombra, p.anello)
           pupazzi.set(g.id, p)
         }
-        const { dx: vx, dy: vy } = insegui(p, g, dt, stato.saliente)
+        const v = vivacita(g, ora / 1000, stato.possessoCasa)
+        const { dx: vx, dy: vy } = insegui(p, { x: limita(g.x + v.x, 1, LUNGHEZZA - 1), y: limita(g.y + v.y, 1, LARGHEZZA - 1) }, dt, stato.saliente)
         const velocita = Math.hypot(vx, vy) / Math.max(dt, 0.001)
         const mira =
           velocita > 0.6 ? Math.atan2(vx, vy) : Math.atan2(stato.palla.x - p.x, stato.palla.y - p.y)

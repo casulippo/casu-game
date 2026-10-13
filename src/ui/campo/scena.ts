@@ -39,6 +39,7 @@ export interface Stato {
   giocatori: StatoGiocatore[]
   palla: { x: number; y: number; h: number }
   portatore: string | null
+  possessoCasa: boolean
   evidenza: { tipo: TipoEvento; protagonista: string; casa: boolean } | null
   saliente: boolean
 }
@@ -138,13 +139,13 @@ export function palla(scena: Scena, t: number): Palla {
 }
 
 // Avvicina una pedina alla posizione voluta senza superare una velocità di corsa credibile.
-// Nelle azioni salienti ~9 m/s reali; nell'avanti veloce il tempo è compresso e si concede di più.
+// Nelle azioni salienti ~9 m/s reali; nell'avanti veloce il tempo è compresso e si concede un po' di più.
 export function insegui(p: { x: number; y: number }, obiettivo: { x: number; y: number }, dt: number, saliente: boolean) {
   if (!(dt > 0)) return { dx: 0, dy: 0 }
   const dx = (obiettivo.x - p.x) * (1 - Math.exp(-dt * 6))
   const dy = (obiettivo.y - p.y) * (1 - Math.exp(-dt * 6))
   const passo = Math.hypot(dx, dy)
-  const massimo = (saliente ? 9 : 30) * dt
+  const massimo = (saliente ? 9 : 14) * dt
   const f = passo > massimo ? massimo / passo : 1
   p.x += dx * f
   p.y += dy * f
@@ -154,15 +155,19 @@ export function insegui(p: { x: number; y: number }, obiettivo: { x: number; y: 
 // Nell'avanti veloce i tocchi sono troppo fitti per seguirli uno a uno: la palla ne segue l'andamento.
 // Nelle azioni salienti resta esatta, perché lì conta vedere ogni passaggio.
 export function smorzaPalla(p: { x: number; y: number; h: number }, obiettivo: { x: number; y: number; h: number }, dt: number, saliente: boolean) {
-  const f = saliente ? 1 : 1 - Math.exp(-Math.max(0, dt) * 5)
+  // Passando da un regime all'altro la palla aggancia la posizione esatta in pochi fotogrammi, senza scatti.
+  const f = 1 - Math.exp(-Math.max(0, dt) * (saliente ? 30 : 5))
   p.x += (obiettivo.x - p.x) * f
   p.y += (obiettivo.y - p.y) * f
-  p.h = saliente ? obiettivo.h : 0
+  p.h += ((saliente ? obiettivo.h : 0) - p.h) * f
 }
 
-export function statoScena(scena: Scena, t: number): Stato {
+// `riferimento`: nell'avanti veloce le squadre seguono la palla smorzata mostrata a schermo
+// invece dei singoli tocchi, che a quella velocità sarebbero un flipper.
+export function statoScena(scena: Scena, t: number, riferimento?: Punto): Stato {
   const posti = postiAl(scena, t)
-  const b = palla(scena, t)
+  const vera = palla(scena, t)
+  const b = riferimento ? { ...vera, x: riferimento.x, y: riferimento.y } : vera
   const tocco = b.tocco
   const ids = new Set(posti.map((q) => q.id))
   // Chi ha la palla: durante una conduzione chi la porta, a palla ferma chi l'ha ricevuta.
@@ -184,6 +189,7 @@ export function statoScena(scena: Scena, t: number): Stato {
     const da = posizioni.get(tocco.riceventeId)!
     posizioni.set(tocco.riceventeId, { x: da.x + (tocco.a.x - da.x) * f, y: da.y + (tocco.a.y - da.y) * f })
   }
+  let pressanteId: string | null = null
   if (!dopoGol) {
     // Un solo avversario va a pressare, lo stesso per tutta la durata del tocco.
     const rif = tocco ? (b.inVolo ? tocco.da : tocco.a) : CENTRO
@@ -200,6 +206,7 @@ export function statoScena(scena: Scena, t: number): Stato {
       }
     }
     if (pressante) {
+      pressanteId = pressante.id
       const verso = pressante.casa ? -1 : 1
       const da = posizioni.get(pressante.id)!
       posizioni.set(pressante.id, { x: da.x + (b.x + verso * 1.8 - da.x) * 0.85, y: da.y + (b.y + 0.6 - da.y) * 0.85 })
@@ -219,6 +226,43 @@ export function statoScena(scena: Scena, t: number): Stato {
     }
   }
 
+  if (!dopoGol) {
+    const ricevente = tocco && b.inVolo ? tocco.riceventeId : null
+    const fermi = new Set([portatore, ricevente, pressanteId])
+    const base = new Map([...posizioni].map(([id, p]) => [id, { ...p }]))
+    for (const q of posti) {
+      if (q.ruolo === 'Goalkeeper' || fermi.has(q.id)) continue
+      const p = posizioni.get(q.id)!
+      if (q.casa !== possessoCasa) {
+        // Marcatura: il difensore si avvicina all'avversario più vicino alla sua zona, restando tra lui e la porta.
+        let avversario: Punto | undefined
+        let d = 14
+        for (const a of posti) {
+          if (a.casa === q.casa || a.ruolo === 'Goalkeeper') continue
+          const pa = base.get(a.id)!
+          const da = Math.hypot(pa.x - p.x, pa.y - p.y)
+          if (da < d) {
+            d = da
+            avversario = pa
+          }
+        }
+        if (avversario) {
+          const lato = q.casa ? -2 : 2
+          p.x += (avversario.x + lato - p.x) * 0.45
+          p.y += (avversario.y - p.y) * 0.45
+        }
+      } else {
+        // Smarcamento: chi è vicino alla palla si avvicina per offrire una linea di passaggio, senza ammassarsi.
+        const d = Math.hypot(b.x - p.x, b.y - p.y)
+        if (d < 28 && d > 9) {
+          const f = 0.22 * (1 - d / 28)
+          p.x += (b.x - p.x) * f
+          p.y += (b.y - p.y) * f
+        }
+      }
+    }
+  }
+
   const giocatori: StatoGiocatore[] = posti.map((q) => {
     const p = posizioni.get(q.id)!
     return {
@@ -234,7 +278,31 @@ export function statoScena(scena: Scena, t: number): Stato {
     s && t > s.tiro
       ? { tipo: s.esito === 'gol' || s.esito === 'parata' || s.esito === 'palo' ? s.esito : 'fuori', protagonista: s.tiratoreId, casa: s.casa }
       : null
-  return { giocatori, palla: { x: b.x, y: b.y, h: b.h }, portatore, evidenza, saliente: s !== undefined }
+  return { giocatori, palla: { x: vera.x, y: vera.y, h: vera.h }, portatore, possessoCasa, evidenza, saliente: s !== undefined }
+}
+
+function hash(s: string): number {
+  let h = 2166136261
+  for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619)
+  return (h >>> 0) / 4294967296
+}
+
+// Movimento continuo senza palla, in tempo reale: aggiustamenti di posizione, piccoli scatti, corse incontro.
+// È solo estetico: non cambia nulla di ciò che decide il motore.
+export function vivacita(g: StatoGiocatore, secondi: number, possessoCasa: boolean): { x: number; y: number } {
+  if (g.conPalla) return { x: 0, y: 0 }
+  const h = hash(g.id)
+  const fase = h * Math.PI * 2
+  const omega = 0.7 + h * 0.6
+  if (g.ruolo === 'Goalkeeper') return { x: 0, y: Math.sin(secondi * omega + fase) * 0.8 }
+  const attacca = g.casa === possessoCasa
+  const ampiezzaX = attacca ? (g.ruolo === 'Defender' ? 2 : 4) : 1.5
+  const ampiezzaY = attacca ? 3 : 2.5
+  const verso = g.casa ? 1 : -1
+  return {
+    x: verso * Math.sin(secondi * omega + fase) * ampiezzaX,
+    y: Math.sin(secondi * omega * 0.73 + fase * 1.7) * ampiezzaY,
+  }
 }
 
 export type { Punto }

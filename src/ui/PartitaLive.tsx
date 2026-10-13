@@ -16,9 +16,9 @@ type Vista = '2d' | '3d' | 'cronaca'
 
 // Secondi reali per minuto di gioco: nelle azioni salienti il tempo rallenta per seguirle.
 const RITMI = [
-  { nome: 'Lenta', gioco: 0.8, azione: 20 },
-  { nome: 'Normale', gioco: 0.4, azione: 12 },
-  { nome: 'Veloce', gioco: 0.15, azione: 6 },
+  { nome: 'Lenta', gioco: 1.6, azione: 14 },
+  { nome: 'Normale', gioco: 0.9, azione: 8 },
+  { nome: 'Veloce', gioco: 0.35, azione: 4 },
 ]
 
 const VISTE: { id: Vista; nome: string }[] = [
@@ -92,7 +92,8 @@ export function PartitaLive({
   const { mia, xi1, anteprima, partite, partitaMia, sim, scena, colori: coloriSquadre } = dati
 
   const orologio = useOrologio(ripresa ? 90 : 45, pannello, (t) => {
-    const saliente = salienteA(scena, t) !== undefined
+    // Si rallenta già mezzo minuto prima dell'azione, così l'orologio ha il tempo di frenare.
+    const saliente = salienteA(scena, t) !== undefined || salienteA(scena, t + 0.5) !== undefined
     if (vista === 'cronaca') return saliente ? ritmo.gioco * 3 : ritmo.gioco
     return saliente ? ritmo.azione : ritmo.gioco
   })
