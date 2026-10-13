@@ -12,7 +12,7 @@ const m = mondoDaRighe(q(QUERY.meta), q(QUERY.club), q(QUERY.giocatori), q(QUERY
 const carriera = nuovaCarriera(m.club, m.giocatori, '46', m.stagione, 'visione')
 
 // Stesso ritmo della schermata live a velocità Normale, con la stessa frenata prima delle azioni.
-const RITMO = { gioco: 0.7, azione: 35 }
+const RITMO = { gioco: 2.5, azione: 22 }
 function ritmoVoluto(scena: Scena, t: number) {
   if (salienteA(scena, t)) return RITMO.azione
   const prossima = scena.salienti.find((s) => s.inizio > t)
@@ -32,7 +32,10 @@ function guarda(scena: Scena, secondi: number) {
     inversioni: { azione: 0, veloce: 0 },
     velocita: { azione: [0, 0], veloce: [0, 0] },
     distanzaPalla: [0, 0, 0],
+    // Cambi di squadra del portatore mostrato: distanza dalla palla di chi la prende, e quanto si sposta la palla.
+    recuperi: [] as { presa: number; spostamento: number }[],
   }
+  let ultimo: { casa: boolean; x: number; y: number } | null = null
   const precedenti = new Map<string, { dx: number; dy: number }>()
   for (let f = 0; f < secondi * 60; f++) {
     const voluto = ritmoVoluto(scena, t)
@@ -42,6 +45,16 @@ function guarda(scena: Scena, secondi: number) {
     t += dt / ritmo
     const { stato, movimenti } = anima(scena, t, dt, f / 60, ritmo)
     const k = stato.saliente ? 'azione' : 'veloce'
+    const chi = stato.giocatori.find((g) => g.conPalla)
+    if (chi) {
+      if (ultimo && chi.casa !== ultimo.casa && !stato.saliente && chi.ruolo !== 'Goalkeeper') {
+        misure.recuperi.push({
+          presa: Math.hypot(chi.x - stato.palla.x, chi.y - stato.palla.y),
+          spostamento: Math.hypot(stato.palla.x - ultimo.x, stato.palla.y - ultimo.y),
+        })
+      }
+      ultimo = { casa: chi.casa, x: stato.palla.x, y: stato.palla.y }
+    }
     for (const g of stato.giocatori) {
       if (g.ruolo === 'Goalkeeper') continue
       const mv = movimenti.get(g.id)!
@@ -86,6 +99,14 @@ describe.each(['46', '1005'])('visione della prima giornata (club %s)', (clubId)
   it('nelle azioni i giocatori corrono a velocità umane', () => {
     expect(misure.velocita.azione[0] / misure.velocita.azione[1]).toBeLessThan(8)
     expect(misure.velocita.azione[0] / misure.velocita.azione[1]).toBeGreaterThan(1)
+  })
+
+  it("nei recuperi la palla non vola verso l'avversario: la prende chi le è vicino", () => {
+    const presa = misure.recuperi.map((r) => r.presa).sort((a, b) => a - b)
+    const spostamento = misure.recuperi.map((r) => r.spostamento).sort((a, b) => a - b)
+    expect(presa.length).toBeGreaterThan(10)
+    expect(presa[Math.floor(presa.length * 0.9)]).toBeLessThan(4)
+    expect(spostamento[Math.floor(spostamento.length * 0.9)]).toBeLessThan(3)
   })
 
   it('la palla resta sui piedi di chi la porta', () => {

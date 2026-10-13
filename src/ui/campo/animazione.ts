@@ -25,19 +25,33 @@ export function creaAnimatore() {
   let riferimento: Palla | null = null
   let mostrata: Palla | null = null
   let portatoreVeloce: string | null = null
+  let pressanteVeloce: string | null = null
+  // Palla contesa: dopo un cambio di possesso nell'avanti veloce resta ferma finché il nuovo portatore non la raggiunge.
+  let pallaLibera: { x: number; y: number; da: number } | null = null
+  let squadraMostrata: boolean | null = null
+  // Il possesso mostrato cambia solo se l'altra squadra tiene palla per almeno 0,12 minuti di gioco (~7 secondi):
+  // i rimpalli di pochi istanti, invisibili a questa velocità, non fanno saltare la palla avanti e indietro.
+  let candidata: { casa: boolean; da: number } | null = null
   // 1 = regime azione, 0 = avanti veloce.
   let regime = 1
 
-  const scegliPortatore = (stato: Stato, rif: Palla) => {
-    const distanza = (g: StatoGiocatore) => {
-      const p = posizioni.get(g.id) ?? g
-      return Math.hypot(p.x - rif.x, p.y - rif.y)
+  // Nell'avanti veloce il portatore mostrato è della squadra che ha davvero la palla.
+  // Tra compagni passa a chi è più vicino alla palla (con isteresi, per non saltare di continuo);
+  // quando cambia squadra la prende l'avversario più vicino alla palla mostrata: un contrasto sul posto.
+  const scegliPortatore = (stato: Stato, rif: Palla, squadra: boolean) => {
+    const dove = (g: StatoGiocatore) => posizioni.get(g.id) ?? g
+    const distanza = (g: StatoGiocatore, p: { x: number; y: number }) => Math.hypot(dove(g).x - p.x, dove(g).y - p.y)
+    const candidati = stato.giocatori.filter((g) => g.ruolo !== 'Goalkeeper' && g.casa === squadra)
+    const attuale = candidati.find((g) => g.id === portatoreVeloce)
+    // Chi sta andando a prendere una palla contesa non viene sostituito a metà corsa.
+    if (attuale && pallaLibera) return attuale.id
+    if (!attuale && mostrata) {
+      const palla = mostrata
+      portatoreVeloce = candidati.reduce((a, g) => (distanza(g, palla) < distanza(a, palla) ? g : a), candidati[0]).id
+      return portatoreVeloce
     }
-    const inPossesso = stato.giocatori.filter((g) => g.ruolo !== 'Goalkeeper' && g.casa === stato.quotaCasa >= 0.5)
-    const migliore = inPossesso.reduce((a, g) => (distanza(g) < distanza(a) ? g : a), inPossesso[0])
-    const attuale = inPossesso.find((g) => g.id === portatoreVeloce)
-    // Isteresi: si cambia portatore solo se il nuovo è almeno 4 metri più vicino alla palla.
-    portatoreVeloce = attuale && distanza(attuale) < distanza(migliore) + 4 ? attuale.id : migliore.id
+    const migliore = candidati.reduce((a, g) => (distanza(g, rif) < distanza(a, rif) ? g : a), candidati[0])
+    portatoreVeloce = attuale && distanza(attuale, rif) < distanza(migliore, rif) + 4 ? attuale.id : migliore.id
     return portatoreVeloce
   }
 
@@ -51,9 +65,40 @@ export function creaAnimatore() {
     if (regime > 0.995) regime = 1
     if (regime < 0.005) regime = 0
     const veloce = regime < 1 ? statoScena(scena, t, riferimento) : null
-    const portatoreVisto = veloce ? scegliPortatore(veloce, riferimento) : null
+    if (!candidata || candidata.casa !== esatto.squadraPalla) candidata = { casa: esatto.squadraPalla, da: t }
+    const squadraStabile =
+      squadraMostrata === null || t - candidata.da >= 0.12 || Math.abs(t - candidata.da) > 5 ? candidata.casa : squadraMostrata
+    const portatoreVisto = veloce ? scegliPortatore(veloce, riferimento, squadraStabile) : null
     if (!veloce) portatoreVeloce = null
-    const portatore = regime >= 0.5 ? esatto.portatore : portatoreVisto
+    // Nell'avanti veloce un avversario sta addosso al portatore mostrato: se la palla cambia squadra,
+    // è lui a prenderla, a contatto. Cambia solo se un altro è chiaramente più vicino.
+    const pressaQui = portatoreVisto ? posizioni.get(portatoreVisto) : undefined
+    let pressante: StatoGiocatore | undefined
+    if (veloce && pressaQui) {
+      const lontananza = (g: StatoGiocatore) => {
+        const p = posizioni.get(g.id) ?? g
+        return Math.hypot(p.x - pressaQui.x, p.y - pressaQui.y)
+      }
+      const avversari = veloce.giocatori.filter((g) => g.casa !== squadraStabile && g.ruolo !== 'Goalkeeper')
+      const migliore = avversari.reduce((a, g) => (lontananza(g) < lontananza(a) ? g : a), avversari[0])
+      const attuale = avversari.find((g) => g.id === pressanteVeloce)
+      pressante = attuale && lontananza(attuale) < lontananza(migliore) + 3 ? attuale : migliore
+      pressanteVeloce = pressante.id
+    } else pressanteVeloce = null
+    if (veloce && portatoreVisto && squadraMostrata !== null && squadraMostrata !== squadraStabile && mostrata) {
+      pallaLibera = { x: mostrata.x, y: mostrata.y, da: secondiReali }
+    }
+    if (veloce) squadraMostrata = squadraStabile
+    else {
+      squadraMostrata = null
+      pallaLibera = null
+    }
+    if (pallaLibera && portatoreVisto) {
+      const p = posizioni.get(portatoreVisto)
+      // Raggiunta (o dopo un secondo e mezzo, per sicurezza): il nuovo portatore la controlla.
+      if (!p || Math.hypot(p.x - pallaLibera.x, p.y - pallaLibera.y) < 1.5 || secondiReali - pallaLibera.da > 1.5) pallaLibera = null
+    }
+    const portatore = regime >= 0.5 ? esatto.portatore : pallaLibera ? null : portatoreVisto
     const quotaCasa = veloce ? veloce.quotaCasa + (esatto.quotaCasa - veloce.quotaCasa) * regime : esatto.quotaCasa
 
     // 9 m/s di gioco convertiti in tempo reale nelle azioni; nell'avanti veloce un limite basso, per calma.
@@ -65,8 +110,13 @@ export function creaAnimatore() {
       let y = g.y
       if (veloce) {
         const f = veloce.giocatori.find((v) => v.id === g.id)!
-        const fx = f.id === portatoreVisto ? riferimento!.x : f.x
-        const fy = f.id === portatoreVisto ? riferimento!.y : f.y
+        const versoPalla = f.id === portatoreVisto ? (pallaLibera ?? riferimento!) : null
+        let fx = versoPalla ? versoPalla.x : f.x
+        let fy = versoPalla ? versoPalla.y : f.y
+        if (pressante && f.id === pressante.id && pressaQui) {
+          fx += (pressaQui.x + (f.casa ? -1.5 : 1.5) - fx) * 0.85
+          fy += (pressaQui.y + 0.5 - fy) * 0.85
+        }
         x = fx + (g.x - fx) * regime
         y = fy + (g.y - fy) * regime
       }
@@ -81,7 +131,7 @@ export function creaAnimatore() {
 
     // Palla mostrata: ai piedi di chi la porta quando qualcuno la porta, sul suo percorso quando è in volo.
     const chi = giocatori.find((g) => g.conPalla)
-    const voluta: Palla = chi ? { x: chi.x + (chi.casa ? 0.9 : -0.9), y: chi.y, h: 0 } : vera
+    const voluta: Palla = pallaLibera ? { x: pallaLibera.x, y: pallaLibera.y, h: 0 } : chi ? { x: chi.x + (chi.casa ? 0.9 : -0.9), y: chi.y, h: 0 } : vera
     mostrata ??= { ...voluta }
     const rapidita = regime === 1 ? 40 : 25
     mostrata.x = avvicina(mostrata.x, voluta.x, dt, rapidita)

@@ -172,7 +172,7 @@ export function simulaPartita(
 
     const pesoTiro =
       distPorta < 32 && io.ruolo !== 'Goalkeeper'
-        ? Math.exp(-distPorta / 9) * 14 * (0.6 + attr(io, 'tiro') / 25) * (laterale < 20 ? 1 : 0.35)
+        ? Math.exp(-distPorta / 9) * 17 * (0.6 + attr(io, 'tiro') / 25) * (laterale < 20 ? 1 : 0.35)
         : 0
     const pesoCross = b.x > 72 && laterale > 17 ? 0.9 * (0.6 + attr(io, 'passaggio') / 25) : 0
     const spazio = limita(distPressione / 8, 0.2, 1.5)
@@ -197,9 +197,9 @@ export function simulaPartita(
       }
     }
 
-    const recupero = (dove: Punto, durata: number, tipo: Tocco['tipo'], esito: Tocco['esito'], alta = 0) => {
-      // Il pallone va all'avversario più vicino al punto in cui viene perso.
-      const chi = piuVicino(avversari, pos, dove, (q) => q.ruolo !== 'Goalkeeper' || nelVerso(dove, !casa).x < 16)
+    const recupero = (dove: Punto, durata: number, tipo: Tocco['tipo'], esito: Tocco['esito'], alta = 0, chi?: Posto) => {
+      // Il pallone va a chi lo intercetta o, se non indicato, all'avversario più vicino al punto in cui viene perso.
+      chi ??= piuVicino(avversari, pos, dove, (q) => q.ruolo !== 'Goalkeeper' || nelVerso(dove, !casa).x < 16)
       registra({ t0: t, t1: t + durata, tipo, esito, giocatoreId: portatore, riceventeId: chi.id, da: palla, a: dove, alta })
       t += durata
       cambiaPossesso(chi.id, dove)
@@ -207,6 +207,8 @@ export function simulaPartita(
 
     if (azione === 'passaggio' || azione === 'rinvio') {
       const lungo = azione === 'rinvio'
+      // Posizioni degli avversari lette una volta: il calcolo si ripete per ogni compagno.
+      const posAvversari = avversari.map((a) => ({ a, p: pos.get(a.id)! }))
       const opzioniPassaggio = compagni
         .filter((q) => q.ruolo !== 'Goalkeeper' || b.x < 35)
         .map((q) => {
@@ -214,12 +216,25 @@ export function simulaPartita(
           const d = distanza(dove, palla)
           const guadagno = nelVerso(dove, casa).x - b.x
           let marcatura = Infinity
-          for (const a of avversari) marcatura = Math.min(marcatura, distanza(pos.get(a.id)!, dove))
+          for (const { p } of posAvversari) marcatura = Math.min(marcatura, distanza(p, dove))
           const libero = limita(marcatura / 6, 0.15, 1.2)
+          // Linea di passaggio: l'avversario più vicino alla traiettoria può intercettare.
+          let corsia = Infinity
+          let bloccante: Posto | undefined
+          for (const { a, p } of posAvversari) {
+            if (a.ruolo === 'Goalkeeper') continue
+            const dq = distanzaDalSegmento(p, palla, dove)
+            if (dq < corsia) {
+              corsia = dq
+              bloccante = a
+            }
+          }
+          const puntoBlocco = bloccante ? sulSegmento(pos.get(bloccante.id)!, palla, dove).punto : dove
+          const aperta = limita(corsia / 4, 0.15, 1)
           const peso = lungo
-            ? (d > 25 ? 1 : 0.1) * Math.exp(guadagno / 20) * libero
-            : (d < 38 ? 1 : 0.05) * Math.exp(guadagno / 16) * libero * (d < 4 ? 0.2 : 1)
-          return { q, dove, d, libero, peso }
+            ? (d > 25 ? 1 : 0.1) * Math.exp(guadagno / 20) * libero * aperta
+            : (d < 38 ? 1 : 0.05) * Math.exp(guadagno / 16) * libero * aperta * (d < 4 ? 0.2 : 1)
+          return { q, dove, d, libero, corsia, bloccante, puntoBlocco, peso }
         })
       let r = caso(t) * opzioniPassaggio.reduce((s, o) => s + o.peso, 0)
       let scelto = opzioniPassaggio[0]
@@ -233,7 +248,7 @@ export function simulaPartita(
       const tecnica = (attr(io, 'passaggio') + attr(io, 'visione') * 0.5) / 15
       // La qualità tecnica pesa più del fattore campo: è lei a decidere chi tiene palla.
       const riuscita = limita(
-        0.945 - scelto.d * (lungo ? 0.009 : 0.005) - 0.22 * pressione * (1.3 - tecnica * 0.6) - 0.22 * (1 - Math.min(1, scelto.libero)) + (tecnica - 1) * 0.2 + bonus * 0.4,
+        0.955 - scelto.d * (lungo ? 0.009 : 0.005) - 0.2 * pressione * (1.3 - tecnica * 0.6) - 0.15 * (1 - Math.min(1, scelto.libero)) - 0.3 * limita(1 - scelto.corsia / 4, 0, 1) + (tecnica - 1) * 0.2 + bonus * 0.4,
         0.25,
         0.98,
       )
@@ -247,10 +262,19 @@ export function simulaPartita(
         ultimoPassatore = portatore
         portatore = scelto.q.id
         palla = scelto.dove
+      } else if (scelto.bloccante && scelto.corsia < 6) {
+        // Intercetto: lo prende l'avversario che stava sulla linea del passaggio, dove si trova.
+        const f = limita(distanza(palla, scelto.puntoBlocco) / Math.max(1, scelto.d), 0.1, 1)
+        recupero(scelto.puntoBlocco, durata * f, azione, 'perso', alta * f, scelto.bloccante)
       } else {
-        const f = 0.5 + caso(t) * 0.45
-        const dove = { x: palla.x + (scelto.dove.x - palla.x) * f, y: palla.y + (scelto.dove.y - palla.y) * f }
-        recupero(dove, durata * f, azione, 'perso', alta)
+        // Passaggio impreciso: troppo lungo o fuori misura, lo raccoglie chi è più vicino.
+        const angolo = caso(t) * Math.PI * 2
+        const errore = 4 + caso(t) * 5
+        const dove = {
+          x: limita(scelto.dove.x + Math.cos(angolo) * errore, 1, LUNGHEZZA - 1),
+          y: limita(scelto.dove.y + Math.sin(angolo) * errore, 1, LARGHEZZA - 1),
+        }
+        recupero(dove, durata, azione, 'perso', alta)
       }
       continue
     }
@@ -319,7 +343,7 @@ export function simulaPartita(
     const portiere = giocatori.get(portiereAvv.id)!
     const parate = (attr(portiere, 'riflessi') + attr(portiere, 'presa') + attr(portiere, 'posizionamento')) / 3
     const xg = limita(
-      1.95 * Math.exp(-0.135 * d) * angolo * (diTesta ? 0.65 : 1) * (abilita / 12) ** 1.3 * (1 - 0.35 * pressione) * (1.18 - 0.025 * (parate - 10)) * (1 + bonus * 4.5),
+      2.05 * Math.exp(-0.135 * d) * angolo * (diTesta ? 0.65 : 1) * (abilita / 12) ** 1.3 * (1 - 0.35 * pressione) * (1.18 - 0.025 * (parate - 10)) * (1 + bonus * 4.5),
       0.01,
       0.75,
     )
@@ -379,6 +403,24 @@ export function simulaPartita(
   stat.possessoCasa = Math.round((tempoPossesso[0] / totale) * 100)
   eventi.sort((a, b) => (a.t ?? a.minuto) - (b.t ?? b.minuto))
   return { eventi, tocchi, statistiche: stat }
+}
+
+// Distanza di un punto dal segmento a-b (dal 10% della lunghezza in poi), senza creare oggetti: si calcola migliaia di volte.
+function distanzaDalSegmento(p: Punto, a: Punto, b: Punto): number {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const f = limita(((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1), 0.1, 1)
+  return Math.hypot(p.x - (a.x + dx * f), p.y - (a.y + dy * f))
+}
+
+// Distanza di un punto dal segmento a-b e punto del segmento più vicino.
+function sulSegmento(p: Punto, a: Punto, b: Punto): { d: number; punto: Punto } {
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  const l2 = dx * dx + dy * dy || 1
+  const f = limita(((p.x - a.x) * dx + (p.y - a.y) * dy) / l2, 0.1, 1)
+  const punto = { x: a.x + dx * f, y: a.y + dy * f }
+  return { d: distanza(p, punto), punto }
 }
 
 function piuVicino(lista: Posto[], pos: Map<string, Punto>, punto: Punto, ammesso: (q: Posto) => boolean): Posto {

@@ -44,6 +44,8 @@ export interface Stato {
   possessoCasa: boolean
   // Quota di possesso recente della squadra di casa (0-1), per movimenti senza scatti.
   quotaCasa: number
+  // Squadra che ha davvero la palla in questo istante, secondo il motore.
+  squadraPalla: boolean
   evidenza: { tipo: TipoEvento; protagonista: string; casa: boolean } | null
   saliente: boolean
 }
@@ -215,6 +217,7 @@ export function statoScena(scena: Scena, t: number, riferimento?: Punto): Stato 
   else if (!riferimento && tocco && !b.inVolo) portatore = tocco.riceventeId
   if (portatore && !ids.has(portatore)) portatore = null
   const quotaCasa = quotaPossessoCasa(scena, t, riferimento ? 0.8 : 0.15)
+  const squadraPalla = tocco ? (b.inVolo ? tocco.casa : (squadraDi(tocco.riceventeId) ?? tocco.casa)) : true
   const possessoCasa = portatore ? squadraDi(portatore)! : quotaCasa >= 0.5
 
   const s = salienteA(scena, t)
@@ -304,7 +307,7 @@ export function statoScena(scena: Scena, t: number, riferimento?: Punto): Stato 
     s && t > s.tiro
       ? { tipo: s.esito === 'gol' || s.esito === 'parata' || s.esito === 'palo' ? s.esito : 'fuori', protagonista: s.tiratoreId, casa: s.casa }
       : null
-  return { giocatori, palla: { x: vera.x, y: vera.y, h: vera.h }, portatore, possessoCasa, quotaCasa, evidenza, saliente: s !== undefined }
+  return { giocatori, palla: { x: vera.x, y: vera.y, h: vera.h }, portatore, possessoCasa, quotaCasa, squadraPalla, evidenza, saliente: s !== undefined }
 }
 
 function hash(s: string): number {

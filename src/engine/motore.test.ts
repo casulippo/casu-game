@@ -122,7 +122,8 @@ describe('stagione simulata', () => {
     expect(rifatta.calendario.map((p) => `${p.golCasa}-${p.golOspite}`)).toEqual(
       finita.calendario.map((p) => `${p.golCasa}-${p.golOspite}`),
     )
-  })
+    // Risimula un'intera stagione: serve più dei 5 secondi standard.
+  }, 30_000)
 
   it('nuova stagione: giovani crescono, anziani calano, statistiche azzerate', () => {
     const dopo = nuovaStagione(finita)

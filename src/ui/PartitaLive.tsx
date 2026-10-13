@@ -16,9 +16,9 @@ type Vista = '2d' | '3d' | 'cronaca'
 
 // Secondi reali per minuto di gioco: nelle azioni salienti il tempo rallenta per seguirle.
 const RITMI = [
-  { nome: 'Lenta', gioco: 1.2, azione: 60 },
-  { nome: 'Normale', gioco: 0.7, azione: 35 },
-  { nome: 'Veloce', gioco: 0.3, azione: 15 },
+  { nome: 'Lenta', gioco: 4, azione: 35 },
+  { nome: 'Normale', gioco: 2.5, azione: 22 },
+  { nome: 'Veloce', gioco: 0.8, azione: 10 },
 ]
 
 const VISTE: { id: Vista; nome: string }[] = [
