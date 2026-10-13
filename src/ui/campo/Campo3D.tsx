@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
 import { Sovraimpressione } from './Campo2D'
 import { PORTIERE_CASA, PORTIERE_OSPITE, type Divisa } from './colori'
-import { insegui, LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
+import { insegui, LARGHEZZA, LUNGHEZZA, smorzaPalla, statoScena, type Scena, type Stato } from './scena'
 
 const PELLI = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0673a']
 // Giocatori un po' più grandi del vero: dalla tribuna devono restare leggibili.
@@ -247,6 +247,7 @@ export default function Campo3D({
 
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.5, 400)
     let camX = 0
+    let pallaVista: { x: number; y: number; h: number } | null = null
     const pupazzi = new Map<string, Pupazzo>()
 
     const ridimensiona = () => {
@@ -306,9 +307,11 @@ export default function Campo3D({
         pupazzi.delete(id)
       }
 
-      palla.position.set(aX(stato.palla.x), 0.28 + stato.palla.h, aZ(stato.palla.y))
-      ombraPalla.position.set(aX(stato.palla.x), 0.02, aZ(stato.palla.y))
-      camX += (aX(stato.palla.x) * 0.8 - camX) * (1 - Math.exp(-dt * 1.8))
+      pallaVista ??= { ...stato.palla }
+      smorzaPalla(pallaVista, stato.palla, dt, stato.saliente)
+      palla.position.set(aX(pallaVista.x), 0.28 + pallaVista.h, aZ(pallaVista.y))
+      ombraPalla.position.set(aX(pallaVista.x), 0.02, aZ(pallaVista.y))
+      camX += (aX(pallaVista.x) * 0.8 - camX) * (1 - Math.exp(-dt * 1.8))
       camera.position.set(camX, 26, 55)
       camera.lookAt(camX, 0, 4)
       renderer.render(mondo, camera)

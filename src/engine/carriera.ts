@@ -60,7 +60,7 @@ export function giocaGiornata(c: Carriera, fasiUtente?: Fase[]): Carriera {
       aggiorna(e.marcatoreId, (s) => ({ ...s, gol: s.gol + 1 }))
       if (e.assistId) aggiorna(e.assistId, (s) => ({ ...s, assist: s.assist + 1 }))
     }
-    return { ...p, golCasa: ris.golCasa, golOspite: ris.golOspite, eventi: ris.eventi }
+    return { ...p, golCasa: ris.golCasa, golOspite: ris.golOspite, eventi: ris.eventi, statistiche: ris.statistiche }
   })
   return { ...c, calendario, giocatori }
 }

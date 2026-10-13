@@ -4,7 +4,7 @@ import { mondoDaRighe, QUERY, type Mondo } from '../data/seed'
 import { generaCalendario } from './calendario'
 import { cambi, giocaGiornata, nuovaCarriera, nuovaStagione, prossimaGiornata, simulaFinoAllaFine, xiDi } from './carriera'
 import { classifica } from './classifica'
-import { formazione } from './partita'
+import { formazione, giocaPartita } from './partita'
 import { tipoEvento } from './tipi'
 
 function mondo(): Mondo {
@@ -74,6 +74,26 @@ describe('stagione simulata', () => {
     expect(perSquadra(['gol', 'parata', 'fuori', 'palo'])).toBeLessThan(15)
     expect(perSquadra(['giallo'])).toBeGreaterThan(1.5)
     expect(perSquadra(['giallo'])).toBeLessThan(2.5)
+  })
+
+  it('passaggi e possesso realistici', () => {
+    const s = finita.calendario.map((p) => p.statistiche!)
+    const passaggi = s.reduce((a, x) => a + x.passaggi[0] + x.passaggi[1], 0)
+    const riusciti = s.reduce((a, x) => a + x.passaggiRiusciti[0] + x.passaggiRiusciti[1], 0)
+    expect(riusciti / passaggi).toBeGreaterThan(0.8)
+    expect(riusciti / passaggi).toBeLessThan(0.9)
+    expect(Math.min(...s.map((x) => x.possessoCasa))).toBeGreaterThan(25)
+    expect(Math.max(...s.map((x) => x.possessoCasa))).toBeLessThan(85)
+  })
+
+  it('gli attributi contano: con passaggio e visione migliori si tiene più palla', () => {
+    const p = carriera.calendario[0]
+    const xiC = xiDi(carriera, p.casaId)
+    const xiO = xiDi(carriera, p.ospiteId)
+    const migliorati = xiC.map((g) => ({ ...g, attr: { ...g.attr, passaggio: Math.min(20, g.attr.passaggio + 4), visione: Math.min(20, g.attr.visione + 4) } }))
+    const media = (xi: typeof xiC) =>
+      Array.from({ length: 12 }, (_, i) => giocaPartita(p, xi, xiO, `attr${i}`).statistiche.possessoCasa).reduce((a, b) => a + b, 0) / 12
+    expect(media(migliorati)).toBeGreaterThan(media(xiC) + 3)
   })
 
   it.each([30, 46, 75])('un cambio al minuto %i non altera quanto successo prima', (da) => {

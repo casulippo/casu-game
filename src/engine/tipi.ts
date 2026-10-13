@@ -50,6 +50,8 @@ export type TipoEvento = 'gol' | 'parata' | 'fuori' | 'palo' | 'giallo'
 
 export interface Evento {
   minuto: number
+  // Istante esatto in minuti di gioco (assente nei salvataggi più vecchi).
+  t?: number
   clubId: string
   // Assente nei salvataggi creati prima della cronaca: vale 'gol'.
   tipo?: TipoEvento
@@ -68,6 +70,13 @@ export interface Partita {
   golCasa?: number
   golOspite?: number
   eventi?: Evento[]
+  statistiche?: {
+    possessoCasa: number
+    passaggi: [number, number]
+    passaggiRiusciti: [number, number]
+    tiri: [number, number]
+    specchio: [number, number]
+  }
 }
 
 export const MODULI = {

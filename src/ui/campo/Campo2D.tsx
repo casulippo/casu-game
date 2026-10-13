@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Divisa } from './colori'
 import { PORTIERE_CASA, PORTIERE_OSPITE } from './colori'
-import { insegui, LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
+import { insegui, LARGHEZZA, LUNGHEZZA, smorzaPalla, statoScena, type Scena, type Stato } from './scena'
 
 // Le pedine inseguono la posizione calcolata con un ritardo morbido, come giocatori che corrono.
 function useStatoAnimato(scena: Scena, tempo: RefObject<number>) {
   const [stato, setStato] = useState<Stato>(() => statoScena(scena, tempo.current))
   const posizioni = useRef(new Map<string, { x: number; y: number }>())
+  const pallaVista = useRef<{ x: number; y: number; h: number } | null>(null)
   const scenaRef = useRef(scena)
 
   useEffect(() => {
@@ -25,7 +26,9 @@ function useStatoAnimato(scena: Scena, tempo: RefObject<number>) {
         posizioni.current.set(g.id, p)
         return { ...g, x: p.x, y: p.y }
       })
-      setStato({ ...obiettivo, giocatori })
+      pallaVista.current ??= { ...obiettivo.palla }
+      smorzaPalla(pallaVista.current, obiettivo.palla, dt, obiettivo.saliente)
+      setStato({ ...obiettivo, giocatori, palla: { ...pallaVista.current } })
       frame = requestAnimationFrame(passo)
     })
     return () => cancelAnimationFrame(frame)

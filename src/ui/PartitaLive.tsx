@@ -1,11 +1,11 @@
 import { Fragment, lazy, Suspense, useMemo, useState } from 'react'
 import { cambi, giocaGiornata, MAX_CAMBI, prossimaGiornata, rosa, xiDi } from '../engine/carriera'
-import { formazione, possesso, xiAlMinuto, type Fase as FaseGioco } from '../engine/partita'
+import { formazione, giocaPartita, xiAlMinuto, type Fase as FaseGioco } from '../engine/partita'
 import { MODULI, tipoEvento, type Carriera, type Evento, type Giocatore, type Modulo, type Partita } from '../engine/tipi'
 import { Campo2D } from './campo/Campo2D'
 import { divise } from './campo/colori'
 import { useOrologio } from './campo/orologio'
-import { creaScena, segmentoA } from './campo/scena'
+import { creaScena, salienteA } from './campo/scena'
 import { Bottone, Overall } from './comuni'
 import { RUOLO_BREVE } from './formato'
 
@@ -16,9 +16,9 @@ type Vista = '2d' | '3d' | 'cronaca'
 
 // Secondi reali per minuto di gioco: nelle azioni salienti il tempo rallenta per seguirle.
 const RITMI = [
-  { nome: 'Lenta', gioco: 0.8, azione: 11 },
-  { nome: 'Normale', gioco: 0.4, azione: 6.5 },
-  { nome: 'Veloce', gioco: 0.15, azione: 3 },
+  { nome: 'Lenta', gioco: 0.8, azione: 20 },
+  { nome: 'Normale', gioco: 0.4, azione: 12 },
+  { nome: 'Veloce', gioco: 0.15, azione: 6 },
 ]
 
 const VISTE: { id: Vista; nome: string }[] = [
@@ -75,32 +75,30 @@ export function PartitaLive({
     const anteprima = giocaGiornata(carriera, fasi.length ? fasi : undefined)
     const partite = anteprima.calendario.filter((p) => p.giornata === giornata)
     const partitaMia = partite.find((p) => stessa(p, mia))!
+    const inCasa = mia.casaId === carriera.clubUtente
+    // Stessi ingressi di giocaGiornata: la partita che guardi è esattamente quella che verrà salvata.
+    const sim = giocaPartita(
+      mia,
+      inCasa ? xi1 : xiAvversario,
+      inCasa ? xiAvversario : xi1,
+      `${carriera.seme}:${carriera.stagione}`,
+      inCasa ? { casa: fasi } : { ospite: fasi },
+    )
     const mie = { base: xi1, fasi }
     const loro = { base: xiAvversario, fasi: [] }
-    const inCasa = mia.casaId === carriera.clubUtente
-    const scena = creaScena(
-      partitaMia,
-      { casa: inCasa ? mie : loro, ospite: inCasa ? loro : mie },
-      possesso(inCasa ? xi1 : xiAvversario, inCasa ? xiAvversario : xi1),
-      `${carriera.seme}:${carriera.stagione}`,
-    )
-    // Momento in cui ogni evento si vede in campo: il tiro arriva a fine azione.
-    const momenti = new Map<Evento, number>(
-      scena.segmenti.filter((s) => s.tipo === 'dopo' && s.evento).map((s) => [s.evento!, s.inizio]),
-    )
-    return { mia, xi1, xiAvversario, anteprima, partite, partitaMia, scena, momenti, colori: divise(mia.casaId, mia.ospiteId) }
+    const scena = creaScena(sim, { casa: inCasa ? mie : loro, ospite: inCasa ? loro : mie })
+    return { mia, xi1, xiAvversario, anteprima, partite, partitaMia, sim, scena, colori: divise(mia.casaId, mia.ospiteId) }
   }, [carriera, giornata, fasi])
-  const { mia, xi1, xiAvversario, anteprima, partite, partitaMia, scena, momenti, colori: coloriSquadre } = dati
+  const { mia, xi1, anteprima, partite, partitaMia, sim, scena, colori: coloriSquadre } = dati
 
   const orologio = useOrologio(ripresa ? 90 : 45, pannello, (t) => {
-    const s = segmentoA(scena, t)
-    const saliente = s !== undefined && s.tipo !== 'gioco'
+    const saliente = salienteA(scena, t) !== undefined
     if (vista === 'cronaca') return saliente ? ritmo.gioco * 3 : ritmo.gioco
     return saliente ? ritmo.azione : ritmo.gioco
   })
   const minuto = orologio.t
   const fase: Fase = minuto < 45 ? 'primo' : !ripresa ? 'intervallo' : minuto < 90 ? 'secondo' : 'fine'
-  const momento = (e: Evento) => momenti.get(e) ?? e.minuto
+  const momento = (e: Evento) => e.t ?? e.minuto
   const eventi = (partitaMia.eventi ?? []).filter((e) => momento(e) <= minuto)
 
   const nomi = Object.fromEntries(carriera.club.map((c) => [c.id, c.nome]))
@@ -135,10 +133,18 @@ export function PartitaLive({
     return [fino.filter((e) => e.clubId === p.casaId).length, fino.filter((e) => e.clubId === p.ospiteId).length]
   }
   const [golCasa, golOspite] = punteggio(partitaMia)
-  const xiCasa = mia.casaId === carriera.clubUtente ? xiAttuale : xiAvversario
-  const xiOspite = mia.ospiteId === carriera.clubUtente ? xiAttuale : xiAvversario
+  // Statistiche dai tocchi giocati fin qui.
+  const giocati = sim.tocchi.filter((x) => x.t0 < minuto)
+  const tempoCasa = giocati.filter((x) => x.casa).reduce((a, x) => a + Math.min(x.t1, minuto) - x.t0, 0)
+  const tempoTotale = giocati.reduce((a, x) => a + Math.min(x.t1, minuto) - x.t0, 0)
+  const possessoCasa = tempoTotale > 0 ? Math.round((tempoCasa / tempoTotale) * 100) : 50
+  const passaggi = (casa: boolean) => giocati.filter((x) => x.casa === casa && x.t1 <= minuto && (x.tipo === 'passaggio' || x.tipo === 'rinvio'))
+  const precisione = (casa: boolean) => {
+    const p = passaggi(casa)
+    return p.length ? Math.round((p.filter((x) => x.esito === 'ok').length / p.length) * 100) : 0
+  }
   const conta = (clubId: string, tipi: string[]) => eventi.filter((e) => e.clubId === clubId && tipi.includes(tipoEvento(e))).length
-  const segmento = segmentoA(scena, minuto)
+  const azioneInCorso = salienteA(scena, minuto)
 
   // Cronaca: eventi di gioco e sostituzioni, dal più recente.
   const cronaca = [
@@ -280,9 +286,9 @@ export function PartitaLive({
             <h2 className="mb-3 text-xs font-semibold tracking-wider text-slate-400 uppercase">Cronaca</h2>
             <ol className="space-y-2 text-sm">
               {fase === 'fine' && <li className="font-semibold text-slate-300">90' Fischio finale.</li>}
-              {segmento?.tipo === 'azione' && (
+              {azioneInCorso && minuto < azioneInCorso.tiro && (
                 <li className="animate-pulse font-semibold text-amber-200">
-                  {Math.floor(minuto) + 1}' Azione pericolosa di {nomi[segmento.casa ? mia.casaId : mia.ospiteId]}…
+                  {Math.floor(minuto) + 1}' Azione pericolosa di {nomi[azioneInCorso.casa ? mia.casaId : mia.ospiteId]}…
                 </li>
               )}
               {cronaca
@@ -303,7 +309,8 @@ export function PartitaLive({
           <div className="space-y-4">
             <section className="rounded-xl border border-white/10 bg-slate-900/70 p-4 text-sm">
               <h2 className="mb-3 text-xs font-semibold tracking-wider text-slate-400 uppercase">Statistiche</h2>
-              <Statistica nome="Possesso" casa={possesso(xiCasa, xiOspite)} ospite={100 - possesso(xiCasa, xiOspite)} percentuale />
+              <Statistica nome="Possesso" casa={possessoCasa} ospite={100 - possessoCasa} percentuale />
+              <Statistica nome="Passaggi riusciti" casa={precisione(true)} ospite={precisione(false)} percentuale />
               <Statistica nome="Tiri" casa={conta(mia.casaId, ['gol', 'parata', 'fuori', 'palo'])} ospite={conta(mia.ospiteId, ['gol', 'parata', 'fuori', 'palo'])} />
               <Statistica nome="Nello specchio" casa={conta(mia.casaId, ['gol', 'parata'])} ospite={conta(mia.ospiteId, ['gol', 'parata'])} />
               <Statistica nome="Ammonizioni" casa={conta(mia.casaId, ['giallo'])} ospite={conta(mia.ospiteId, ['giallo'])} />
