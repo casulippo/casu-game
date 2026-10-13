@@ -4,22 +4,16 @@ import { mondoDaRighe, QUERY } from '../../data/seed'
 import { nuovaCarriera, xiDi } from '../../engine/carriera'
 import { giocaPartita } from '../../engine/partita'
 import { creaAnimatore } from './animazione'
-import { creaScena, pallaFermaA, salienteA, type Scena } from './scena'
+import { creaScena, seguitoA, type Scena } from './scena'
 
 const db = new DatabaseSync('public/seed.sqlite', { readOnly: true })
 const q = (s: string) => db.prepare(s).all() as Record<string, unknown>[]
 const m = mondoDaRighe(q(QUERY.meta), q(QUERY.club), q(QUERY.giocatori), q(QUERY.statistiche))
 const carriera = nuovaCarriera(m.club, m.giocatori, '46', m.stagione, 'visione')
 
-// Stesso ritmo della schermata live a velocità Normale, con la stessa frenata prima delle azioni.
+// Stesso ritmo della schermata live 2D a velocità Normale.
 const RITMO = { gioco: 2.5, azione: 30 }
-function ritmoVoluto(scena: Scena, t: number) {
-  if (salienteA(scena, t)) return RITMO.azione
-  if (pallaFermaA(scena, t)) return RITMO.gioco
-  const prossima = scena.salienti.find((s) => s.inizio > t)
-  const k = prossima ? Math.min(1, Math.max(0, 1 - (prossima.inizio - t) / 0.5)) : 0
-  return RITMO.gioco ** (1 - k) * RITMO.azione ** k
-}
+const ritmoVoluto = (scena: Scena, t: number) => (seguitoA(scena, t) ? RITMO.azione : RITMO.gioco)
 
 // Guarda la partita per qualche minuto reale a 60 fotogrammi al secondo, come i campi 2D e 3D.
 function guarda(scena: Scena, secondi: number) {

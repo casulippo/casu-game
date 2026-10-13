@@ -5,7 +5,7 @@ import { MODULI, tipoEvento, type Carriera, type Evento, type Giocatore, type Mo
 import { Campo2D } from './campo/Campo2D'
 import { divise } from './campo/colori'
 import { useOrologio } from './campo/orologio'
-import { creaScena, pallaFermaA, salienteA } from './campo/scena'
+import { creaScena, pericoloA, salienteA, seguitoA } from './campo/scena'
 import { Bottone, Overall } from './comuni'
 import { RUOLO_BREVE } from './formato'
 
@@ -102,19 +102,15 @@ export function PartitaLive({
   const { mia, xi1, anteprima, partite, partitaMia, sim, scena, colori: coloriSquadre } = dati
 
   const orologio = useOrologio(ripresa ? 90 : 45, pannello, (t) => {
-    if (vista === 'cronaca') return salienteA(scena, t) ? ritmo.gioco * 3 : ritmo.gioco
+    if (vista === 'cronaca') return seguitoA(scena, t) ? ritmo.gioco * 3 : ritmo.gioco
     // In 3D le azioni scorrono a velocità quasi reale; fuori dalle azioni il tempo resta quasi fermo durante lo stacco.
     if (vista === '3d') {
       const s = salienteA(scena, t)
       return s && !finitaDalVivo(s, t) ? ritmo.azione3d : 600
     }
-    if (salienteA(scena, t)) return ritmo.azione
-    // Palla ferma (rinvio, calcio d'inizio, punizione): si passa oltre in fretta, anche se un'azione è vicina.
-    if (pallaFermaA(scena, t)) return ritmo.gioco
-    // Frenata progressiva nell'ultimo mezzo minuto prima di un'azione.
-    const prossima = scena.salienti.find((s) => s.inizio > t)
-    const k = prossima ? Math.min(1, Math.max(0, 1 - (prossima.inizio - t) / 0.5)) : 0
-    return ritmo.gioco ** (1 - k) * ritmo.azione ** k
+    // 2D: si rallenta guardando solo ciò che è già successo (attacco in zona pericolosa, tiro partito),
+    // così il rallentamento non annuncia il tiro.
+    return seguitoA(scena, t) ? ritmo.azione : ritmo.gioco
   })
   const minuto = orologio.t
   const fase: Fase = minuto < 45 ? 'primo' : !ripresa ? 'intervallo' : minuto < 90 ? 'secondo' : 'fine'
@@ -164,7 +160,9 @@ export function PartitaLive({
     return p.length ? Math.round((p.filter((x) => x.esito === 'ok').length / p.length) * 100) : 0
   }
   const conta = (clubId: string, tipi: string[]) => eventi.filter((e) => e.clubId === clubId && tipi.includes(tipoEvento(e))).length
-  const azioneInCorso = salienteA(scena, minuto)
+  // Attacco in zona pericolosa (squadra di casa o no), finché non parte un tiro: non si sa ancora come finirà.
+  const sequenza = salienteA(scena, minuto)
+  const attacco = sequenza && minuto >= sequenza.daTiro ? undefined : pericoloA(scena, minuto)
 
   // Cronaca: eventi di gioco e sostituzioni, dal più recente.
   const cronaca = [
@@ -344,9 +342,9 @@ export function PartitaLive({
             <h2 className="mb-3 text-xs font-semibold tracking-wider text-slate-400 uppercase">Cronaca</h2>
             <ol className="space-y-2 text-sm">
               {fase === 'fine' && <li className="font-semibold text-slate-300">90' Fischio finale.</li>}
-              {azioneInCorso && minuto < azioneInCorso.tiro && (
+              {attacco !== undefined && (
                 <li className="animate-pulse font-semibold text-amber-200">
-                  {Math.floor(minuto) + 1}' Azione pericolosa di {nomi[azioneInCorso.casa ? mia.casaId : mia.ospiteId]}…
+                  {Math.floor(minuto) + 1}' Azione pericolosa di {nomi[attacco ? mia.casaId : mia.ospiteId]}…
                 </li>
               )}
               {cronaca

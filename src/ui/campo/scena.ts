@@ -14,6 +14,8 @@ interface Periodo {
 // Tratto da seguire a velocità reale: l'azione che porta a un tiro e quello che succede subito dopo.
 export interface Saliente {
   inizio: number
+  // Istante in cui parte il primo tiro della sequenza: da lì in poi la regia lo segue anche se nessuno l'aveva previsto.
+  daTiro: number
   tiro: number
   fine: number
   casa: boolean
@@ -93,7 +95,7 @@ export function creaScena(sim: Simulazione, xi: FormazioniPartita): Scena {
     if (prec && inizio <= prec.fine) {
       // Due tiri ravvicinati: un'unica sequenza da seguire, con l'esito dell'ultimo.
       Object.assign(prec, { tiro: tiro.t1, fine: Math.max(prec.fine, fine), esito: tiro.esito, tiratoreId: tiro.giocatoreId, casa: tiro.casa })
-    } else salienti.push({ inizio, tiro: tiro.t1, fine, casa: tiro.casa, esito: tiro.esito, tiratoreId: tiro.giocatoreId })
+    } else salienti.push({ inizio, daTiro: tiro.t0, tiro: tiro.t1, fine, casa: tiro.casa, esito: tiro.esito, tiratoreId: tiro.giocatoreId })
   }
   const gialli = sim.eventi.filter((e) => tipoEvento(e) === 'giallo').map((e) => ({ t: e.t ?? e.minuto, id: e.marcatoreId }))
   const casaIds = new Set(periodi.flatMap((p) => p.posti.filter((q) => q.casa).map((q) => q.id)))
@@ -132,6 +134,48 @@ export function salienteA(scena: Scena, t: number): Saliente | undefined {
   const i = cerca(scena.salienti, t, (s) => s.inizio)
   const s = scena.salienti[i]
   return s && t <= s.fine ? s : undefined
+}
+
+// Zona pericolosa: gli ultimi metri prima della porta attaccata (in casa si attacca verso x = LUNGHEZZA).
+const ZONA_PERICOLO = 30
+// Per quanto un'azione resta pericolosa dopo l'ultimo tocco in zona, in minuti di gioco (circa 6 secondi).
+const TENUTA_PERICOLO = 0.05
+const inZona = (p: Punto, casa: boolean) => (casa ? LUNGHEZZA - p.x : p.x) < ZONA_PERICOLO
+
+// Squadra che sta attaccando in zona pericolosa, guardando solo i tocchi già giocati: la regia non sa se arriverà
+// un tiro, come un regista in TV. Finisce quando l'altra squadra tocca palla o l'azione si allontana dalla porta.
+export function pericoloA(scena: Scena, t: number): boolean | undefined {
+  const tocchi = scena.tocchi
+  const i = cerca(tocchi, t, (x) => x.t0)
+  if (i < 0) return undefined
+  const squadra = tocchi[i].casa
+  for (let j = i; j >= 0; j--) {
+    const x = tocchi[j]
+    if (x.casa !== squadra || t - x.t0 > TENUTA_PERICOLO + 0.1) break
+    if (t - x.t0 <= TENUTA_PERICOLO && inZona(x.da, squadra)) return squadra
+    if (x.esito === 'ok' && x.t1 <= t && t - x.t1 <= TENUTA_PERICOLO && inZona(x.a, squadra)) return squadra
+  }
+  return undefined
+}
+
+// Anticipo con cui la regia comincia a frenare, in minuti di gioco: il tempo non si ferma di colpo, e un recupero
+// palla al limite dell'area può diventare un tiro in pochi secondi.
+const ANTICIPO = 0.2
+
+// Tratto da seguire tocco per tocco nel 2D: un attacco in zona pericolosa (palla ferma esclusa, si salta in fretta)
+// e, partito un tiro, il suo esito e l'eventuale esultanza. La frenata parte poco prima che la palla entri in zona,
+// per ogni attacco e non solo per quelli che finiranno in un tiro: così non annuncia nulla.
+export function seguitoA(scena: Scena, t: number): boolean {
+  const s = salienteA(scena, t)
+  if (s && t >= s.daTiro) return true
+  if (pallaFermaA(scena, t)) return false
+  if (pericoloA(scena, t) !== undefined) return true
+  const tocchi = scena.tocchi
+  for (let j = Math.max(0, cerca(tocchi, t, (x) => x.t0) + 1); j < tocchi.length && tocchi[j].t0 <= t + ANTICIPO; j++) {
+    const x = tocchi[j]
+    if (inZona(x.da, x.casa) || (x.esito === 'ok' && inZona(x.a, x.casa))) return true
+  }
+  return false
 }
 
 interface Palla {

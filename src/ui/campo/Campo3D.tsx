@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { Sovraimpressione } from './Campo2D'
 import { PORTIERE_CASA, PORTIERE_OSPITE, type Divisa } from './colori'
 import { creaAnimatore, debugFotogramma } from './animazione'
-import { LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
+import { LARGHEZZA, LUNGHEZZA, salienteA, statoScena, type Scena, type Stato } from './scena'
 
 const PELLI = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0673a']
 // Giocatori un po' più grandi del vero: dalla tribuna devono restare leggibili.
@@ -271,7 +271,8 @@ export default function Campo3D({
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.5, 400)
     let camX = 0
     let ultimoTempo = tempo.current
-    const anima = creaAnimatore()
+    // Il 3D mostra solo le azioni salienti: tutta l'azione va seguita tocco per tocco.
+    const anima = creaAnimatore((s, t) => salienteA(s, t) !== undefined)
     const pupazzi = new Map<string, Pupazzo>()
 
     const ridimensiona = () => {

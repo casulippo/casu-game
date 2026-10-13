@@ -1,5 +1,5 @@
 import { limita } from '../../engine/campo'
-import { LARGHEZZA, LUNGHEZZA, salienteA, statoScena, vivacita, type Scena, type Stato, type StatoGiocatore } from './scena'
+import { LARGHEZZA, LUNGHEZZA, seguitoA, statoScena, vivacita, type Scena, type Stato, type StatoGiocatore } from './scena'
 
 export interface Fotogramma {
   stato: Stato
@@ -73,7 +73,9 @@ const PALLA_MAX = 18
 // - avanti veloce: i tocchi sono troppo fitti per essere seguiti. Le squadre seguono una palla
 //   smorzata e il portatore mostrato cambia solo quando un altro è chiaramente più vicino.
 // Il passaggio tra i due regimi è graduale: per circa mezzo secondo le posizioni si mescolano.
-export function creaAnimatore() {
+// `segui` dice quando si è nel regime azione: nel 2D quando la regia segue un attacco (vedi seguitoA),
+// nel 3D per tutta l'azione saliente.
+export function creaAnimatore(segui: (scena: Scena, t: number) => boolean = seguitoA) {
   const posizioni = new Map<string, Corridore>()
   // Posto scelto da chi non segue la palla: cambia solo quando quello ideale se ne allontana di qualche metro.
   const mete = new Map<string, { x: number; y: number }>()
@@ -125,7 +127,7 @@ export function creaAnimatore() {
       pallaLibera = null
       squadraMostrata = null
       candidata = null
-      regime = salienteA(scena, t) ? 1 : 0
+      regime = segui(scena, t) ? 1 : 0
     }
     ultimoT = t
     const esatto = statoScena(scena, t)
@@ -135,7 +137,8 @@ export function creaAnimatore() {
     riferimento ??= { ...vera }
     riferimento.x = avvicina(riferimento.x, vera.x, dt, 0.6)
     riferimento.y = avvicina(riferimento.y, vera.y, dt, 0.6)
-    regime = avvicina(regime, esatto.saliente ? 1 : 0, dt, 5)
+    const seguito = segui(scena, t)
+    regime = avvicina(regime, seguito ? 1 : 0, dt, 5)
     if (regime > 0.995) regime = 1
     if (regime < 0.005) regime = 0
     const veloce = regime < 1 ? statoScena(scena, t, riferimento) : null
@@ -257,7 +260,7 @@ export function creaAnimatore() {
     // Palla ancora in viaggio verso chi la riceverà: nessuno ha l'anello finché non gli arriva ai piedi.
     const inViaggio = chi && Math.hypot(chi.x + (chi.casa ? 0.9 : -0.9) - mostrata!.x, chi.y - mostrata!.y) > 2.5
     const visti = inViaggio ? giocatori.map((g) => ({ ...g, conPalla: false })) : giocatori
-    return { stato: { ...esatto, giocatori: visti, portatore: inViaggio ? null : portatore, quotaCasa, palla: { ...mostrata! } }, movimenti }
+    return { stato: { ...esatto, saliente: seguito, giocatori: visti, portatore: inViaggio ? null : portatore, quotaCasa, palla: { ...mostrata! } }, movimenti }
   }
 }
 
