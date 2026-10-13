@@ -86,8 +86,8 @@ describe.each(['46', '5', '1005'])('scena della prima giornata (club %s)', (club
 
 it.each([-0.004, 0, 0.016])('insegui non produce NaN (dt %f, pedina già in posizione)', (dt) => {
   const p = { x: 10, y: 20 }
-  insegui(p, { x: 10, y: 20 }, dt, true)
-  insegui(p, { x: 30, y: 20 }, dt, false)
+  insegui(p, { x: 10, y: 20 }, dt, 9)
+  insegui(p, { x: 30, y: 20 }, dt, 14)
   expect(Number.isFinite(p.x) && Number.isFinite(p.y)).toBe(true)
 })
 

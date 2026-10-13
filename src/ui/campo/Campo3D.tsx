@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
 import { Sovraimpressione } from './Campo2D'
 import { PORTIERE_CASA, PORTIERE_OSPITE, type Divisa } from './colori'
-import { limita } from '../../engine/campo'
-import { insegui, LARGHEZZA, LUNGHEZZA, smorzaPalla, statoScena, vivacita, type Scena, type Stato } from './scena'
+import { creaAnimatore } from './animazione'
+import { LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
 
 const PELLI = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0673a']
 // Giocatori un po' più grandi del vero: dalla tribuna devono restare leggibili.
@@ -20,8 +20,6 @@ interface Pupazzo {
   ombra: THREE.Mesh
   anello: THREE.Mesh
   cartellino: THREE.Mesh
-  x: number
-  y: number
   fase: number
 }
 
@@ -120,7 +118,7 @@ function creaPupazzo(divisa: Divisa, id: string): Pupazzo {
   const cartellino = cubo(0.22, 0.3, 0.02, new THREE.MeshBasicMaterial({ color: '#facc15' }), 2.25)
   gruppo.add(cartellino)
   gruppo.scale.setScalar(SCALA)
-  return { gruppo, gambe: [gamba(-1), gamba(1)], braccia: [braccio(-1), braccio(1)], ombra, anello, cartellino, x: 0, y: 0, fase: 0 }
+  return { gruppo, gambe: [gamba(-1), gamba(1)], braccia: [braccio(-1), braccio(1)], ombra, anello, cartellino, fase: 0 }
 }
 
 function webglDisponibile(): boolean {
@@ -178,11 +176,13 @@ function creaPorta(lato: -1 | 1): THREE.Group {
 export default function Campo3D({
   scena,
   tempo,
+  ritmo,
   divise,
   nomi,
 }: {
   scena: Scena
   tempo: RefObject<number>
+  ritmo: RefObject<number | null>
   divise: { casa: Divisa; ospite: Divisa }
   nomi: Record<string, string>
 }) {
@@ -248,8 +248,7 @@ export default function Campo3D({
 
     const camera = new THREE.PerspectiveCamera(36, 16 / 9, 0.5, 400)
     let camX = 0
-    let pallaVista: { x: number; y: number; h: number } | null = null
-    let ultimoSaliente = true
+    const anima = creaAnimatore()
     const pupazzi = new Map<string, Pupazzo>()
 
     const ridimensiona = () => {
@@ -268,8 +267,7 @@ export default function Campo3D({
     let frame = requestAnimationFrame(function passo(ora) {
       const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
-      const stato = statoScena(scenaRef.current, tempo.current, ultimoSaliente ? undefined : (pallaVista ?? undefined))
-      ultimoSaliente = stato.saliente
+      const { stato, movimenti } = anima(scenaRef.current, tempo.current, dt, ora / 1000, ritmo.current ?? 1)
       const presenti = new Set<string>()
 
       for (const g of stato.giocatori) {
@@ -278,16 +276,13 @@ export default function Campo3D({
         if (!p) {
           const divisa = g.ruolo === 'Goalkeeper' ? (g.casa ? PORTIERE_CASA : PORTIERE_OSPITE) : g.casa ? divise.casa : divise.ospite
           p = creaPupazzo(divisa, g.id)
-          p.x = g.x
-          p.y = g.y
           mondo.add(p.gruppo, p.ombra, p.anello)
           pupazzi.set(g.id, p)
         }
-        const v = vivacita(g, ora / 1000, stato.possessoCasa)
-        const { dx: vx, dy: vy } = insegui(p, { x: limita(g.x + v.x, 1, LUNGHEZZA - 1), y: limita(g.y + v.y, 1, LARGHEZZA - 1) }, dt, stato.saliente)
+        const { dx: vx, dy: vy } = movimenti.get(g.id) ?? { dx: 0, dy: 0 }
         const velocita = Math.hypot(vx, vy) / Math.max(dt, 0.001)
         const mira =
-          velocita > 0.6 ? Math.atan2(vx, vy) : Math.atan2(stato.palla.x - p.x, stato.palla.y - p.y)
+          velocita > 0.6 ? Math.atan2(vx, vy) : Math.atan2(stato.palla.x - g.x, stato.palla.y - g.y)
         let delta = mira - p.gruppo.rotation.y
         delta = Math.atan2(Math.sin(delta), Math.cos(delta))
         p.gruppo.rotation.y += delta * Math.min(1, dt * 8)
@@ -298,9 +293,9 @@ export default function Campo3D({
         p.gambe[1].rotation.x = -oscilla
         p.braccia[0].rotation.x = -oscilla * 0.8
         p.braccia[1].rotation.x = oscilla * 0.8
-        p.gruppo.position.set(aX(p.x), 0, aZ(p.y))
-        p.ombra.position.set(aX(p.x), 0.02, aZ(p.y))
-        p.anello.position.set(aX(p.x), 0.03, aZ(p.y))
+        p.gruppo.position.set(aX(g.x), 0, aZ(g.y))
+        p.ombra.position.set(aX(g.x), 0.02, aZ(g.y))
+        p.anello.position.set(aX(g.x), 0.03, aZ(g.y))
         p.anello.visible = g.conPalla
         p.cartellino.visible = g.giallo
       }
@@ -311,11 +306,9 @@ export default function Campo3D({
         pupazzi.delete(id)
       }
 
-      pallaVista ??= { ...stato.palla }
-      smorzaPalla(pallaVista, stato.palla, dt, stato.saliente)
-      palla.position.set(aX(pallaVista.x), 0.28 + pallaVista.h, aZ(pallaVista.y))
-      ombraPalla.position.set(aX(pallaVista.x), 0.02, aZ(pallaVista.y))
-      camX += (aX(pallaVista.x) * 0.8 - camX) * (1 - Math.exp(-dt * 1.8))
+      palla.position.set(aX(stato.palla.x), 0.28 + stato.palla.h, aZ(stato.palla.y))
+      ombraPalla.position.set(aX(stato.palla.x), 0.02, aZ(stato.palla.y))
+      camX += (aX(stato.palla.x) * 0.8 - camX) * (1 - Math.exp(-dt * 1.8))
       camera.position.set(camX, 26, 55)
       camera.lookAt(camX, 0, 4)
       renderer.render(mondo, camera)
@@ -334,7 +327,7 @@ export default function Campo3D({
       renderer.dispose()
       el.removeChild(renderer.domElement)
     }
-  }, [divise, tempo])
+  }, [divise, tempo, ritmo])
 
   if (!supportato) {
     return (

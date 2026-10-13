@@ -16,9 +16,9 @@ type Vista = '2d' | '3d' | 'cronaca'
 
 // Secondi reali per minuto di gioco: nelle azioni salienti il tempo rallenta per seguirle.
 const RITMI = [
-  { nome: 'Lenta', gioco: 1.6, azione: 14 },
-  { nome: 'Normale', gioco: 0.9, azione: 8 },
-  { nome: 'Veloce', gioco: 0.35, azione: 4 },
+  { nome: 'Lenta', gioco: 1.2, azione: 60 },
+  { nome: 'Normale', gioco: 0.7, azione: 35 },
+  { nome: 'Veloce', gioco: 0.3, azione: 15 },
 ]
 
 const VISTE: { id: Vista; nome: string }[] = [
@@ -92,10 +92,12 @@ export function PartitaLive({
   const { mia, xi1, anteprima, partite, partitaMia, sim, scena, colori: coloriSquadre } = dati
 
   const orologio = useOrologio(ripresa ? 90 : 45, pannello, (t) => {
-    // Si rallenta già mezzo minuto prima dell'azione, così l'orologio ha il tempo di frenare.
-    const saliente = salienteA(scena, t) !== undefined || salienteA(scena, t + 0.5) !== undefined
-    if (vista === 'cronaca') return saliente ? ritmo.gioco * 3 : ritmo.gioco
-    return saliente ? ritmo.azione : ritmo.gioco
+    if (vista === 'cronaca') return salienteA(scena, t) ? ritmo.gioco * 3 : ritmo.gioco
+    if (salienteA(scena, t)) return ritmo.azione
+    // Frenata progressiva nell'ultimo mezzo minuto prima di un'azione.
+    const prossima = scena.salienti.find((s) => s.inizio > t)
+    const k = prossima ? Math.min(1, Math.max(0, 1 - (prossima.inizio - t) / 0.5)) : 0
+    return ritmo.gioco ** (1 - k) * ritmo.azione ** k
   })
   const minuto = orologio.t
   const fase: Fase = minuto < 45 ? 'primo' : !ripresa ? 'intervallo' : minuto < 90 ? 'secondo' : 'fine'
@@ -247,13 +249,13 @@ export function PartitaLive({
         </div>
         {vista === '2d' && (
           <div className="mt-3">
-            <Campo2D scena={scena} tempo={orologio.tempo} divise={coloriSquadre} nomi={nomiGiocatori} />
+            <Campo2D scena={scena} tempo={orologio.tempo} ritmo={orologio.ritmo} divise={coloriSquadre} nomi={nomiGiocatori} />
           </div>
         )}
         {vista === '3d' && (
           <div className="mt-3">
             <Suspense fallback={<div className="flex aspect-video items-center justify-center rounded-xl bg-slate-900 text-slate-400">Carico lo stadio…</div>}>
-              <Campo3D scena={scena} tempo={orologio.tempo} divise={coloriSquadre} nomi={nomiGiocatori} />
+              <Campo3D scena={scena} tempo={orologio.tempo} ritmo={orologio.ritmo} divise={coloriSquadre} nomi={nomiGiocatori} />
             </Suspense>
           </div>
         )}

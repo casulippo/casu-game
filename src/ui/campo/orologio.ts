@@ -41,5 +41,5 @@ export function useOrologio(limite: number, fermo: boolean, secondiPerMinuto: (t
     setT(tempo.current)
   }
 
-  return { tempo, t, salta }
+  return { tempo, t, salta, ritmo: ritmoAttuale }
 }
