@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
 import { Sovraimpressione } from './Campo2D'
 import { PORTIERE_CASA, PORTIERE_OSPITE, type Divisa } from './colori'
-import { LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
+import { insegui, LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
 
 const PELLI = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0673a']
 // Giocatori un po' più grandi del vero: dalla tribuna devono restare leggibili.
@@ -266,7 +266,6 @@ export default function Campo3D({
       const dt = Math.min(0.1, (ora - ultimo) / 1000)
       ultimo = ora
       const stato = statoScena(scenaRef.current, tempo.current)
-      const alfa = 1 - Math.exp(-dt * 7)
       const presenti = new Set<string>()
 
       for (const g of stato.giocatori) {
@@ -280,10 +279,7 @@ export default function Campo3D({
           mondo.add(p.gruppo, p.ombra, p.anello)
           pupazzi.set(g.id, p)
         }
-        const vx = (g.x - p.x) * alfa
-        const vy = (g.y - p.y) * alfa
-        p.x += vx
-        p.y += vy
+        const { dx: vx, dy: vy } = insegui(p, g, dt, stato.saliente)
         const velocita = Math.hypot(vx, vy) / Math.max(dt, 0.001)
         const mira =
           velocita > 0.6 ? Math.atan2(vx, vy) : Math.atan2(stato.palla.x - p.x, stato.palla.y - p.y)

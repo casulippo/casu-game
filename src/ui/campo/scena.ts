@@ -1,4 +1,5 @@
 import type { Ruolo } from '../../engine/attributi'
+import { xiAlMinuto, type Fase } from '../../engine/partita'
 import { rng, type Rng } from '../../engine/rng'
 import { tipoEvento, type Evento, type Giocatore, type Partita, type TipoEvento } from '../../engine/tipi'
 
@@ -39,8 +40,14 @@ interface Segmento {
   evento?: Evento
 }
 
+// Giocatori in campo dal minuto `da`: cambia a ogni sostituzione o cambio di modulo.
+interface Periodo {
+  da: number
+  posti: Posto[]
+}
+
 export interface Scena {
-  posti: [Posto[], Posto[]]
+  periodi: Periodo[]
   segmenti: Segmento[]
   tappe: Tappa[]
   gialli: { minuto: number; id: string }[]
@@ -92,16 +99,28 @@ const portaAvversaria = (casa: boolean) => (casa ? LUNGHEZZA : 0)
 const limita = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
 export interface FormazioniPartita {
-  casa: [Giocatore[], Giocatore[]]
-  ospite: [Giocatore[], Giocatore[]]
+  casa: { base: Giocatore[]; fasi: Fase[] }
+  ospite: { base: Giocatore[]; fasi: Fase[] }
+}
+
+// Il tempo t (minuti con decimali) cade nel minuto floor(t)+1: è quello in corso.
+const minutoDi = (t: number) => Math.min(90, Math.floor(t) + 1)
+
+export const postiAl = (scena: Scena, t: number) => {
+  const m = minutoDi(t)
+  return scena.periodi.filter((p) => p.da <= m).at(-1)!.posti
 }
 
 export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: number, seme: string): Scena {
   const r = rng(`scena:${seme}:${p.giornata}:${p.casaId}:${p.ospiteId}`)
-  const posti: [Posto[], Posto[]] = [
-    [...disponi(xi.casa[0], true), ...disponi(xi.ospite[0], false)],
-    [...disponi(xi.casa[1], true), ...disponi(xi.ospite[1], false)],
-  ]
+  const inizi = [...new Set([1, ...xi.casa.fasi.map((f) => f.da), ...xi.ospite.fasi.map((f) => f.da)])].sort((a, b) => a - b)
+  const periodi: Periodo[] = inizi.map((da) => ({
+    da,
+    posti: [
+      ...disponi(xiAlMinuto(xi.casa.base, xi.casa.fasi, da), true),
+      ...disponi(xiAlMinuto(xi.ospite.base, xi.ospite.fasi, da), false),
+    ],
+  }))
   const tappe: Tappa[] = [{ arrivo: 0, partenza: 0, x: CENTRO.x, y: CENTRO.y, alta: 0 }]
   const segmenti: Segmento[] = []
   const eventi = [...(p.eventi ?? [])].sort((a, b) => a.minuto - b.minuto)
@@ -118,7 +137,8 @@ export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: numbe
     arrivo = Math.max(arrivo, prec.partenza + Math.max(0.01, Math.hypot(x - prec.x, y - prec.y) / velocitaMax))
     tappe.push({ arrivo, partenza: arrivo, x, y, id, alta })
   }
-  const postiDi = (t: number, casa: boolean) => posti[t < 45 ? 0 : 1].filter((q) => q.casa === casa)
+  const postiDi = (t: number, casa: boolean) =>
+    periodi.filter((x) => x.da <= minutoDi(t)).at(-1)!.posti.filter((q) => q.casa === casa)
   const avanzato = (q: Posto, quanto: number) => ({ x: q.base.x + verso(q.casa) * quanto, y: q.base.y })
   const scegli = <T,>(rr: Rng, a: T[]) => a[Math.floor(rr() * a.length)]
   const altezzaPassaggio = (x: number, y: number) => (Math.hypot(x - ultima().x, y - ultima().y) > 28 ? 2.5 : 0)
@@ -129,7 +149,8 @@ export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: numbe
       const durata = Math.min(b - t, 0.8 + r() * 2.2)
       const casa = r() * 100 < possessoCasa
       const squadra = postiDi(t, casa).filter((q) => q.ruolo !== 'Goalkeeper')
-      const passaggi = Math.max(1, Math.round(durata / 0.55))
+      // Nell'avanti veloce un minuto dura meno di mezzo secondo: pochi passaggi, altrimenti è un flipper.
+      const passaggi = Math.max(1, Math.round(durata / 1.1))
       const passo = durata / passaggi
       // Il primo a toccare palla è il più vicino: sembra un recupero o una ripartenza.
       let corrente = [...squadra].sort(
@@ -142,8 +163,8 @@ export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: numbe
           corrente = scegli(r, candidati.length ? candidati : squadra)
         }
         const pos = avanzato(corrente, 6)
-        const x = pos.x + (r() - 0.5) * 8
-        const y = pos.y + (r() - 0.5) * 8
+        const x = pos.x + (r() - 0.5) * 5
+        const y = pos.y + (r() - 0.5) * 5
         passa(inizio, inizio + passo * 0.3, x, y, corrente.id, altezzaPassaggio(x, y))
       }
       segmenti.push({ inizio: t, fine: t + durata, tipo: 'gioco', casa })
@@ -155,8 +176,9 @@ export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: numbe
     const casa = e.clubId === p.casaId
     const dir = verso(casa)
     const porta = portaAvversaria(casa)
-    const squadra = postiDi(inizio, casa)
-    const portiere = postiDi(inizio, !casa).find((q) => q.ruolo === 'Goalkeeper')
+    // Chi è in campo nel minuto dell'evento: un subentrato può segnare appena entrato.
+    const squadra = postiDi(e.minuto - 0.5, casa)
+    const portiere = postiDi(e.minuto - 0.5, !casa).find((q) => q.ruolo === 'Goalkeeper')
     const trova = (id: string | null | undefined) => squadra.find((q) => q.id === id)
     const tiratore = trova(e.marcatoreId) ?? scegli(r, squadra.filter((q) => q.ruolo === 'Attack'))
     const di = (ruoli: Ruolo[]) => squadra.filter((q) => ruoli.includes(q.ruolo) && q !== tiratore)
@@ -184,7 +206,7 @@ export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: numbe
     if (tipo === 'gol') {
       passa(partenzaTiro, tiro, porta + dir * 1, PALO_ALTO + 1 + r() * 5.3, undefined, 0.5 + r() * 1.5, TIRO)
       // Dopo l'esultanza la palla torna a centrocampo per il calcio d'inizio.
-      passa(fine - 0.12, fine, CENTRO.x, CENTRO.y)
+      passa(fine - 0.12, fine, CENTRO.x, CENTRO.y, undefined, 0, 600)
     } else if (tipo === 'parata') {
       passa(partenzaTiro, tiro, porta - dir * 1.2, CENTRO.y + (r() - 0.5) * 4, portiere?.id, 0.6, TIRO)
     } else if (tipo === 'palo') {
@@ -205,7 +227,8 @@ export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: numbe
     [45, 90],
   ]) {
     let cursore = inizioTempo
-    if (inizioTempo === 45) passa(44.9, 45, CENTRO.x, CENTRO.y)
+    // Durante l'intervallo l'orologio è fermo: la palla torna al centro senza che si veda.
+    if (inizioTempo === 45) passa(44.9, 45, CENTRO.x, CENTRO.y, undefined, 0, 10_000)
     const azioni = eventi.filter((e) => tipoEvento(e) !== 'giallo' && (inizioTempo === 0 ? e.minuto <= 45 : e.minuto > 45))
     for (const e of azioni) {
       const tiro = Math.min(fineTempo - 0.1, Math.max(e.minuto, cursore + 0.4))
@@ -219,7 +242,7 @@ export function creaScena(p: Partita, xi: FormazioniPartita, possessoCasa: numbe
     gioco(cursore, fineTempo)
   }
   ultima().partenza = Infinity
-  return { posti, segmenti, tappe, gialli }
+  return { periodi, segmenti, tappe, gialli }
 }
 
 function cerca<T>(elenco: T[], t: number, inizio: (x: T) => number): number {
@@ -252,8 +275,21 @@ export function palla(scena: Scena, t: number): { x: number; y: number; h: numbe
   }
 }
 
+// Avvicina una pedina alla posizione voluta senza superare una velocità di corsa credibile.
+// Nelle azioni salienti ~9 m/s reali; nell'avanti veloce il tempo è compresso e si concede di più.
+export function insegui(p: { x: number; y: number }, obiettivo: { x: number; y: number }, dt: number, saliente: boolean) {
+  const dx = (obiettivo.x - p.x) * (1 - Math.exp(-dt * 6))
+  const dy = (obiettivo.y - p.y) * (1 - Math.exp(-dt * 6))
+  const passo = Math.hypot(dx, dy)
+  const massimo = (saliente ? 9 : 30) * dt
+  const f = passo > massimo ? massimo / passo : 1
+  p.x += dx * f
+  p.y += dy * f
+  return { dx: dx * f, dy: dy * f }
+}
+
 export function statoScena(scena: Scena, t: number): Stato {
-  const posti = scena.posti[t < 45 ? 0 : 1]
+  const posti = postiAl(scena, t)
   const seg = segmentoA(scena, t)
   const b = palla(scena, t)
   const portatore = b.ferma?.id ?? null
@@ -273,7 +309,8 @@ export function statoScena(scena: Scena, t: number): Stato {
       y = CENTRO.y + (b.y - CENTRO.y) * 0.2
     } else {
       const inPossesso = seg ? seg.casa === q.casa : false
-      const spinta = !seg ? 0 : seg.tipo === 'gioco' ? (inPossesso ? 6 : -3) : inPossesso ? 12 : -6
+      // Nel gioco normale il blocco si sposta poco: il possesso cambia spesso e la squadra non può fare l'elastico.
+      const spinta = !seg ? 0 : seg.tipo === 'gioco' ? (inPossesso ? 4 : -2) : inPossesso ? 12 : -6
       x = q.base.x + dir * spinta + segueX
       y = q.base.y + segueY
     }
@@ -292,22 +329,29 @@ export function statoScena(scena: Scena, t: number): Stato {
     conPalla.x = b.x - verso(conPalla.casa) * 0.7
     conPalla.y = b.y
   }
-  // Chi riceverà il prossimo passaggio si muove in anticipo verso il punto d'incontro.
-  if (b.prossima?.id && b.prossima.arrivo - t < 0.3 && !esultanza) {
+  // Chi riceverà il prossimo passaggio si avvicina gradualmente al punto d'incontro.
+  if (b.prossima?.id && !esultanza) {
     const ricevente = giocatori.find((g) => g.id === b.prossima!.id)
-    if (ricevente && ricevente !== conPalla) {
-      ricevente.x = b.prossima.x
-      ricevente.y = b.prossima.y
+    const f = limita(1 - (b.prossima.arrivo - t) / 0.3, 0, 1)
+    if (ricevente && ricevente !== conPalla && f > 0) {
+      ricevente.x += (b.prossima.x - ricevente.x) * f
+      ricevente.y += (b.prossima.y - ricevente.y) * f
     }
   }
+  // Pressa un solo avversario, scelto per tutta la durata del possesso di quel giocatore: niente scambi di ruolo a ogni fotogramma.
+  const riferimento = b.ferma ?? b.prossima
   const squadraPalla = conPalla?.casa ?? seg?.casa
-  if (squadraPalla !== undefined && !esultanza) {
+  if (riferimento && squadraPalla !== undefined && !esultanza) {
     const pressante = giocatori
       .filter((g) => g.casa !== squadraPalla && g.ruolo !== 'Goalkeeper')
-      .sort((g1, g2) => Math.hypot(g1.x - b.x, g1.y - b.y) - Math.hypot(g2.x - b.x, g2.y - b.y))[0]
+      .sort(
+        (g1, g2) =>
+          Math.hypot(g1.base.x - riferimento.x, g1.base.y - riferimento.y) -
+          Math.hypot(g2.base.x - riferimento.x, g2.base.y - riferimento.y),
+      )[0]
     if (pressante) {
-      pressante.x = b.x - verso(pressante.casa) * 2.2
-      pressante.y = b.y + 0.8
+      pressante.x += (b.x - verso(pressante.casa) * 2.2 - pressante.x) * 0.85
+      pressante.y += (b.y + 0.8 - pressante.y) * 0.85
     }
   }
   for (const g of scena.gialli) {

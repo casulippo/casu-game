@@ -76,17 +76,25 @@ describe('stagione simulata', () => {
     expect(perSquadra(['giallo'])).toBeLessThan(2.5)
   })
 
-  it("cambiare all'intervallo non altera il primo tempo", () => {
+  it.each([30, 46, 75])('un cambio al minuto %i non altera quanto successo prima', (da) => {
     const p = carriera.calendario.find((x) => x.casaId === '46' || x.ospiteId === '46')!
     const xi = xiDi(carriera, '46')
     const panchina = Object.values(carriera.giocatori).filter((g) => g.clubId === '46' && !xi.includes(g))
     const nuovo = [...xi.slice(0, 8), ...panchina.slice(0, 3)]
     const stessa = (x: typeof p) => x.casaId === p.casaId && x.ospiteId === p.ospiteId
     const base = giocaGiornata(carriera).calendario.find(stessa)!
-    const cambiata = giocaGiornata(carriera, nuovo).calendario.find(stessa)!
-    const primo = (q: typeof base) => JSON.stringify(q.eventi!.filter((e) => e.minuto <= 45))
-    expect(primo(cambiata)).toBe(primo(base))
-    expect(cambi(xi, nuovo)).toBe(3)
+    const cambiata = giocaGiornata(carriera, [{ da, xi: nuovo }]).calendario.find(stessa)!
+    const prima = (q: typeof base) => JSON.stringify(q.eventi!.filter((e) => e.minuto < da))
+    expect(prima(cambiata)).toBe(prima(base))
+    expect(cambi(xi, [nuovo])).toBe(3)
+  })
+
+  it('i cambi contano ogni giocatore entrato una sola volta', () => {
+    const xi = xiDi(carriera, '46')
+    const panchina = Object.values(carriera.giocatori).filter((g) => g.clubId === '46' && !xi.includes(g))
+    const dopo60 = [...xi.slice(0, 10), panchina[0]]
+    const dopo75 = [...xi.slice(0, 9), panchina[0], panchina[1]]
+    expect(cambi(xi, [dopo60, dopo75])).toBe(2)
   })
 
   it('stessa carriera, stessi risultati', () => {

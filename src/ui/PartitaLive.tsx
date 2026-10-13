@@ -1,6 +1,6 @@
-import { lazy, Suspense, useMemo, useState } from 'react'
+import { Fragment, lazy, Suspense, useMemo, useState } from 'react'
 import { cambi, giocaGiornata, MAX_CAMBI, prossimaGiornata, rosa, xiDi } from '../engine/carriera'
-import { formazione, possesso } from '../engine/partita'
+import { formazione, possesso, xiAlMinuto, type Fase as FaseGioco } from '../engine/partita'
 import { MODULI, tipoEvento, type Carriera, type Evento, type Giocatore, type Modulo, type Partita } from '../engine/tipi'
 import { Campo2D } from './campo/Campo2D'
 import { divise } from './campo/colori'
@@ -57,9 +57,13 @@ export function PartitaLive({
   const [ripresa, setRipresa] = useState(false)
   const [ritmo, setRitmo] = useState(RITMI[1])
   const [vista, setVista] = useState<Vista>(vistaSalvata)
-  const [modulo2, setModulo2] = useState<Modulo>(carriera.modulo)
-  const [esclusi2, setEsclusi2] = useState<string[]>(carriera.esclusi)
-  const [secondoTempo, setSecondoTempo] = useState<Giocatore[]>()
+  // Tattica in vigore e bozza in modifica nel pannello cambi.
+  const [modulo, setModulo] = useState<Modulo>(carriera.modulo)
+  const [esclusi, setEsclusi] = useState<string[]>(carriera.esclusi)
+  const [bozzaModulo, setBozzaModulo] = useState<Modulo>(carriera.modulo)
+  const [bozzaEsclusi, setBozzaEsclusi] = useState<string[]>(carriera.esclusi)
+  const [pannello, setPannello] = useState(false)
+  const [fasi, setFasi] = useState<FaseGioco[]>([])
 
   const dati = useMemo(() => {
     const mia = carriera.calendario.find(
@@ -68,11 +72,11 @@ export function PartitaLive({
     const avversario = mia.casaId === carriera.clubUtente ? mia.ospiteId : mia.casaId
     const xi1 = xiDi(carriera, carriera.clubUtente)
     const xiAvversario = xiDi(carriera, avversario)
-    const anteprima = giocaGiornata(carriera, secondoTempo)
+    const anteprima = giocaGiornata(carriera, fasi.length ? fasi : undefined)
     const partite = anteprima.calendario.filter((p) => p.giornata === giornata)
     const partitaMia = partite.find((p) => stessa(p, mia))!
-    const mie: [Giocatore[], Giocatore[]] = [xi1, secondoTempo ?? xi1]
-    const loro: [Giocatore[], Giocatore[]] = [xiAvversario, xiAvversario]
+    const mie = { base: xi1, fasi }
+    const loro = { base: xiAvversario, fasi: [] }
     const inCasa = mia.casaId === carriera.clubUtente
     const scena = creaScena(
       partitaMia,
@@ -85,10 +89,10 @@ export function PartitaLive({
       scena.segmenti.filter((s) => s.tipo === 'dopo' && s.evento).map((s) => [s.evento!, s.inizio]),
     )
     return { mia, xi1, xiAvversario, anteprima, partite, partitaMia, scena, momenti, colori: divise(mia.casaId, mia.ospiteId) }
-  }, [carriera, giornata, secondoTempo])
+  }, [carriera, giornata, fasi])
   const { mia, xi1, xiAvversario, anteprima, partite, partitaMia, scena, momenti, colori: coloriSquadre } = dati
 
-  const orologio = useOrologio(ripresa ? 90 : 45, (t) => {
+  const orologio = useOrologio(ripresa ? 90 : 45, pannello, (t) => {
     const s = segmentoA(scena, t)
     const saliente = s !== undefined && s.tipo !== 'gioco'
     if (vista === 'cronaca') return saliente ? ritmo.gioco * 3 : ritmo.gioco
@@ -101,18 +105,65 @@ export function PartitaLive({
 
   const nomi = Object.fromEntries(carriera.club.map((c) => [c.id, c.nome]))
   const nomiGiocatori = Object.fromEntries(Object.values(carriera.giocatori).map((g) => [g.id, g.nome]))
-  const bozza2 = formazione(rosa(carriera, carriera.clubUtente), modulo2, esclusi2)
+
+  // Minuto da cui vale un cambio: all'intervallo il 46°, in partita quello dopo il minuto in corso.
+  const daMinuto = fase === 'intervallo' ? 46 : Math.floor(minuto) + 2
+  const minutoInCorso = Math.min(90, Math.floor(minuto) + 1)
+  const xiAttuale = xiAlMinuto(xi1, fasi, fase === 'intervallo' ? 46 : minutoInCorso)
+  // Chi è uscito non può rientrare, come da regolamento.
+  const usciti = [...new Set([xi1, ...fasi.map((f) => f.xi)].flat())].filter((g) => !xiAttuale.includes(g)).map((g) => g.id)
+  const bozza = formazione(rosa(carriera, carriera.clubUtente), bozzaModulo, [...bozzaEsclusi, ...usciti])
+  const nCambiFatti = cambi(xi1, fasi.map((f) => f.xi))
+  const nCambi = cambi(xi1, [...fasi.map((f) => f.xi), bozza])
+  const bozzaDiversa = bozza.length !== xiAttuale.length || bozza.some((g) => !xiAttuale.includes(g))
+
+  const apriCambi = () => {
+    setBozzaModulo(modulo)
+    setBozzaEsclusi(esclusi)
+    setPannello(true)
+  }
+  const applicaCambi = () => {
+    if (bozzaDiversa && daMinuto <= 90) setFasi([...fasi, { da: daMinuto, xi: bozza }])
+    setModulo(bozzaModulo)
+    setEsclusi(bozzaEsclusi)
+    setPannello(false)
+    if (fase === 'intervallo') setRipresa(true)
+  }
 
   const punteggio = (p: Partita) => {
     const fino = (p.eventi ?? []).filter((e) => (p === partitaMia ? momento(e) : e.minuto) <= minuto && tipoEvento(e) === 'gol')
     return [fino.filter((e) => e.clubId === p.casaId).length, fino.filter((e) => e.clubId === p.ospiteId).length]
   }
   const [golCasa, golOspite] = punteggio(partitaMia)
-  const xiCasa = mia.casaId === carriera.clubUtente ? (secondoTempo && minuto > 45 ? secondoTempo : xi1) : xiAvversario
-  const xiOspite = mia.ospiteId === carriera.clubUtente ? (secondoTempo && minuto > 45 ? secondoTempo : xi1) : xiAvversario
+  const xiCasa = mia.casaId === carriera.clubUtente ? xiAttuale : xiAvversario
+  const xiOspite = mia.ospiteId === carriera.clubUtente ? xiAttuale : xiAvversario
   const conta = (clubId: string, tipi: string[]) => eventi.filter((e) => e.clubId === clubId && tipi.includes(tipoEvento(e))).length
-  const nCambi = cambi(xi1, bozza2)
   const segmento = segmentoA(scena, minuto)
+
+  // Cronaca: eventi di gioco e sostituzioni, dal più recente.
+  const cronaca = [
+    ...eventi.map((e) => ({ t: momento(e), chiave: `e-${e.minuto}-${e.marcatoreId}-${e.tipo}`, el: <RigaCronaca e={e} carriera={carriera} nomi={nomi} utente={e.clubId === carriera.clubUtente} /> })),
+    ...fasi
+      .filter((f) => f.da - 1 <= minuto)
+      .map((f, i) => {
+        const prima = i === 0 ? xi1 : fasi[i - 1].xi
+        const entrati = f.xi.filter((g) => !prima.includes(g)).map((g) => g.nome)
+        const fuori = prima.filter((g) => !f.xi.includes(g)).map((g) => g.nome)
+        return {
+          t: f.da - 1,
+          chiave: `f-${f.da}-${i}`,
+          el: (
+            <li className="flex items-start gap-2">
+              <span className="w-8 shrink-0 text-right text-slate-500 tabular-nums">{f.da}'</span>
+              <span className="shrink-0 rounded bg-emerald-400/20 px-1.5 py-0.5 text-[10px] font-bold text-emerald-200">CAMBIO</span>
+              <span className="text-slate-100">
+                {entrati.length ? `Entra ${entrati.join(', ')}, esce ${fuori.join(', ')}.` : `${nomi[carriera.clubUtente]} cambia modulo.`}
+              </span>
+            </li>
+          ),
+        }
+      }),
+  ].sort((a, b) => b.t - a.t)
 
   const salta = () => orologio.salta(fase === 'primo' ? 45 : 90)
   const scegliVista = (v: Vista) => {
@@ -157,7 +208,12 @@ export function PartitaLive({
                 {v.nome}
               </button>
             ))}
-            {(fase === 'primo' || fase === 'secondo') && (
+            {(fase === 'primo' || fase === 'secondo') && !pannello && daMinuto <= 90 && (
+              <button type="button" onClick={apriCambi} className="rounded-full bg-emerald-500 px-3 py-1 font-semibold text-emerald-950">
+                Cambi e tattica ({nCambiFatti}/{MAX_CAMBI})
+              </button>
+            )}
+            {(fase === 'primo' || fase === 'secondo') && !pannello && (
               <button type="button" onClick={salta} className="rounded-full bg-white/10 px-3 py-1">
                 {fase === 'primo' ? "Vai all'intervallo" : 'Vai al fischio finale'}
               </button>
@@ -195,20 +251,21 @@ export function PartitaLive({
           </div>
         )}
 
-        {fase === 'intervallo' && (
-          <Intervallo
-            xi1={xi1}
-            bozza={bozza2}
-            panchina={rosa(carriera, carriera.clubUtente)}
-            modulo={modulo2}
-            esclusi={esclusi2}
+        {(fase === 'intervallo' || pannello) && (
+          <PannelloCambi
+            titolo={fase === 'intervallo' ? 'Intervallo: parla alla squadra' : `Cambi e tattica · dal ${daMinuto}'`}
+            inCampo={xiAttuale}
+            bozza={bozza}
+            rosa={rosa(carriera, carriera.clubUtente)}
+            modulo={bozzaModulo}
+            esclusi={bozzaEsclusi}
+            usciti={usciti}
             nCambi={nCambi}
-            onModulo={setModulo2}
-            onEscludi={(id) => setEsclusi2(esclusi2.includes(id) ? esclusi2.filter((e) => e !== id) : [...esclusi2, id])}
-            onRiprendi={() => {
-              setSecondoTempo(nCambi > 0 ? bozza2 : undefined)
-              setRipresa(true)
-            }}
+            onModulo={setBozzaModulo}
+            onEscludi={(id) => setBozzaEsclusi(bozzaEsclusi.includes(id) ? bozzaEsclusi.filter((e) => e !== id) : [...bozzaEsclusi, id])}
+            conferma={fase === 'intervallo' ? 'Riprendi il secondo tempo' : 'Conferma e riprendi'}
+            onConferma={applicaCambi}
+            onAnnulla={fase === 'intervallo' ? undefined : () => setPannello(false)}
           />
         )}
 
@@ -228,10 +285,17 @@ export function PartitaLive({
                   {Math.floor(minuto) + 1}' Azione pericolosa di {nomi[segmento.casa ? mia.casaId : mia.ospiteId]}…
                 </li>
               )}
-              {minuto > 45 && <li className="text-slate-400">46' Inizia il secondo tempo{secondoTempo ? ', con i cambi decisi negli spogliatoi' : ''}.</li>}
-              {[...eventi].reverse().map((e, i) => (
-                <RigaCronaca key={`${e.minuto}-${i}`} e={e} carriera={carriera} nomi={nomi} utente={e.clubId === carriera.clubUtente} />
-              ))}
+              {cronaca
+                .filter((c) => c.t >= 45)
+                .map((c) => (
+                  <Fragment key={c.chiave}>{c.el}</Fragment>
+                ))}
+              {minuto > 45 && <li className="text-slate-400">46' Inizia il secondo tempo.</li>}
+              {cronaca
+                .filter((c) => c.t < 45)
+                .map((c) => (
+                  <Fragment key={c.chiave}>{c.el}</Fragment>
+                ))}
               <li className="text-slate-400">1' Calcio d'inizio.</li>
             </ol>
           </section>
@@ -308,34 +372,42 @@ function Statistica({ nome, casa, ospite, percentuale = false }: { nome: string;
   )
 }
 
-function Intervallo({
-  xi1,
+function PannelloCambi({
+  titolo,
+  inCampo,
   bozza,
-  panchina,
+  rosa,
   modulo,
   esclusi,
+  usciti,
   nCambi,
   onModulo,
   onEscludi,
-  onRiprendi,
+  conferma,
+  onConferma,
+  onAnnulla,
 }: {
-  xi1: Giocatore[]
+  titolo: string
+  inCampo: Giocatore[]
   bozza: Giocatore[]
-  panchina: Giocatore[]
+  rosa: Giocatore[]
   modulo: Modulo
   esclusi: string[]
+  usciti: string[]
   nCambi: number
   onModulo: (m: Modulo) => void
   onEscludi: (id: string) => void
-  onRiprendi: () => void
+  conferma: string
+  onConferma: () => void
+  onAnnulla?: () => void
 }) {
-  const fuori = panchina.filter((g) => !bozza.includes(g)).sort((a, b) => b.overall - a.overall)
+  const fuori = rosa.filter((g) => !bozza.includes(g)).sort((a, b) => b.overall - a.overall)
   const troppi = nCambi > MAX_CAMBI
   return (
     <section className="mt-4 rounded-xl border border-emerald-400/30 bg-slate-900 p-4">
-      <h2 className="text-lg font-bold">Intervallo: parla alla squadra</h2>
+      <h2 className="text-lg font-bold">{titolo}</h2>
       <p className="mt-1 text-sm text-slate-400">
-        Cambia modulo o togli qualcuno: il vice sceglie il migliore sostituto per ruolo. Al massimo {MAX_CAMBI} cambi.
+        Cambia modulo o togli qualcuno: il vice sceglie il migliore sostituto per ruolo. Al massimo {MAX_CAMBI} cambi, e chi esce non rientra.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {(Object.keys(MODULI) as Modulo[]).map((m) => (
@@ -351,7 +423,7 @@ function Intervallo({
       </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
-          <h3 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">In campo nel secondo tempo</h3>
+          <h3 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">In campo</h3>
           <ul className="space-y-1">
             {bozza.map((g) => (
               <li key={g.id} className="flex items-center gap-2 text-sm">
@@ -359,7 +431,7 @@ function Intervallo({
                 <span className="w-8 text-xs text-slate-500">{RUOLO_BREVE[g.ruolo]}</span>
                 <span className="flex-1 truncate">
                   {g.nome}
-                  {!xi1.includes(g) && <span className="ml-1 text-xs text-emerald-300">entra</span>}
+                  {!inCampo.includes(g) && <span className="ml-1 text-xs text-emerald-300">entra</span>}
                 </span>
                 <button type="button" onClick={() => onEscludi(g.id)} className="rounded px-2 py-0.5 text-xs text-slate-400 hover:bg-white/10">
                   Togli
@@ -371,28 +443,37 @@ function Intervallo({
         <div>
           <h3 className="mb-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">Fuori</h3>
           <ul className="space-y-1">
-            {fuori.map((g) => (
-              <li key={g.id} className={`flex items-center gap-2 text-sm ${esclusi.includes(g.id) ? 'opacity-50' : ''}`}>
-                <Overall valore={g.overall} />
-                <span className="w-8 text-xs text-slate-500">{RUOLO_BREVE[g.ruolo]}</span>
-                <span className="flex-1 truncate">
-                  {g.nome}
-                  {xi1.includes(g) && <span className="ml-1 text-xs text-rose-300">esce</span>}
-                </span>
-                {esclusi.includes(g.id) && (
-                  <button type="button" onClick={() => onEscludi(g.id)} className="rounded px-2 py-0.5 text-xs text-slate-400 hover:bg-white/10">
-                    Rimetti
-                  </button>
-                )}
-              </li>
-            ))}
+            {fuori.map((g) => {
+              const uscito = usciti.includes(g.id)
+              return (
+                <li key={g.id} className={`flex items-center gap-2 text-sm ${esclusi.includes(g.id) || uscito ? 'opacity-50' : ''}`}>
+                  <Overall valore={g.overall} />
+                  <span className="w-8 text-xs text-slate-500">{RUOLO_BREVE[g.ruolo]}</span>
+                  <span className="flex-1 truncate">
+                    {g.nome}
+                    {inCampo.includes(g) && <span className="ml-1 text-xs text-rose-300">esce</span>}
+                    {uscito && <span className="ml-1 text-xs text-slate-500">già uscito</span>}
+                  </span>
+                  {esclusi.includes(g.id) && !uscito && (
+                    <button type="button" onClick={() => onEscludi(g.id)} className="rounded px-2 py-0.5 text-xs text-slate-400 hover:bg-white/10">
+                      Rimetti
+                    </button>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </div>
       </div>
-      <div className="mt-4 flex items-center gap-3">
-        <Bottone onClick={onRiprendi} disabled={troppi}>
-          Riprendi il secondo tempo
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Bottone onClick={onConferma} disabled={troppi}>
+          {conferma}
         </Bottone>
+        {onAnnulla && (
+          <Bottone variante="secondario" onClick={onAnnulla}>
+            Annulla
+          </Bottone>
+        )}
         <span className={`text-sm ${troppi ? 'text-rose-300' : 'text-slate-400'}`}>
           Cambi: {nCambi}/{MAX_CAMBI}
         </span>

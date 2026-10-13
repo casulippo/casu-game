@@ -1,6 +1,6 @@
 import { generaCalendario } from './calendario'
 import { classifica } from './classifica'
-import { formazione, giocaPartita } from './partita'
+import { formazione, giocaPartita, type Fase } from './partita'
 import { invecchia } from './progressione'
 import { tipoEvento, type Carriera, type Club, type Giocatore, type Partita } from './tipi'
 
@@ -36,10 +36,12 @@ export function xiDi(c: Carriera, clubId: string): Giocatore[] {
 
 export const MAX_CAMBI = 5
 
-export const cambi = (xi1: Giocatore[], xi2: Giocatore[]) => xi2.filter((g) => !xi1.includes(g)).length
+// Sostituzioni: giocatori entrati in qualunque momento che non erano tra i titolari.
+export const cambi = (titolari: Giocatore[], formazioni: Giocatore[][]) =>
+  new Set(formazioni.flat().filter((g) => !titolari.includes(g))).size
 
-// secondoTempo: gli 11 scelti dall'utente all'intervallo; senza, decide il vice e restano i titolari.
-export function giocaGiornata(c: Carriera, secondoTempo?: Giocatore[]): Carriera {
+// fasiUtente: formazioni decise dall'utente durante la partita; senza, decide il vice e restano i titolari.
+export function giocaGiornata(c: Carriera, fasiUtente?: Fase[]): Carriera {
   const g = prossimaGiornata(c)
   if (g === null) return c
   const giocatori = { ...c.giocatori }
@@ -49,8 +51,8 @@ export function giocaGiornata(c: Carriera, secondoTempo?: Giocatore[]): Carriera
   const calendario: Partita[] = c.calendario.map((p) => {
     if (p.giornata !== g) return p
     const ris = giocaPartita(p, xiDi(c, p.casaId), xiDi(c, p.ospiteId), `${c.seme}:${c.stagione}`, {
-      casa: p.casaId === c.clubUtente ? secondoTempo : undefined,
-      ospite: p.ospiteId === c.clubUtente ? secondoTempo : undefined,
+      casa: p.casaId === c.clubUtente ? fasiUtente : undefined,
+      ospite: p.ospiteId === c.clubUtente ? fasiUtente : undefined,
     })
     for (const id of [...ris.xiCasa, ...ris.xiOspite]) aggiorna(id, (s) => ({ ...s, presenze: s.presenze + 1 }))
     for (const e of ris.eventi) {

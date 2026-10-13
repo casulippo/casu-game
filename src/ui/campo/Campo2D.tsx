@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Divisa } from './colori'
 import { PORTIERE_CASA, PORTIERE_OSPITE } from './colori'
-import { LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
+import { insegui, LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
 
 // Le pedine inseguono la posizione calcolata con un ritardo morbido, come giocatori che corrono.
 function useStatoAnimato(scena: Scena, tempo: RefObject<number>) {
@@ -19,11 +19,9 @@ function useStatoAnimato(scena: Scena, tempo: RefObject<number>) {
       const dt = Math.min(0.1, (ora - ultimo) / 1000)
       ultimo = ora
       const obiettivo = statoScena(scenaRef.current, tempo.current)
-      const alfa = 1 - Math.exp(-dt * 7)
       const giocatori = obiettivo.giocatori.map((g) => {
         const p = posizioni.current.get(g.id) ?? { x: g.x, y: g.y }
-        p.x += (g.x - p.x) * alfa
-        p.y += (g.y - p.y) * alfa
+        insegui(p, g, dt, obiettivo.saliente)
         posizioni.current.set(g.id, p)
         return { ...g, x: p.x, y: p.y }
       })

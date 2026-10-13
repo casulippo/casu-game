@@ -38,38 +38,44 @@ export function possesso(xiCasa: Giocatore[], xiOspite: Giocatore[]): number {
   return Math.round(Math.min(68, Math.max(32, 51 + (cc - co) * 1.2)))
 }
 
-// Un tempo di gioco: gol, tiri sbagliati e ammonizioni per entrambe le squadre.
-function tempo(r: Rng, p: Partita, xiCasa: Giocatore[], xiOspite: Giocatore[], inizio: 0 | 45): Evento[] {
+// Un minuto di gioco: gol, tiri sbagliati e ammonizioni per entrambe le squadre.
+// Per partita e squadra: gol attesi λ, circa 5λ+4 tiri sbagliati (un terzo parati), 2 ammonizioni.
+function minuto(r: Rng, m: number, p: Partita, xiCasa: Giocatore[], xiOspite: Giocatore[]): Evento[] {
   const eventi: Evento[] = []
-  const minuto = () => inizio + 1 + Math.floor(r() * 45)
   const lato = (xi: Giocatore[], avversari: Giocatore[], clubId: string, casa: boolean) => {
-    const att = forza(xi)
-    const dif = forza(avversari)
-    const lambda = golAttesi(att.attacco, dif.difesa, casa) / 2
+    const lambda = golAttesi(forza(xi).attacco, forza(avversari).difesa, casa)
     const tiratore = () => sceltaPesata(r, xi, (g) => PESO_TIRO[g.ruolo] * (g.attr.finalizzazione / 10) ** 1.5)
     const portiere = avversari.find((g) => g.ruolo === 'Goalkeeper') ?? avversari[0]
-    for (let i = poisson(r, lambda); i > 0; i--) {
+    for (let i = poisson(r, lambda / 90); i > 0; i--) {
       const marcatore = tiratore()
       const compagni = xi.filter((g) => g !== marcatore)
       const assist =
         r() < 0.7 ? sceltaPesata(r, compagni, (g) => PESO_ASSIST[g.ruolo] * ((g.attr.passaggio + g.attr.visione) / 20) ** 2) : null
-      eventi.push({ minuto: minuto(), clubId, tipo: 'gol', marcatoreId: marcatore.id, assistId: assist?.id ?? null })
+      eventi.push({ minuto: m, clubId, tipo: 'gol', marcatoreId: marcatore.id, assistId: assist?.id ?? null })
     }
-    // Circa 11 tiri a partita per squadra, un terzo nello specchio: quelli non finiti in rete.
-    for (let i = poisson(r, lambda * 5 + 2); i > 0; i--) {
+    for (let i = poisson(r, (lambda * 5 + 4) / 90); i > 0; i--) {
       const x = r()
       const tipo = x < 0.33 ? 'parata' : x < 0.92 ? 'fuori' : 'palo'
-      eventi.push({ minuto: minuto(), clubId, tipo, marcatoreId: tiratore().id, assistId: null, portiereId: tipo === 'parata' ? portiere.id : undefined })
+      eventi.push({ minuto: m, clubId, tipo, marcatoreId: tiratore().id, assistId: null, portiereId: tipo === 'parata' ? portiere.id : undefined })
     }
-    for (let i = poisson(r, 1); i > 0; i--) {
+    for (let i = poisson(r, 2 / 90); i > 0; i--) {
       const ammonito = sceltaPesata(r, xi, (g) => PESO_FALLO[g.ruolo] * (g.attr.contrasto / 10))
-      eventi.push({ minuto: minuto(), clubId, tipo: 'giallo', marcatoreId: ammonito.id, assistId: null })
+      eventi.push({ minuto: m, clubId, tipo: 'giallo', marcatoreId: ammonito.id, assistId: null })
     }
   }
   lato(xiCasa, xiOspite, p.casaId, true)
   lato(xiOspite, xiCasa, p.ospiteId, false)
   return eventi
 }
+
+// Formazione in campo a partire dal minuto `da` (incluso), dopo cambi o variazioni di modulo.
+export interface Fase {
+  da: number
+  xi: Giocatore[]
+}
+
+export const xiAlMinuto = (base: Giocatore[], fasi: Fase[], m: number) =>
+  fasi.filter((f) => f.da <= m).sort((a, b) => a.da - b.da).at(-1)?.xi ?? base
 
 export interface Risultato {
   golCasa: number
@@ -79,28 +85,28 @@ export interface Risultato {
   xiOspite: string[]
 }
 
-// Ogni tempo ha il suo generatore: cambiare formazione all'intervallo non altera il primo tempo già visto.
+// Ogni minuto ha il suo generatore: un cambio al minuto m non altera nulla di quanto successo prima.
 export function giocaPartita(
   p: Partita,
   xiCasa: Giocatore[],
   xiOspite: Giocatore[],
   seme: string,
-  secondoTempo: { casa?: Giocatore[]; ospite?: Giocatore[] } = {},
+  fasi: { casa?: Fase[]; ospite?: Fase[] } = {},
 ): Risultato {
   const chiave = `partita:${seme}:${p.giornata}:${p.casaId}:${p.ospiteId}`
-  const xi2Casa = secondoTempo.casa ?? xiCasa
-  const xi2Ospite = secondoTempo.ospite ?? xiOspite
-  const eventi = [
-    ...tempo(rng(`${chiave}:1`), p, xiCasa, xiOspite, 0),
-    ...tempo(rng(`${chiave}:2`), p, xi2Casa, xi2Ospite, 45),
-  ].sort((a, b) => a.minuto - b.minuto)
+  const eventi: Evento[] = []
+  for (let m = 1; m <= 90; m++) {
+    const casa = xiAlMinuto(xiCasa, fasi.casa ?? [], m)
+    const ospite = xiAlMinuto(xiOspite, fasi.ospite ?? [], m)
+    eventi.push(...minuto(rng(`${chiave}:${m}`), m, p, casa, ospite))
+  }
   const gol = (clubId: string) => eventi.filter((e) => e.tipo === 'gol' && e.clubId === clubId).length
-  const ids = (a: Giocatore[], b: Giocatore[]) => [...new Set([...a, ...b].map((g) => g.id))]
+  const ids = (base: Giocatore[], f: Fase[] = []) => [...new Set([base, ...f.map((x) => x.xi)].flat().map((g) => g.id))]
   return {
     golCasa: gol(p.casaId),
     golOspite: gol(p.ospiteId),
     eventi,
-    xiCasa: ids(xiCasa, xi2Casa),
-    xiOspite: ids(xiOspite, xi2Ospite),
+    xiCasa: ids(xiCasa, fasi.casa),
+    xiOspite: ids(xiOspite, fasi.ospite),
   }
 }

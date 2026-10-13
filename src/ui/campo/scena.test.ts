@@ -16,7 +16,7 @@ describe.each(['46', '5', '1005'])('scena della prima giornata (club %s)', (club
   const p = giocaGiornata(c).calendario.find((x) => x.giornata === 1 && (x.casaId === clubId || x.ospiteId === clubId))!
   const xiC = xiDi(c, p.casaId)
   const xiO = xiDi(c, p.ospiteId)
-  const scena = creaScena(p, { casa: [xiC, xiC], ospite: [xiO, xiO] }, possesso(xiC, xiO), 'test')
+  const scena = creaScena(p, { casa: { base: xiC, fasi: [] }, ospite: { base: xiO, fasi: [] } }, possesso(xiC, xiO), 'test')
   const istanti = Array.from({ length: 18001 }, (_, i) => i * 0.005)
 
   it('22 giocatori sempre dentro il campo', () => {
@@ -61,14 +61,16 @@ describe.each(['46', '5', '1005'])('scena della prima giornata (club %s)', (club
   })
 })
 
-it('nel secondo tempo scende in campo la formazione cambiata', () => {
+it('dopo un cambio al 60° scende in campo il subentrato', () => {
   const p = giocaGiornata(carriera).calendario.find((x) => x.giornata === 1 && (x.casaId === '46' || x.ospiteId === '46'))!
   const xi = xiDi(carriera, '46')
   const panchina = Object.values(carriera.giocatori).filter((g) => g.clubId === '46' && !xi.includes(g))
   const xi2 = [...xi.slice(0, 10), panchina[0]]
   const avversario = xiDi(carriera, p.casaId === '46' ? p.ospiteId : p.casaId)
-  const formazioni = p.casaId === '46' ? { casa: [xi, xi2], ospite: [avversario, avversario] } : { casa: [avversario, avversario], ospite: [xi, xi2] }
-  const scena = creaScena(p, formazioni as never, 50, 'test')
-  expect(statoScena(scena, 30).giocatori.some((g) => g.id === panchina[0].id)).toBe(false)
-  expect(statoScena(scena, 60).giocatori.some((g) => g.id === panchina[0].id)).toBe(true)
+  const mia = { base: xi, fasi: [{ da: 60, xi: xi2 }] }
+  const loro = { base: avversario, fasi: [] }
+  const scena = creaScena(p, p.casaId === '46' ? { casa: mia, ospite: loro } : { casa: loro, ospite: mia }, 50, 'test')
+  const inCampo = (t: number) => statoScena(scena, t).giocatori.some((g) => g.id === panchina[0].id)
+  expect(inCampo(58.9)).toBe(false)
+  expect(inCampo(59.1)).toBe(true)
 })
