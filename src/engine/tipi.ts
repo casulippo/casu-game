@@ -46,12 +46,20 @@ export interface Club {
   allenatore: string | null
 }
 
+export type TipoEvento = 'gol' | 'parata' | 'fuori' | 'palo' | 'giallo'
+
 export interface Evento {
   minuto: number
   clubId: string
+  // Assente nei salvataggi creati prima della cronaca: vale 'gol'.
+  tipo?: TipoEvento
+  // Protagonista dell'evento: marcatore, tiratore o ammonito.
   marcatoreId: string
   assistId: string | null
+  portiereId?: string
 }
+
+export const tipoEvento = (e: Evento): TipoEvento => e.tipo ?? 'gol'
 
 export interface Partita {
   giornata: number

@@ -2,7 +2,7 @@ import { generaCalendario } from './calendario'
 import { classifica } from './classifica'
 import { formazione, giocaPartita } from './partita'
 import { invecchia } from './progressione'
-import type { Carriera, Club, Giocatore, Partita } from './tipi'
+import { tipoEvento, type Carriera, type Club, type Giocatore, type Partita } from './tipi'
 
 export function nuovaCarriera(club: Club[], giocatori: Giocatore[], clubUtente: string, stagione: string, seme: string): Carriera {
   return {
@@ -34,7 +34,12 @@ export function xiDi(c: Carriera, clubId: string): Giocatore[] {
   return formazione(rosa(c, clubId), utente ? c.modulo : '4-3-3', utente ? c.esclusi : [])
 }
 
-export function giocaGiornata(c: Carriera): Carriera {
+export const MAX_CAMBI = 5
+
+export const cambi = (xi1: Giocatore[], xi2: Giocatore[]) => xi2.filter((g) => !xi1.includes(g)).length
+
+// secondoTempo: gli 11 scelti dall'utente all'intervallo; senza, decide il vice e restano i titolari.
+export function giocaGiornata(c: Carriera, secondoTempo?: Giocatore[]): Carriera {
   const g = prossimaGiornata(c)
   if (g === null) return c
   const giocatori = { ...c.giocatori }
@@ -43,9 +48,13 @@ export function giocaGiornata(c: Carriera): Carriera {
   }
   const calendario: Partita[] = c.calendario.map((p) => {
     if (p.giornata !== g) return p
-    const ris = giocaPartita(p, xiDi(c, p.casaId), xiDi(c, p.ospiteId), `${c.seme}:${c.stagione}`)
+    const ris = giocaPartita(p, xiDi(c, p.casaId), xiDi(c, p.ospiteId), `${c.seme}:${c.stagione}`, {
+      casa: p.casaId === c.clubUtente ? secondoTempo : undefined,
+      ospite: p.ospiteId === c.clubUtente ? secondoTempo : undefined,
+    })
     for (const id of [...ris.xiCasa, ...ris.xiOspite]) aggiorna(id, (s) => ({ ...s, presenze: s.presenze + 1 }))
     for (const e of ris.eventi) {
+      if (tipoEvento(e) !== 'gol') continue
       aggiorna(e.marcatoreId, (s) => ({ ...s, gol: s.gol + 1 }))
       if (e.assistId) aggiorna(e.assistId, (s) => ({ ...s, assist: s.assist + 1 }))
     }

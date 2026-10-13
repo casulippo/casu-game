@@ -8,6 +8,7 @@ import { Bottone, Card } from './comuni'
 
 export function Panoramica({
   carriera,
+  onGuarda,
   onGioca,
   onSimulaTutto,
   onNuovaStagione,
@@ -15,6 +16,7 @@ export function Panoramica({
   onVaiClassifica,
 }: {
   carriera: Carriera
+  onGuarda: () => void
   onGioca: () => void
   onSimulaTutto: () => void
   onNuovaStagione: () => void
@@ -41,9 +43,12 @@ export function Panoramica({
           <Card titolo={`Prossima partita · ${giornata}ª giornata di ${ultimaGiornata(carriera)}`}>
             <Sfida carriera={carriera} casaId={prossima.casaId} ospiteId={prossima.ospiteId} />
             <div className="mt-4 flex flex-wrap gap-2">
-              <Bottone onClick={onGioca}>Gioca giornata</Bottone>
+              <Bottone onClick={onGuarda}>Guarda la partita</Bottone>
+              <Bottone variante="secondario" onClick={onGioca}>
+                Lascia al vice
+              </Bottone>
               <Bottone variante="secondario" onClick={onSimulaTutto}>
-                Simula fino a fine stagione
+                Vice fino a fine stagione
               </Bottone>
             </div>
           </Card>

@@ -9,6 +9,7 @@ import { Classifica } from './ui/Classifica'
 import { Bottone, Modale } from './ui/comuni'
 import { Opzioni } from './ui/Opzioni'
 import { Panoramica } from './ui/Panoramica'
+import { PartitaLive } from './ui/PartitaLive'
 import { Rosa } from './ui/Rosa'
 import { SceltaClub } from './ui/SceltaClub'
 import { SchedaGiocatore } from './ui/SchedaGiocatore'
@@ -35,6 +36,7 @@ export default function App() {
   const [aperto, setAperto] = useState<Giocatore>()
   const [clubAperto, setClubAperto] = useState<string>()
   const [giornataGiocata, setGiornataGiocata] = useState<number>()
+  const [live, setLive] = useState(false)
 
   useEffect(() => {
     caricaCarriera()
@@ -186,6 +188,7 @@ export default function App() {
             carriera={carriera}
             onApri={setAperto}
             onVaiClassifica={() => setScheda('classifica')}
+            onGuarda={() => setLive(true)}
             onGioca={() => {
               setGiornataGiocata(prossimaGiornata(carriera) ?? undefined)
               aggiorna(giocaGiornata(carriera))
@@ -228,7 +231,7 @@ export default function App() {
       </nav>
 
       {giornataGiocata !== undefined && (
-        <Modale titolo={`Risultati · ${giornataGiocata}ª giornata`} onChiudi={() => setGiornataGiocata(undefined)}>
+        <Modale titolo={`Il vice ha gestito la ${giornataGiocata}ª giornata`} onChiudi={() => setGiornataGiocata(undefined)}>
           <div className="divide-y divide-white/5">
             {carriera.calendario
               .filter((p) => p.giornata === giornataGiocata)
@@ -241,6 +244,16 @@ export default function App() {
             <Bottone onClick={() => setGiornataGiocata(undefined)}>Continua</Bottone>
           </div>
         </Modale>
+      )}
+
+      {live && (
+        <PartitaLive
+          carriera={carriera}
+          onFine={(c) => {
+            aggiorna(c)
+            setLive(false)
+          }}
+        />
       )}
 
       {clubAperto && (

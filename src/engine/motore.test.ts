@@ -2,9 +2,10 @@ import { DatabaseSync } from 'node:sqlite'
 import { describe, expect, it } from 'vitest'
 import { mondoDaRighe, QUERY, type Mondo } from '../data/seed'
 import { generaCalendario } from './calendario'
-import { nuovaCarriera, nuovaStagione, prossimaGiornata, simulaFinoAllaFine } from './carriera'
+import { cambi, giocaGiornata, nuovaCarriera, nuovaStagione, prossimaGiornata, simulaFinoAllaFine, xiDi } from './carriera'
 import { classifica } from './classifica'
 import { formazione } from './partita'
+import { tipoEvento } from './tipi'
 
 function mondo(): Mondo {
   const db = new DatabaseSync('public/seed.sqlite', { readOnly: true })
@@ -64,6 +65,28 @@ describe('stagione simulata', () => {
     expect(tabella[0].punti).toBeGreaterThan(65)
     expect(tabella[0].punti).toBeLessThan(100)
     expect(tabella[19].punti).toBeGreaterThan(10)
+  })
+
+  it('tiri e ammonizioni realistici', () => {
+    const eventi = finita.calendario.flatMap((p) => p.eventi ?? [])
+    const perSquadra = (tipi: string[]) => eventi.filter((e) => tipi.includes(tipoEvento(e))).length / 760
+    expect(perSquadra(['gol', 'parata', 'fuori', 'palo'])).toBeGreaterThan(9)
+    expect(perSquadra(['gol', 'parata', 'fuori', 'palo'])).toBeLessThan(15)
+    expect(perSquadra(['giallo'])).toBeGreaterThan(1.5)
+    expect(perSquadra(['giallo'])).toBeLessThan(2.5)
+  })
+
+  it("cambiare all'intervallo non altera il primo tempo", () => {
+    const p = carriera.calendario.find((x) => x.casaId === '46' || x.ospiteId === '46')!
+    const xi = xiDi(carriera, '46')
+    const panchina = Object.values(carriera.giocatori).filter((g) => g.clubId === '46' && !xi.includes(g))
+    const nuovo = [...xi.slice(0, 8), ...panchina.slice(0, 3)]
+    const stessa = (x: typeof p) => x.casaId === p.casaId && x.ospiteId === p.ospiteId
+    const base = giocaGiornata(carriera).calendario.find(stessa)!
+    const cambiata = giocaGiornata(carriera, nuovo).calendario.find(stessa)!
+    const primo = (q: typeof base) => JSON.stringify(q.eventi!.filter((e) => e.minuto <= 45))
+    expect(primo(cambiata)).toBe(primo(base))
+    expect(cambi(xi, nuovo)).toBe(3)
   })
 
   it('stessa carriera, stessi risultati', () => {

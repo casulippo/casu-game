@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { prossimaGiornata } from '../engine/carriera'
-import type { Carriera, Partita } from '../engine/tipi'
+import { tipoEvento, type Carriera, type Partita } from '../engine/tipi'
 
 export function RigaPartita({ p, carriera, dettaglio = false }: { p: Partita; carriera: Carriera; dettaglio?: boolean }) {
   const nomi = Object.fromEntries(carriera.club.map((c) => [c.id, c.nome]))
@@ -21,15 +21,16 @@ export function RigaPartita({ p, carriera, dettaglio = false }: { p: Partita; ca
         </span>
         <span className="truncate">{nomi[p.ospiteId]}</span>
       </div>
-      {dettaglio && giocata && p.eventi && p.eventi.length > 0 && (
+      {dettaglio && giocata && p.eventi?.some((e) => tipoEvento(e) === 'gol') && (
         <div className="grid grid-cols-2 gap-3 pb-2 text-xs font-normal text-slate-400">
           {[p.casaId, p.ospiteId].map((club, i) => (
             <ul key={club} className={i === 0 ? 'text-right' : ''}>
               {p.eventi!
-                .filter((e) => e.clubId === club)
+                .filter((e) => e.clubId === club && tipoEvento(e) === 'gol')
                 .map((e, k) => (
                   <li key={k}>
-                    ⚽ {carriera.giocatori[e.marcatoreId]?.nome} {e.minuto}'
+                    <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 align-middle" />
+                    {carriera.giocatori[e.marcatoreId]?.nome} {e.minuto}'
                     {e.assistId && <span className="text-slate-500"> ({carriera.giocatori[e.assistId]?.nome})</span>}
                   </li>
                 ))}
