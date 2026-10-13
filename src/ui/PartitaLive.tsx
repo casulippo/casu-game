@@ -5,24 +5,31 @@ import { MODULI, tipoEvento, type Carriera, type Evento, type Giocatore, type Mo
 import { Campo2D } from './campo/Campo2D'
 import { divise } from './campo/colori'
 import { useOrologio } from './campo/orologio'
-import { creaScena, salienteA } from './campo/scena'
+import { creaScena, pallaFermaA, salienteA } from './campo/scena'
 import { Bottone, Overall } from './comuni'
 import { RUOLO_BREVE } from './formato'
 
 const Campo3D = lazy(() => import('./campo/Campo3D'))
+type Replay = { inizio: number; fine: number; secondiPerMinuto: number }
 
 type Fase = 'primo' | 'intervallo' | 'secondo' | 'fine'
 type Vista = '2d' | '3d' | 'cronaca'
 
 // Secondi reali per minuto di gioco: nelle azioni salienti il tempo rallenta per seguirle.
 const RITMI = [
-  { nome: 'Lenta', gioco: 4, azione: 35, azione3d: 60 },
-  { nome: 'Normale', gioco: 2.5, azione: 22, azione3d: 40 },
-  { nome: 'Veloce', gioco: 0.8, azione: 10, azione3d: 22 },
+  { nome: 'Lenta', gioco: 4, azione: 45, azione3d: 70 },
+  { nome: 'Normale', gioco: 2.5, azione: 30, azione3d: 55 },
+  { nome: 'Veloce', gioco: 0.8, azione: 14, azione3d: 30 },
 ]
 
-// In 3D, come in Football Manager, si vedono solo le azioni salienti: tra l'una e l'altra uno stacco.
-const DURATA_STACCO_MS = 1200
+// In 3D, come in Football Manager, si vedono solo le azioni salienti: azione, replay accelerato, breve stacco.
+const DURATA_STACCO_MS = 700
+// Quanto si resta sull'azione dopo il tiro, in minuti di gioco: pochi secondi, qualcuno in più per esultare.
+const DOPO_TIRO = 0.05
+const DOPO_GOL = 0.12
+// Il replay scorre 2,5 volte più veloce dell'azione dal vivo.
+const ACCELERA_REPLAY = 2.5
+const finitaDalVivo = (s: { tiro: number; esito: string }, t: number) => t > s.tiro + (s.esito === 'gol' ? DOPO_GOL : DOPO_TIRO)
 
 const VISTE: { id: Vista; nome: string }[] = [
   { id: '2d', nome: 'Campo 2D' },
@@ -97,8 +104,13 @@ export function PartitaLive({
   const orologio = useOrologio(ripresa ? 90 : 45, pannello, (t) => {
     if (vista === 'cronaca') return salienteA(scena, t) ? ritmo.gioco * 3 : ritmo.gioco
     // In 3D le azioni scorrono a velocità quasi reale; fuori dalle azioni il tempo resta quasi fermo durante lo stacco.
-    if (vista === '3d') return salienteA(scena, t) ? ritmo.azione3d : 600
+    if (vista === '3d') {
+      const s = salienteA(scena, t)
+      return s && !finitaDalVivo(s, t) ? ritmo.azione3d : 600
+    }
     if (salienteA(scena, t)) return ritmo.azione
+    // Palla ferma (rinvio, calcio d'inizio, punizione): si passa oltre in fretta, anche se un'azione è vicina.
+    if (pallaFermaA(scena, t)) return ritmo.gioco
     // Frenata progressiva nell'ultimo mezzo minuto prima di un'azione.
     const prossima = scena.salienti.find((s) => s.inizio > t)
     const k = prossima ? Math.min(1, Math.max(0, 1 - (prossima.inizio - t) / 0.5)) : 0
@@ -179,8 +191,15 @@ export function PartitaLive({
       }),
   ].sort((a, b) => b.t - a.t)
 
-  const inAzione = salienteA(scena, minuto) !== undefined
-  const stacco = vista === '3d' && !inAzione && !pannello && (fase === 'primo' || fase === 'secondo')
+  // 3D: finita l'azione dal vivo parte il replay; finito il replay, lo stacco verso l'azione successiva.
+  const azioneVista = salienteA(scena, minuto)
+  const [replayFatto, setReplayFatto] = useState<number | null>(null)
+  const inCampo3D = vista === '3d' && !pannello && (fase === 'primo' || fase === 'secondo')
+  const replay: Replay | null =
+    inCampo3D && azioneVista && finitaDalVivo(azioneVista, minuto) && replayFatto !== azioneVista.inizio
+      ? { inizio: azioneVista.inizio, fine: azioneVista.tiro + 0.02, secondiPerMinuto: ritmo.azione3d / ACCELERA_REPLAY }
+      : null
+  const stacco = inCampo3D && !replay && (!azioneVista || finitaDalVivo(azioneVista, minuto))
   const saltaA = orologio.salta
   const leggiTempo = orologio.leggi
   useEffect(() => {
@@ -275,7 +294,15 @@ export function PartitaLive({
         {vista === '3d' && (
           <div className="relative mt-3">
             <Suspense fallback={<div className="flex aspect-video items-center justify-center rounded-xl bg-slate-900 text-slate-400">Carico lo stadio…</div>}>
-              <Campo3D scena={scena} tempo={orologio.tempo} ritmo={orologio.ritmo} divise={coloriSquadre} nomi={nomiGiocatori} />
+              <Campo3D
+                scena={scena}
+                tempo={orologio.tempo}
+                ritmo={orologio.ritmo}
+                divise={coloriSquadre}
+                nomi={nomiGiocatori}
+                replay={replay}
+                onFineReplay={() => azioneVista && setReplayFatto(azioneVista.inizio)}
+              />
             </Suspense>
             <div
               className={`pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-slate-950 transition-opacity duration-500 ${

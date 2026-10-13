@@ -46,6 +46,8 @@ export interface Simulazione {
 }
 
 const SECONDI = 1 / 60
+// Velocità della palla in metri al secondo, vicine a quelle misurate in Serie A.
+const PALLA = { passaggio: 12, lancio: 18, cross: 16, tiro: 24 }
 const VANTAGGIO_CASA = 0.04
 
 const attr = (g: Giocatore, a: keyof Giocatore['attr']) => g.attr[a]
@@ -253,7 +255,7 @@ export function simulaPartita(
         0.98,
       )
       const alta = scelto.d > 28 || lungo ? 2 + scelto.d / 15 : 0
-      const durata = (scelto.d / (lungo ? 20 : 15)) * SECONDI
+      const durata = (scelto.d / (lungo || scelto.d > 28 ? PALLA.lancio : PALLA.passaggio)) * SECONDI
       stat.passaggi[casa ? 0 : 1]++
       if (caso(t) < riuscita) {
         stat.passaggiRiusciti[casa ? 0 : 1]++
@@ -313,7 +315,7 @@ export function simulaPartita(
       const inArea = compagni.filter((q) => q.ruolo !== 'Goalkeeper' && nelVerso(pos.get(q.id)!, casa).x > 78)
       const bersaglio = sceltaDaCaso(caso(t), inArea.length ? inArea : compagni, (q) => attr(giocatori.get(q.id)!, 'colpo_di_testa') ** 2 + 20)
       const punto = nelVerso({ x: 92 + caso(t) * 7, y: CENTRO.y + (caso(t) - 0.5) * 14 }, casa)
-      const durata = (distanza(palla, punto) / 18) * SECONDI
+      const durata = (distanza(palla, punto) / PALLA.cross) * SECONDI
       const avversarioInArea = avversari
         .filter((q) => q.ruolo !== 'Goalkeeper')
         .sort((a, b2) => distanza(pos.get(a.id)!, punto) - distanza(pos.get(b2.id)!, punto))[0]
@@ -348,8 +350,8 @@ export function simulaPartita(
       0.75,
     )
     stat.tiri[casa ? 0 : 1]++
-    // Tiro a circa 24 m/s sul percorso reale, fino al punto in cui finisce la palla.
-    const durataVerso = (dove: Punto) => (distanza(partenza, dove) / 24) * SECONDI
+    // Durata del tiro sul percorso reale, fino al punto in cui finisce la palla.
+    const durataVerso = (dove: Punto) => (distanza(partenza, dove) / PALLA.tiro) * SECONDI
     const clubId = casa ? p.casaId : p.ospiteId
     const xPorta = casa ? LUNGHEZZA : 0
     const r = caso(t)

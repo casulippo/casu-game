@@ -55,6 +55,10 @@ Punti critici:
 
 Nel collaudo del 2026-10-13 l'Inter ha avuto il 72% e il 78% di possesso contro Venezia e Frosinone, ma solo 6 e 9 tiri (in Serie A una squadra che domina ne fa 15-20). Il motore a possessi fa girare palla ma, contro una difesa schierata, raramente entra in area. Da capire: più conduzioni e passaggi filtranti negli ultimi 30 metri, cross più frequenti, oppure tiri da fuori quando la difesa è chiusa. Va ritarato senza alzare troppo i gol medi (oggi 2,44 a partita).
 
+## Replay 3D tagliati sul finale
+
+Da fare (segnalato il 2026-10-13): il replay velocizzato spesso viene interrotto prima della fine per riprendere il gioco, e la conclusione dell'azione (tiro, gol) non si vede. Il replay deve arrivare sempre fino in fondo prima dello stacco.
+
 ## Transfermarkt fermo a luglio 2026
 
 Il database pubblico di `transfermarkt-datasets` non si aggiorna dal 6 luglio 2026, senza data di ripresa. Valori di mercato, contratti e trasferimenti invecchiano: serve una fonte alternativa se gli aggiornamenti non ripartono.

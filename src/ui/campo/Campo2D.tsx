@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import type { Divisa } from './colori'
 import { PORTIERE_CASA, PORTIERE_OSPITE } from './colori'
-import { creaAnimatore } from './animazione'
+import { creaAnimatore, debugFotogramma } from './animazione'
 import { LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
 
 // Le pedine inseguono la posizione calcolata con un ritardo morbido, come giocatori che corrono.
@@ -19,7 +19,9 @@ function useStatoAnimato(scena: Scena, tempo: RefObject<number>, ritmo: RefObjec
     let frame = requestAnimationFrame(function passo(ora) {
       const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
-      setStato(anima(scenaRef.current, tempo.current, dt, ora / 1000, ritmo.current ?? 1).stato)
+      const fotogramma = anima(scenaRef.current, tempo.current, dt, ora / 1000, ritmo.current ?? 1)
+      debugFotogramma(fotogramma, tempo.current, ritmo.current ?? 1, '2d')
+      setStato(fotogramma.stato)
       frame = requestAnimationFrame(passo)
     })
     return () => cancelAnimationFrame(frame)

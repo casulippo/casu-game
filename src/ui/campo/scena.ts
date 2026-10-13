@@ -46,6 +46,18 @@ export interface Stato {
   quotaCasa: number
   // Squadra che ha davvero la palla in questo istante, secondo il motore.
   squadraPalla: boolean
+  // Tocco con la palla in volo in questo istante (passaggio, cross, tiro...), se c'è.
+  volo: {
+    tipo: Tocco['tipo']
+    esito: Tocco['esito']
+    metri: number
+    secondi: number
+    t0: number
+    t1: number
+    a: Punto
+    alta: number
+    riceventeId: string | null
+  } | null
   evidenza: { tipo: TipoEvento; protagonista: string; casa: boolean } | null
   saliente: boolean
 }
@@ -75,7 +87,8 @@ export function creaScena(sim: Simulazione, xi: FormazioniPartita): Scena {
   for (const tiro of tocchi.filter((x) => x.tipo === 'tiro' && ESITI_TIRO.has(x.esito))) {
     const primo = tocchi.find((x) => x.possesso === tiro.possesso)!
     const inizio = Math.max(primo.t0, tiro.t0 - 0.3, tiro.t0 < 45 ? 0 : 45)
-    const fine = Math.min(tiro.t0 < 45 ? 45 : 90, tiro.t1 + (tiro.esito === 'gol' ? 0.5 : 0.15))
+    // Dopo il tiro: qualche secondo per l'esito, un po' di più per esultare. Il resto è tempo morto.
+    const fine = Math.min(tiro.t0 < 45 ? 45 : 90, tiro.t1 + (tiro.esito === 'gol' ? 0.15 : 0.06))
     const prec = salienti.at(-1)
     if (prec && inizio <= prec.fine) {
       // Due tiri ravvicinati: un'unica sequenza da seguire, con l'esito dell'ultimo.
@@ -105,6 +118,14 @@ function cerca<T>(elenco: T[], t: number, inizio: (x: T) => number): number {
     else hi = mid - 1
   }
   return lo
+}
+
+// Palla ferma in attesa di essere rimessa in gioco (rinvio, calcio d'inizio, punizione): tempo morto da saltare in fretta.
+export function pallaFermaA(scena: Scena, t: number): boolean {
+  const i = cerca(scena.tocchi, t, (x) => x.t0)
+  const tocco = scena.tocchi[i]
+  const prossimo = scena.tocchi[i + 1]
+  return !!tocco && !!prossimo && t > tocco.t1 && prossimo.t0 - tocco.t1 > 0.08
 }
 
 export function salienteA(scena: Scena, t: number): Saliente | undefined {
@@ -303,11 +324,26 @@ export function statoScena(scena: Scena, t: number, riferimento?: Punto): Stato 
     }
   })
 
+  const volo =
+    tocco && vera.inVolo && tocco.tipo !== 'conduzione'
+      ? {
+          tipo: tocco.tipo,
+          esito: tocco.esito,
+          metri: Math.hypot(tocco.a.x - tocco.da.x, tocco.a.y - tocco.da.y),
+          secondi: (tocco.t1 - tocco.t0) * 60,
+          t0: tocco.t0,
+          t1: tocco.t1,
+          a: tocco.a,
+          alta: tocco.alta,
+          // Solo i passaggi riusciti vanno ai piedi del compagno; un intercetto resta nel punto in cui avviene.
+          riceventeId: tocco.tipo !== 'tiro' && tocco.esito === 'ok' ? tocco.riceventeId : null,
+        }
+      : null
   const evidenza: Stato['evidenza'] =
     s && t > s.tiro
       ? { tipo: s.esito === 'gol' || s.esito === 'parata' || s.esito === 'palo' ? s.esito : 'fuori', protagonista: s.tiratoreId, casa: s.casa }
       : null
-  return { giocatori, palla: { x: vera.x, y: vera.y, h: vera.h }, portatore, possessoCasa, quotaCasa, squadraPalla, evidenza, saliente: s !== undefined }
+  return { giocatori, palla: { x: vera.x, y: vera.y, h: vera.h }, portatore, possessoCasa, quotaCasa, squadraPalla, volo, evidenza, saliente: s !== undefined }
 }
 
 function hash(s: string): number {
@@ -316,21 +352,27 @@ function hash(s: string): number {
   return (h >>> 0) / 4294967296
 }
 
-// Movimento continuo senza palla, in tempo reale: aggiustamenti di posizione, piccoli scatti, corse incontro.
-// È solo estetico: non cambia nulla di ciò che decide il motore.
+// Movimento senza palla, in tempo reale: ogni 4-7 secondi il giocatore sceglie un nuovo punto vicino alla sua
+// posizione, ci va e si ferma; chi attacca ogni tanto si inserisce in avanti. Niente oscillazioni continue:
+// con l'inerzia della corsa diventano piccoli giri ad anello. È solo estetico: il motore non ne tiene conto.
 export function vivacita(g: StatoGiocatore, secondi: number, quotaCasa: number): { x: number; y: number } {
   if (g.conPalla) return { x: 0, y: 0 }
   const h = hash(g.id)
-  const fase = h * Math.PI * 2
-  const omega = 0.7 + h * 0.6
-  if (g.ruolo === 'Goalkeeper') return { x: 0, y: Math.sin(secondi * omega + fase) * 0.8 }
+  const durata = 4 + h * 3
+  const tratto = Math.floor(secondi / durata + h * 7)
+  const r1 = hash(`${g.id}:${tratto}:x`)
+  const r2 = hash(`${g.id}:${tratto}:y`)
+  const r3 = hash(`${g.id}:${tratto}:corsa`)
+  if (g.ruolo === 'Goalkeeper') return { x: 0, y: (r2 - 0.5) * 2 }
   const attacca = g.casa ? quotaCasa : 1 - quotaCasa
-  const ampiezzaX = 1.5 + attacca * ((g.ruolo === 'Defender' ? 2 : 4) - 1.5)
-  const ampiezzaY = 2.5 + attacca * 0.5
+  const ampiezza = 1.5 + attacca * (g.ruolo === 'Defender' ? 1 : 2.5)
   const verso = g.casa ? 1 : -1
+  // Inserimento in avanti: attaccanti più spesso e più a fondo dei centrocampisti.
+  const spinta = g.ruolo === 'Attack' ? 7 : g.ruolo === 'Midfield' ? 4 : 0
+  const inserimento = r3 < 0.35 * attacca ? spinta : 0
   return {
-    x: verso * Math.sin(secondi * omega + fase) * ampiezzaX,
-    y: Math.sin(secondi * omega * 0.73 + fase * 1.7) * ampiezzaY,
+    x: verso * ((r1 - 0.5) * 2 * ampiezza + inserimento),
+    y: (r2 - 0.5) * 2 * ampiezza,
   }
 }
 

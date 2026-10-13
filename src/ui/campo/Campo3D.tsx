@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
 import { Sovraimpressione } from './Campo2D'
 import { PORTIERE_CASA, PORTIERE_OSPITE, type Divisa } from './colori'
-import { creaAnimatore } from './animazione'
+import { creaAnimatore, debugFotogramma } from './animazione'
 import { LARGHEZZA, LUNGHEZZA, statoScena, type Scena, type Stato } from './scena'
 
 const PELLI = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac', '#a0673a']
@@ -118,7 +118,15 @@ function creaPupazzo(divisa: Divisa, id: string): Pupazzo {
   const cartellino = cubo(0.22, 0.3, 0.02, new THREE.MeshBasicMaterial({ color: '#facc15' }), 2.25)
   gruppo.add(cartellino)
   gruppo.scale.setScalar(SCALA)
+  // Prima la direzione (Y), poi l'inclinazione in avanti (X): così il busto si piega verso dove corre.
+  gruppo.rotation.order = 'YXZ'
   return { gruppo, gambe: [gamba(-1), gamba(1)], braccia: [braccio(-1), braccio(1)], ombra, anello, cartellino, fase: 0 }
+}
+
+export interface Replay {
+  inizio: number
+  fine: number
+  secondiPerMinuto: number
 }
 
 function webglDisponibile(): boolean {
@@ -179,15 +187,29 @@ export default function Campo3D({
   ritmo,
   divise,
   nomi,
+  replay,
+  onFineReplay,
 }: {
   scena: Scena
   tempo: RefObject<number>
   ritmo: RefObject<number | null>
   divise: { casa: Divisa; ospite: Divisa }
   nomi: Record<string, string>
+  // Replay accelerato di un'azione: il campo la rigioca con un orologio suo, senza toccare la partita.
+  replay?: Replay | null
+  onFineReplay?: () => void
 }) {
   const contenitore = useRef<HTMLDivElement>(null)
   const scenaRef = useRef(scena)
+  const replayRef = useRef<{ dati: Replay; t: number; finito: boolean } | null>(null)
+  const fineReplayRef = useRef(onFineReplay)
+
+  useEffect(() => {
+    fineReplayRef.current = onFineReplay
+    const attuale = replayRef.current
+    if (!replay) replayRef.current = null
+    else if (!attuale || attuale.dati.inizio !== replay.inizio) replayRef.current = { dati: replay, t: replay.inizio, finito: false }
+  }, [replay, onFineReplay])
   const [sovra, setSovra] = useState<Stato>(() => statoScena(scena, tempo.current))
   const [supportato] = useState(webglDisponibile)
 
@@ -268,7 +290,19 @@ export default function Campo3D({
     let frame = requestAnimationFrame(function passo(ora) {
       const dt = Math.max(0, Math.min(0.1, (ora - ultimo) / 1000))
       ultimo = ora
-      const { stato, movimenti } = anima(scenaRef.current, tempo.current, dt, ora / 1000, ritmo.current ?? 1)
+      const r = replayRef.current
+      if (r && !r.finito) {
+        r.t += dt / r.dati.secondiPerMinuto
+        if (r.t >= r.dati.fine) {
+          r.finito = true
+          fineReplayRef.current?.()
+        }
+      }
+      const tVista = r ? Math.min(r.t, r.dati.fine) : tempo.current
+      const spm = r ? r.dati.secondiPerMinuto : (ritmo.current ?? 1)
+      const fotogramma = anima(scenaRef.current, tVista, dt, ora / 1000, spm)
+      debugFotogramma(fotogramma, tVista, spm, '3d')
+      const { stato, movimenti } = fotogramma
       const presenti = new Set<string>()
 
       for (const g of stato.giocatori) {
@@ -288,14 +322,24 @@ export default function Campo3D({
         delta = Math.atan2(Math.sin(delta), Math.cos(delta))
         // Si gira gradualmente, al massimo di circa mezzo giro al secondo.
         p.gruppo.rotation.y += Math.sign(delta) * Math.min(Math.abs(delta) * Math.min(1, dt * 6), dt * 3.5)
-        p.fase += Math.min(velocita, 12) * dt * 1.8
-        const ampiezza = Math.min(0.9, velocita * 0.12)
+        // Velocità "da calciatore": divisa per quanto è accelerato il tempo, così passo e postura restano naturali.
+        const corsa = velocita / Math.max(1, 60 / (ritmo.current ?? 60))
+        p.fase += Math.min(corsa, 9) * dt * 2.2
+        const ampiezza = Math.min(0.85, corsa * 0.11)
+        p.gruppo.rotation.x = Math.min(0.28, corsa * 0.035)
+        const fermo = Math.max(0, 1 - corsa / 1.5)
         const oscilla = Math.sin(p.fase) * ampiezza
         p.gambe[0].rotation.x = oscilla
         p.gambe[1].rotation.x = -oscilla
         p.braccia[0].rotation.x = -oscilla * 0.8
         p.braccia[1].rotation.x = oscilla * 0.8
+        // Da fermi un leggero ondeggiare delle braccia; nessun rimbalzo verticale, che fa sembrare tutto molleggiato.
         p.gruppo.position.set(aX(g.x), 0, aZ(g.y))
+        if (fermo > 0) {
+          const respiro = Math.sin(ora / 700 + p.fase) * 0.12 * fermo
+          p.braccia[0].rotation.x += respiro
+          p.braccia[1].rotation.x -= respiro
+        }
         p.ombra.position.set(aX(g.x), 0.02, aZ(g.y))
         p.anello.position.set(aX(g.x), 0.03, aZ(g.y))
         p.anello.visible = g.conPalla
@@ -311,8 +355,8 @@ export default function Campo3D({
       palla.position.set(aX(stato.palla.x), 0.28 + stato.palla.h, aZ(stato.palla.y))
       ombraPalla.position.set(aX(stato.palla.x), 0.02, aZ(stato.palla.y))
       // Dopo uno stacco la telecamera è già sull'azione, senza panoramiche lunghe.
-      if (Math.abs(tempo.current - ultimoTempo) > 0.3) camX = aX(stato.palla.x) * 0.8
-      ultimoTempo = tempo.current
+      if (Math.abs(tVista - ultimoTempo) > 0.3) camX = aX(stato.palla.x) * 0.8
+      ultimoTempo = tVista
       camX += (aX(stato.palla.x) * 0.8 - camX) * (1 - Math.exp(-dt * 1.8))
       camera.position.set(camX, 26, 55)
       camera.lookAt(camX, 0, 4)
@@ -346,6 +390,11 @@ export default function Campo3D({
     <div className="relative">
       <div ref={contenitore} className="aspect-video max-h-[70dvh] w-full overflow-hidden rounded-xl bg-slate-900" />
       <Sovraimpressione stato={sovra} nomi={nomi} portatore={portatore?.nome} />
+      {replay && (
+        <span className="pointer-events-none absolute top-2 left-2 rounded bg-rose-600 px-2 py-0.5 text-xs font-bold tracking-widest text-white">
+          REPLAY
+        </span>
+      )}
     </div>
   )
 }
